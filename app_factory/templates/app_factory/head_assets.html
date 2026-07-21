@@ -1,0 +1,25 @@
+{# Shared head: basecoat-factory + htmx + alpine (SRI). Host may add extras after. #}
+{% set basecoat_css = cdn_asset('basecoat-css') %}
+<link rel="stylesheet" href="{{ basecoat_css.url }}"{% if basecoat_css.integrity %} integrity="{{ basecoat_css.integrity }}" crossorigin="{{ basecoat_css.crossorigin }}"{% endif %}>
+{% if product_css_url is defined and product_css_url %}
+<link rel="stylesheet" href="{{ product_css_url }}">
+{% endif %}
+{% set basecoat_js = cdn_asset('basecoat-js-all') %}
+<script src="{{ basecoat_js.url }}"{% if basecoat_js.integrity %} integrity="{{ basecoat_js.integrity }}" crossorigin="{{ basecoat_js.crossorigin }}"{% endif %}{% if basecoat_js.defer %} defer{% endif %}></script>
+{% set htmx = cdn_asset('htmx') %}
+<script src="{{ htmx.url }}"{% if htmx.integrity %} integrity="{{ htmx.integrity }}" crossorigin="{{ htmx.crossorigin }}"{% endif %}{% if htmx.defer %} defer{% endif %}></script>
+{% set alpine = cdn_asset('alpine') %}
+<script src="{{ alpine.url }}"{% if alpine.integrity %} integrity="{{ alpine.integrity }}" crossorigin="{{ alpine.crossorigin }}"{% endif %}{% if alpine.defer %} defer{% endif %}></script>
+<script>
+  document.addEventListener('htmx:configRequest', function (event) {
+    if (event.detail && event.detail.xhr) {
+      event.detail.xhr.withCredentials = true;
+    }
+  });
+  document.addEventListener('htmx:responseError', (event) => {
+    const status = event?.detail?.xhr?.status;
+    if (status === 401) {
+      window.location.href = {{ (login_url if login_url is defined else '/login') | tojson }};
+    }
+  });
+</script>

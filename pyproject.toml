@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "app-factory"
+version = "0.1.0"
+description = "Shared FastAPI/Jinja/HTMX/Basecoat chrome for rnkstr-family apps (CDN pin, shell, passkey compose)"
+requires-python = ">=3.11"
+dependencies = [
+    "jinja2>=3.1.6",
+]
+
+[project.optional-dependencies]
+fastapi = [
+    "fastapi>=0.115",
+    "starlette>=0.37",
+]
+dev = [
+    "pytest>=8",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app_factory"]
+
+[tool.hatch.build.targets.sdist]
+include = ["app_factory", "README.md", "pyproject.toml"]

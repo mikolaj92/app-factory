@@ -1,0 +1,52 @@
+{# Early theme FOUC guard — set window.appTheme (host may alias product name). #}
+<script>
+(() => {
+  const media = window.matchMedia('(prefers-color-scheme: dark)');
+  const validModes = new Set(['light', 'dark', 'auto']);
+  let mode = 'auto';
+  try {
+    const stored = localStorage.getItem('themeMode');
+    if (validModes.has(stored)) mode = stored;
+  } catch (_) {}
+  const isDark = () => mode === 'dark' || (mode === 'auto' && media.matches);
+  const updateControls = () => {
+    document.querySelectorAll('[data-theme]').forEach((control) => {
+      control.setAttribute('aria-pressed', String(control.dataset.theme === mode));
+    });
+    document.querySelectorAll('[data-theme-toggle]').forEach((control) => {
+      control.setAttribute('aria-pressed', String(mode === 'dark'));
+    });
+  };
+  const apply = (value, persist = true) => {
+    if (value === 'toggle') {
+      mode = isDark() ? 'light' : 'dark';
+    } else {
+      mode = validModes.has(value) ? value : 'auto';
+    }
+    document.documentElement.classList.toggle('dark', isDark());
+    if (persist) {
+      try { localStorage.setItem('themeMode', mode); } catch (_) {}
+    }
+    updateControls();
+  };
+  window.appTheme = {
+    get mode() { return mode; },
+    set: (value) => apply(value),
+    toggle: () => apply(isDark() ? 'light' : 'dark'),
+    refresh: updateControls,
+  };
+  apply(mode, false);
+  media.addEventListener?.('change', () => {
+    if (mode === 'auto') apply('auto', false);
+  });
+  document.addEventListener('basecoat:theme', (event) => {
+    const requested = event.detail?.mode;
+    if (!requested || requested === 'toggle') window.appTheme.toggle();
+    else window.appTheme.set(requested);
+  });
+  document.addEventListener('basecoat:themechange', (event) => {
+    const requested = event.detail?.mode;
+    if (requested === 'dark' || requested === 'light') window.appTheme.set(requested);
+  });
+})();
+</script>
