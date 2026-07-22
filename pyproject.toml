@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "app-factory"
 version = "0.1.0"
-description = "Shared FastAPI/Jinja/HTMX/Basecoat chrome for rnkstr-family apps (CDN pin, shell, passkey compose)"
+description = "Shared FastAPI/Jinja/HTMX/Basecoat chrome: CDN pins, shell includes, compose with my-auth passkey UI"
 requires-python = ">=3.11"
 dependencies = [
     "jinja2>=3.1.6",

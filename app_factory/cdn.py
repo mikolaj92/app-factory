@@ -1,4 +1,4 @@
-"""Pinned third-party CDN assets shared by rnkstr-family apps.
+"""Pinned third-party CDN assets for host apps.
 
 Core pin: basecoat-factory (Basecoat + utilities + app-shell) + htmx + alpine.
 Optional extras (chartjs, leaflet, …) via :func:`extend_manifest` or by name
