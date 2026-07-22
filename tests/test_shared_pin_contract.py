@@ -1,26 +1,22 @@
-"""Cross-app pin contract: all factory consumers share the same core URLs."""
+"""Cross-app contract for locally bundled core chrome."""
 
 from __future__ import annotations
 
-from app_factory.cdn import CDN_ASSET_MANIFEST, cdn_asset
+from app_factory.assets import bundled_asset, list_bundled_assets, platform_asset_url
 
 
-def test_factory_pin_is_v0_2_0():
-    css = cdn_asset("basecoat-css")
-    js = cdn_asset("basecoat-js-all")
-    assert css.version == "0.2.0"
-    assert js.version == "0.2.0"
-    assert "mikolaj92/basecoat-factory@v0.2.0" in css.url
-    assert css.url.endswith("basecoat-factory.min.css")
-    assert js.url.endswith("basecoat-js.min.js")
+def test_factory_assets_share_the_generated_versions():
+    css = bundled_asset("basecoat-css")
+    js = bundled_asset("basecoat-js-all")
+    assert css.version == js.version == "1.0.2"
+    assert platform_asset_url(css.name).endswith("/basecoat-factory.min.css")
+    assert platform_asset_url(js.name).endswith("/basecoat-js.min.js")
 
 
-def test_core_order_stable():
-    orders = [a.order for a in CDN_ASSET_MANIFEST]
-    assert orders == sorted(orders)
-    assert [a.name for a in CDN_ASSET_MANIFEST] == [
+def test_core_names_are_stable():
+    assert [asset.name for asset in list_bundled_assets()] == [
+        "alpine",
         "basecoat-css",
         "basecoat-js-all",
         "htmx",
-        "alpine",
     ]

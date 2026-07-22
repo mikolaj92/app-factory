@@ -1,4 +1,4 @@
-"""Jinja helpers: register CDN globals and optional factory template search path."""
+"""Jinja helpers for bundled core assets and optional CDN extras."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from app_factory.cdn import CDN_ASSET_MANIFEST, cdn_asset
+from app_factory.assets import bundled_asset, list_bundled_assets, platform_asset_url
 
 
 def factory_template_dirs() -> list[Path]:
@@ -16,11 +17,13 @@ def factory_template_dirs() -> list[Path]:
 
 
 def configure_jinja_env(env: Any, *, include_factory_templates: bool = True) -> Any:
-    """Register ``cdn_asset`` / ``cdn_assets`` on a Jinja2 Environment.
-
+    """Register bundled core assets, CDN extras, and the template loader.
     When ``include_factory_templates`` is true, prepends factory template dirs
     so hosts can ``{% include "app_factory/head_assets.html" %}``.
     """
+    env.globals["bundled_asset"] = bundled_asset
+    env.globals["bundled_assets"] = tuple(list_bundled_assets())
+    env.globals["platform_asset_url"] = platform_asset_url
     env.globals["cdn_asset"] = cdn_asset
     env.globals["cdn_assets"] = CDN_ASSET_MANIFEST
 

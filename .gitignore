@@ -5,3 +5,4 @@ dist/
 .pytest_cache/
 .ruff_cache/
 uv.lock
+scripts/platform_assets_src/node_modules/

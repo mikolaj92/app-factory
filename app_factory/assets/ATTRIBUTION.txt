@@ -1,0 +1,30 @@
+app-factory bundled platform assets
+
+Runtime/build provenance:
+- basecoat-css 1.0.2
+  License: MIT
+  Source: git+https://github.com/hunvreus/basecoat.git
+  Exact source commit: 6953a4adbe63cb5ba25e2bda30d7b76202d4f2b4
+  Exact license: https://raw.githubusercontent.com/hunvreus/basecoat/6953a4adbe63cb5ba25e2bda30d7b76202d4f2b4/LICENSE.md
+  License text: licenses/basecoat-css.LICENSE
+- htmx.org 2.0.10
+  License: 0BSD
+  Source: https://github.com/bigskysoftware/htmx
+  Exact license: https://raw.githubusercontent.com/bigskysoftware/htmx/v2.0.10/LICENSE
+  License text: licenses/htmx.LICENSE
+- alpinejs 3.15.12
+  License: MIT
+  Source: https://github.com/alpinejs/alpine
+  Exact license: https://raw.githubusercontent.com/alpinejs/alpine/v3.15.12/LICENSE.md
+  License text: licenses/alpine.LICENSE
+- tailwindcss (build-time; incorporated into generated CSS) 4.3.3
+  License: MIT
+  Source: https://github.com/tailwindlabs/tailwindcss
+  Exact license: https://raw.githubusercontent.com/tailwindlabs/tailwindcss/v4.3.3/LICENSE
+  License text: licenses/tailwindcss.LICENSE
+
+Runtime files:
+- basecoat-css 1.0.2: basecoat-factory.min.css (sha384-SgDPYsJR9XbJQj8gSAARXSy0mP2AwzbwLin3tECsiPE6QSWdbiEYg82eij7tNMZP)
+- basecoat-js-all 1.0.2: basecoat-js.min.js (sha384-rD2ZCuReXV7nIneJcn1lsTn6yOv87YARLQyUsemVAxrYYHdy5hcAW8XZEQxx87Dj)
+- htmx 2.0.10: htmx.min.js (sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V)
+- alpine 3.15.12: alpine.min.js (sha384-pb6hrQvo4s23cEUFtj0CZkzGE3jyK3pj26RIupXXxhSrrcUA/Cn0lZgcCrGH0t6L)

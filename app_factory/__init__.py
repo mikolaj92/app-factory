@@ -1,5 +1,13 @@
 """Shared frontend chrome for FastAPI + Jinja + HTMX + basecoat-factory apps."""
 
+from app_factory.assets import (
+    BundledAsset,
+    bundled_asset,
+    get_assets_dir,
+    get_platform_static_app,
+    list_bundled_assets,
+    platform_asset_url,
+)
 from app_factory.cdn import (
     CDN_ASSET_MANIFEST,
     CDNAsset,
@@ -12,6 +20,12 @@ from app_factory.cdn import (
 from app_factory.jinja import configure_jinja_env, factory_template_dirs
 
 __all__ = [
+    "BundledAsset",
+    "bundled_asset",
+    "get_assets_dir",
+    "get_platform_static_app",
+    "list_bundled_assets",
+    "platform_asset_url",
     "CDN_ASSET_MANIFEST",
     "CDNAsset",
     "CDNVerificationError",
@@ -23,4 +37,4 @@ __all__ = [
     "verify_cdn_manifest",
 ]
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

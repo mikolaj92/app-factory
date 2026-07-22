@@ -1,11 +1,8 @@
-"""Pinned third-party CDN assets for host apps.
+"""Pinned optional CDN assets for product-specific integrations.
 
-Core pin: basecoat-factory (Basecoat + utilities + app-shell) + htmx + alpine.
-Optional extras (chartjs, leaflet, …) via :func:`extend_manifest` or by name
-lookup after registration.
-
-Importing this module never performs network I/O.
+Core chrome is bundled locally; this registry contains only optional extras.
 """
+
 
 from __future__ import annotations
 
@@ -49,43 +46,6 @@ class CDNAsset:
     algorithm: Literal["sha384"] = "sha384"
 
 
-# basecoat-factory@v0.2.0 — https://github.com/mikolaj92/basecoat-factory
-_CORE: tuple[CDNAsset, ...] = (
-    CDNAsset(
-        name="basecoat-css",
-        version="0.2.0",
-        url="https://cdn.jsdelivr.net/gh/mikolaj92/basecoat-factory@v0.2.0/dist/basecoat-factory.min.css",
-        integrity="sha384-yTWLxHpctVA4TCmRqP+h0CCXfSSzQW89Hbcck6TPoobuRVMH67ZP6KjDoM6Dfu1D",
-        kind="style",
-        order=10,
-    ),
-    CDNAsset(
-        name="basecoat-js-all",
-        version="0.2.0",
-        url="https://cdn.jsdelivr.net/gh/mikolaj92/basecoat-factory@v0.2.0/dist/basecoat-js.min.js",
-        integrity="sha384-Nh+vuYF6cR32jKYrKMif2BIAyNAYtifVdaSvCBc2IheqqAAuNII7/hWSWy6dIdmr",
-        kind="script",
-        defer=True,
-        order=20,
-    ),
-    CDNAsset(
-        name="htmx",
-        version="2.0.10",
-        url="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js",
-        integrity="sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V",
-        kind="script",
-        order=30,
-    ),
-    CDNAsset(
-        name="alpine",
-        version="3.15.12",
-        url="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js",
-        integrity="sha384-pb6hrQvo4s23cEUFtj0CZkzGE3jyK3pj26RIupXXxhSrrcUA/Cn0lZgcCrGH0t6L",
-        kind="script",
-        defer=True,
-        order=40,
-    ),
-)
 
 # Optional well-known extras (not in core validate count)
 OPTIONAL_ASSETS: dict[str, CDNAsset] = {
@@ -123,13 +83,11 @@ OPTIONAL_ASSETS: dict[str, CDNAsset] = {
     ),
 }
 
-CDN_ASSET_MANIFEST: tuple[CDNAsset, ...] = _CORE
-_APPROVED_BY_NAME: dict[str, CDNAsset] = {a.name: a for a in CDN_ASSET_MANIFEST}
+CDN_ASSET_MANIFEST: tuple[CDNAsset, ...] = ()
+_APPROVED_BY_NAME: dict[str, CDNAsset] = {}
 
 
-def _validate_core(manifest: tuple[CDNAsset, ...]) -> None:
-    if not manifest:
-        raise RuntimeError("CDN asset manifest is empty")
+def _validate_manifest(manifest: tuple[CDNAsset, ...]) -> None:
     orders = [asset.order for asset in manifest]
     if orders != sorted(orders) or len(set(orders)) != len(orders):
         raise RuntimeError("CDN asset order values must be unique and ascending")
@@ -143,15 +101,11 @@ def _validate_core(manifest: tuple[CDNAsset, ...]) -> None:
             raise RuntimeError(f"CDN asset must use anonymous CORS: {asset.name}")
 
 
-_validate_core(CDN_ASSET_MANIFEST)
+_validate_manifest(CDN_ASSET_MANIFEST)
 
 
 def extend_manifest(extras: Iterable[CDNAsset | str]) -> tuple[CDNAsset, ...]:
-    """Return core manifest plus named optional extras or CDNAsset instances.
-
-    Does not mutate the module-level default; callers that need a custom
-    registry should pass the result into :func:`install_manifest`.
-    """
+    """Return the installed optional manifest plus named or explicit extras."""
     assets: list[CDNAsset] = list(CDN_ASSET_MANIFEST)
     names = {a.name for a in assets}
     for item in extras:
@@ -165,15 +119,15 @@ def extend_manifest(extras: Iterable[CDNAsset | str]) -> tuple[CDNAsset, ...]:
             continue
         assets.append(asset)
         names.add(asset.name)
-    out = tuple(sorted(assets, key=lambda a: a.order))
-    _validate_core(out)
+    out = tuple(sorted(assets, key=lambda asset: asset.order))
+    _validate_manifest(out)
     return out
 
 
 def install_manifest(manifest: tuple[CDNAsset, ...]) -> None:
     """Replace the process-wide approved manifest (used by apps with extras)."""
     global CDN_ASSET_MANIFEST, _APPROVED_BY_NAME
-    _validate_core(manifest)
+    _validate_manifest(manifest)
     CDN_ASSET_MANIFEST = manifest
     _APPROVED_BY_NAME = {a.name: a for a in manifest}
 

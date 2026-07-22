@@ -1,15 +1,12 @@
-{# Shared head: basecoat-factory + htmx + alpine (SRI). Host may add extras after. #}
-{% set basecoat_css = cdn_asset('basecoat-css') %}
-<link rel="stylesheet" href="{{ basecoat_css.url }}"{% if basecoat_css.integrity %} integrity="{{ basecoat_css.integrity }}" crossorigin="{{ basecoat_css.crossorigin }}"{% endif %}>
+{# Shared head: locally bundled core assets. Mount get_platform_static_app() at platform_assets_prefix. #}
+{% set asset_prefix = platform_assets_prefix if platform_assets_prefix is defined else '/static/platform' %}
+<link rel="stylesheet" href="{{ platform_asset_url('basecoat-css', prefix=asset_prefix) }}">
 {% if product_css_url is defined and product_css_url %}
 <link rel="stylesheet" href="{{ product_css_url }}">
 {% endif %}
-{% set basecoat_js = cdn_asset('basecoat-js-all') %}
-<script src="{{ basecoat_js.url }}"{% if basecoat_js.integrity %} integrity="{{ basecoat_js.integrity }}" crossorigin="{{ basecoat_js.crossorigin }}"{% endif %}{% if basecoat_js.defer %} defer{% endif %}></script>
-{% set htmx = cdn_asset('htmx') %}
-<script src="{{ htmx.url }}"{% if htmx.integrity %} integrity="{{ htmx.integrity }}" crossorigin="{{ htmx.crossorigin }}"{% endif %}{% if htmx.defer %} defer{% endif %}></script>
-{% set alpine = cdn_asset('alpine') %}
-<script src="{{ alpine.url }}"{% if alpine.integrity %} integrity="{{ alpine.integrity }}" crossorigin="{{ alpine.crossorigin }}"{% endif %}{% if alpine.defer %} defer{% endif %}></script>
+<script src="{{ platform_asset_url('basecoat-js-all', prefix=asset_prefix) }}" defer></script>
+<script src="{{ platform_asset_url('htmx', prefix=asset_prefix) }}"></script>
+<script src="{{ platform_asset_url('alpine', prefix=asset_prefix) }}" defer></script>
 <script>
   document.addEventListener('htmx:configRequest', function (event) {
     if (event.detail && event.detail.xhr) {

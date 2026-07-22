@@ -1,0 +1,26 @@
+{
+  "alpine": {
+    "filename": "alpine.min.js",
+    "integrity": "sha384-pb6hrQvo4s23cEUFtj0CZkzGE3jyK3pj26RIupXXxhSrrcUA/Cn0lZgcCrGH0t6L",
+    "kind": "script",
+    "version": "3.15.12"
+  },
+  "basecoat-css": {
+    "filename": "basecoat-factory.min.css",
+    "integrity": "sha384-SgDPYsJR9XbJQj8gSAARXSy0mP2AwzbwLin3tECsiPE6QSWdbiEYg82eij7tNMZP",
+    "kind": "style",
+    "version": "1.0.2"
+  },
+  "basecoat-js-all": {
+    "filename": "basecoat-js.min.js",
+    "integrity": "sha384-rD2ZCuReXV7nIneJcn1lsTn6yOv87YARLQyUsemVAxrYYHdy5hcAW8XZEQxx87Dj",
+    "kind": "script",
+    "version": "1.0.2"
+  },
+  "htmx": {
+    "filename": "htmx.min.js",
+    "integrity": "sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V",
+    "kind": "script",
+    "version": "2.0.10"
+  }
+}

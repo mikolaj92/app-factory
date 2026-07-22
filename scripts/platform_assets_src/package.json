@@ -1,0 +1,15 @@
+{
+  "name": "app-factory-platform-assets",
+  "private": true,
+  "description": "Build inputs for app-factory bundled chrome. Maintainer-only. One lockfile pins everything. Use exact versions that match current dist.",
+  "scripts": {
+    "build:css": "tailwindcss -i ./src/input.css -o ./dist/basecoat-factory.min.css --minify"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "4.3.3",
+    "alpinejs": "3.15.12",
+    "basecoat-css": "1.0.2",
+    "htmx.org": "2.0.10",
+    "tailwindcss": "4.3.3"
+  }
+}
