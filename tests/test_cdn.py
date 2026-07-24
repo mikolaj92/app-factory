@@ -99,6 +99,9 @@ def test_local_bundled_assets_are_present_via_importlib_resources():
         ".hidden",
         ".items-center",
         ".justify-between",
+        ".app-table-wrap",
+        ".app-dropzone",
+        ".app-progress",
     ]
     missing = [sel for sel in required if sel not in content]
     assert not missing, f"bundled baseline CSS missing selectors: {missing}"

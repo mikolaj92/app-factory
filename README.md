@@ -8,7 +8,7 @@ The goal is one place to ship the resilient same-origin chrome, Jinja head
 partials, and optional CDN pins so product apps do **not** re-implement
 Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.2.0`
+**Tag:** `v0.3.0`
 
 ---
 
@@ -18,7 +18,7 @@ This package is the thin shared layer in a small platform. Together:
 
 | Piece | Role | How consumers get it |
 |-------|------|----------------------|
-| **app-factory** (this repo) | Bundled chrome assets + Jinja includes | `git` tag `v0.2.0` via uv |
+| **app-factory** (this repo) | Bundled chrome assets + Jinja includes | `git` tag `v0.3.0` via uv |
 | **basecoat-factory** | Build source for Basecoat + utility safelist + **app-shell** classes (`.app-*`) | Bundled in app-factory |
 | **my-auth** (`fastapi-htmx`) | Passkey auth + **default** login/register UI | `git` tag `v0.2.0`; UI chrome uses app-factory |
 | **my-usermanager** | Identity, roles, grants, session principal helpers | `git` branch/tag (pin so it depends on my-auth@v0.2.0) |
@@ -63,7 +63,7 @@ Apps should not ship:
 
 ---
 
-## Bundled core assets (`v0.2.0`)
+## Bundled core assets (`v0.3.0`)
 
 The wheel ships all core files. `MANIFEST.json` pins filenames, versions, and
 SHA-384 digests; the runtime verifies it on first access.
@@ -83,6 +83,21 @@ url = platform_asset_url(css.name)  # /static/platform/basecoat-factory.min.css
 ```
 
 Exact sources, licenses, and digests are stored under `app_factory/assets/`.
+### Shared presentation primitives
+
+The bundled stylesheet keeps product markup Basecoat-first and adds only a
+small domain-blind layer where utilities alone do not express the behavior:
+
+- `.app-page`, `.app-stack`, `.app-header`, `.app-cluster`, and `.app-card-grid`
+  compose responsive pages around Basecoat components.
+- `.app-table-wrap` gives wide Basecoat tables a mobile overflow boundary.
+- `.app-dropzone` styles a native file-input label or another correctly
+  keyboard-enabled file target; set `data-dragover="true"` during drag-over.
+- `.app-progress` normalizes native `<progress>` elements without replacing
+  their semantics.
+
+Product-specific statuses, worker states, and document actions stay in product
+HTML and use Basecoat variants or semantic `data-*` attributes, not shared CSS.
 Importing app-factory never performs network I/O.
 
 ### Optional CDN extras
@@ -120,7 +135,7 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.2.0" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.3.0" }
 my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.2.0" }
 my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", branch = "main" }
 
@@ -259,7 +274,7 @@ app.mount(ui.static_mount_path, ui.static_files, name="my_auth_fastapi_htmx_stat
 
 ## Recommended app checklist
 
-1. Depend on `app-factory@v0.2.0` + `my-auth[fastapi-htmx]@v0.2.0` via git tags.
+1. Depend on `app-factory@v0.3.0` + `my-auth[fastapi-htmx]@v0.2.0` via git tags.
 2. Mount `get_platform_static_app()` at `/static/platform`.
 3. `configure_jinja_env` on every Jinja environment that renders full pages.
 4. Include `app_factory/head_assets.html` (and usually `theme_boot.html`) in the shell.
