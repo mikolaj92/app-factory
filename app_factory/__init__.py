@@ -18,6 +18,7 @@ from app_factory.cdn import (
     verify_cdn_manifest,
 )
 from app_factory.jinja import configure_jinja_env, factory_template_dirs
+
 try:
     from app_factory.fastapi import (
         AppFactoryUi,
@@ -28,24 +29,24 @@ except ImportError:  # Optional fastapi extra is not installed.
     AppFactoryUi = AppFactoryUiConflict = install_app_factory_ui = None
 
 __all__ = [
-    "BundledAsset",
+    "CDN_ASSET_MANIFEST",
     "AppFactoryUi",
     "AppFactoryUiConflict",
-    "install_app_factory_ui",
-    "bundled_asset",
-    "get_assets_dir",
-    "get_platform_static_app",
-    "list_bundled_assets",
-    "platform_asset_url",
-    "CDN_ASSET_MANIFEST",
+    "BundledAsset",
     "CDNAsset",
     "CDNVerificationError",
+    "bundled_asset",
     "cdn_asset",
     "configure_jinja_env",
     "extend_manifest",
     "factory_template_dirs",
+    "get_assets_dir",
+    "get_platform_static_app",
+    "install_app_factory_ui",
+    "list_bundled_assets",
+    "platform_asset_url",
     "verify_cdn_asset",
     "verify_cdn_manifest",
 ]
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"

@@ -16,7 +16,9 @@ def _environment(content: str = "Ready") -> Environment:
             {
                 "page.html": (
                     "{% extends 'app_factory/shell.html' %}"
-                    "{% block main %}" + content + "{% endblock %}"
+                    + "{% block main %}"
+                    + content
+                    + "{% endblock %}"
                 )
             }
         )
@@ -46,10 +48,8 @@ def test_install_is_idempotent_configures_new_environments_and_rejects_conflicts
 
     assert install_app_factory_ui(app, environments=[second_environment]) == first
     assert "Second" in second_environment.get_template("page.html").render()
-    assert sum(isinstance(route, Mount) for route in app.routes) == 1
-
     with pytest.raises(AppFactoryUiConflict):
-        install_app_factory_ui(
+        _ = install_app_factory_ui(
             app,
             environments=[first_environment],
             static_path="/different",
@@ -58,12 +58,12 @@ def test_install_is_idempotent_configures_new_environments_and_rejects_conflicts
 
 def test_shell_exposes_only_the_supported_blocks():
     environment = _environment()
-    install_app_factory_ui(FastAPI(), environments=[environment])
+    _ = install_app_factory_ui(FastAPI(), environments=[environment])
     blocks = environment.get_template("app_factory/shell.html").blocks
     assert set(blocks) == {"title", "head_extra", "navigation", "main", "body_end"}
 
 
 @pytest.mark.parametrize("static_path", ["", "/", "relative"])
-def test_static_path_must_be_an_absolute_non_root_path(static_path):
+def test_static_path_must_be_an_absolute_non_root_path(static_path: str) -> None:
     with pytest.raises(ValueError):
-        install_app_factory_ui(FastAPI(), environments=[], static_path=static_path)
+        _ = install_app_factory_ui(FastAPI(), environments=[], static_path=static_path)

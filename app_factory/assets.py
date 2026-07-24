@@ -10,7 +10,10 @@ from dataclasses import dataclass
 from functools import lru_cache
 from importlib.resources import files
 from pathlib import Path
-from typing import Literal, cast
+from typing import TYPE_CHECKING, Literal, cast
+
+if TYPE_CHECKING:
+    from starlette.types import ASGIApp
 
 AssetKind = Literal["script", "style"]
 
@@ -28,24 +31,30 @@ class BundledAsset:
     kind: AssetKind
 
 
-
-
 @lru_cache(maxsize=1)
 def _bundled_assets() -> dict[str, BundledAsset]:
     """Load and verify the sole generated manifest once per process."""
     root = files("app_factory").joinpath("assets")
-    raw = json.loads(root.joinpath("MANIFEST.json").read_text(encoding="utf-8"))
-    if not isinstance(raw, dict) or set(raw) != _CORE_NAMES:
+    loaded = cast(
+        object,
+        json.loads(root.joinpath("MANIFEST.json").read_text(encoding="utf-8")),
+    )
+    if (
+        not isinstance(loaded, dict)
+        or set(cast(dict[str, object], loaded)) != _CORE_NAMES
+    ):
         raise RuntimeError("invalid bundled asset manifest names")
 
     assets: dict[str, BundledAsset] = {}
+    raw = cast(dict[str, object], loaded)
     for name, value in raw.items():
-        if not isinstance(name, str) or not isinstance(value, dict):
-            raise RuntimeError("invalid bundled asset manifest entry")
-        filename = value.get("filename")
-        version = value.get("version")
-        integrity = value.get("integrity")
-        kind = value.get("kind")
+        if not isinstance(value, dict):
+            raise TypeError("invalid bundled asset manifest entry")
+        entry = cast(dict[str, object], value)
+        filename = entry.get("filename")
+        version = entry.get("version")
+        integrity = entry.get("integrity")
+        kind = entry.get("kind")
         if (
             not isinstance(filename, str)
             or Path(filename).name != filename
@@ -69,9 +78,10 @@ def _bundled_assets() -> dict[str, BundledAsset]:
             filename=filename,
             version=version,
             integrity=integrity,
-            kind=cast(AssetKind, kind),
+            kind=kind,
         )
     return assets
+
 
 def bundled_asset(name: str) -> BundledAsset:
     try:
@@ -102,12 +112,13 @@ def platform_asset_url(name: str, *, prefix: str = "/static/platform") -> str:
 
 # --- Optional Starlette mount (only when the fastapi extra is installed) ---
 
-def get_platform_static_app() -> object:
+
+def get_platform_static_app() -> ASGIApp:
     """Return a Starlette app serving the package assets."""
     try:
-        from starlette.staticfiles import StaticFiles  # type: ignore[import-not-found]
+        from starlette.staticfiles import StaticFiles
     except ImportError as exc:
         raise RuntimeError(
             "get_platform_static_app() requires the 'fastapi' extra"
         ) from exc
-    return StaticFiles(directory=str(get_assets_dir()), check_dir=True)
+    return cast("ASGIApp", StaticFiles(directory=str(get_assets_dir()), check_dir=True))

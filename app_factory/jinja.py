@@ -1,13 +1,19 @@
 """Jinja helpers for bundled core assets and optional CDN extras."""
 
-from __future__ import annotations
-
 from importlib.resources import files
 from pathlib import Path
-from typing import Any
+from typing import cast
 
-from app_factory.cdn import CDN_ASSET_MANIFEST, cdn_asset
+from jinja2 import (
+    BaseLoader,
+    ChoiceLoader,
+    Environment,
+    FileSystemLoader,
+    PackageLoader,
+)
+
 from app_factory.assets import bundled_asset, list_bundled_assets, platform_asset_url
+from app_factory.cdn import CDN_ASSET_MANIFEST, cdn_asset
 
 
 def factory_template_dirs() -> list[Path]:
@@ -16,40 +22,34 @@ def factory_template_dirs() -> list[Path]:
     return [Path(str(root))]
 
 
-def configure_jinja_env(env: Any, *, include_factory_templates: bool = True) -> Any:
+def configure_jinja_env(
+    env: Environment, *, include_factory_templates: bool = True
+) -> Environment:
     """Register bundled core assets, CDN extras, and the template loader.
     When ``include_factory_templates`` is true, prepends factory template dirs
     so hosts can ``{% include "app_factory/head_assets.html" %}``.
     """
-    env.globals["bundled_asset"] = bundled_asset
-    env.globals["bundled_assets"] = tuple(list_bundled_assets())
-    env.globals["platform_asset_url"] = platform_asset_url
-    env.globals["cdn_asset"] = cdn_asset
-    env.globals["cdn_assets"] = CDN_ASSET_MANIFEST
+    globals_dict = cast(dict[str, object], env.globals)
+    globals_dict["bundled_asset"] = bundled_asset
+    globals_dict["bundled_assets"] = tuple(list_bundled_assets())
+    globals_dict["platform_asset_url"] = platform_asset_url
+    globals_dict["cdn_asset"] = cdn_asset
+    globals_dict["cdn_assets"] = CDN_ASSET_MANIFEST
 
     if include_factory_templates:
-        try:
-            from jinja2 import ChoiceLoader, FileSystemLoader, PackageLoader
-        except ImportError:
-            return env
-
-        loaders = []
+        loaders: list[BaseLoader] = []
         # Prefer package loader so installed wheels work
         try:
             loaders.append(PackageLoader("app_factory", "templates"))
-        except Exception:
-            for d in factory_template_dirs():
-                if d.is_dir():
-                    loaders.append(FileSystemLoader(str(d)))
+        except (ImportError, OSError, ValueError):
+            for directory in factory_template_dirs():
+                if directory.is_dir():
+                    loaders.append(FileSystemLoader(str(directory)))
 
         if loaders:
             existing = env.loader
             if existing is not None:
-                from jinja2 import ChoiceLoader as CL
-
-                env.loader = CL([existing, *loaders])
+                env.loader = ChoiceLoader([existing, *loaders])
             else:
-                from jinja2 import ChoiceLoader as CL
-
-                env.loader = CL(loaders)
+                env.loader = ChoiceLoader(loaders)
     return env

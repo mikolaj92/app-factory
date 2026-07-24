@@ -27,12 +27,12 @@ from __future__ import annotations
 
 import base64
 import ctypes
-import sys
 import hashlib
 import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from urllib.error import HTTPError
@@ -44,7 +44,9 @@ ASSETS_DST = REPO_ROOT / "app_factory" / "assets"
 BASECOAT_LICENSE_FILENAME = "basecoat-css.LICENSE"
 BASECOAT_VERSION = "1.0.2"
 BASECOAT_REGISTRY_URL = f"https://registry.npmjs.org/basecoat-css/{BASECOAT_VERSION}"
-BASECOAT_LICENSE_URL = "https://raw.githubusercontent.com/hunvreus/basecoat/{git_head}/LICENSE.md"
+BASECOAT_LICENSE_URL = (
+    "https://raw.githubusercontent.com/hunvreus/basecoat/{git_head}/LICENSE.md"
+)
 MIT_REQUIRED_TEXT = (
     b"MIT License",
     b"Copyright",
@@ -104,8 +106,6 @@ def run(cmd: list[str], cwd: Path) -> None:
     subprocess.run(cmd, cwd=cwd, check=True)
 
 
-
-
 def b64sha384(path: Path) -> str:
     return "sha384-" + base64.b64encode(
         hashlib.sha384(path.read_bytes()).digest()
@@ -153,12 +153,20 @@ def build_and_stage() -> Path:
     licenses_dir = assets_stage / "licenses"
     licenses_dir.mkdir()
 
-    for filename, (_package, license_name, _repository, source) in LICENSE_SOURCES.items():
+    for filename, (
+        _package,
+        license_name,
+        _repository,
+        source,
+    ) in LICENSE_SOURCES.items():
         content = fetch_bytes(source)
         required = (
             MIT_REQUIRED_TEXT
             if license_name == "MIT"
-            else (b"Permission to use, copy, modify, and/or distribute", b"THE SOFTWARE IS PROVIDED")
+            else (
+                b"Permission to use, copy, modify, and/or distribute",
+                b"THE SOFTWARE IS PROVIDED",
+            )
         )
         validate_license(content, source, required=required)
         (licenses_dir / filename).write_bytes(content)
@@ -179,11 +187,17 @@ def build_and_stage() -> Path:
     lock_entry = lock.get("packages", {}).get("node_modules/basecoat-css", {})
     registry_metadata = json.loads(fetch_bytes(BASECOAT_REGISTRY_URL))
     registry_integrity = registry_metadata.get("dist", {}).get("integrity")
-    if not isinstance(registry_integrity, str) or registry_integrity != lock_entry.get("integrity"):
-        raise RuntimeError("basecoat-css registry integrity does not match package-lock.json")
+    if not isinstance(registry_integrity, str) or registry_integrity != lock_entry.get(
+        "integrity"
+    ):
+        raise RuntimeError(
+            "basecoat-css registry integrity does not match package-lock.json"
+        )
     git_head = registry_metadata.get("gitHead")
     if not isinstance(git_head, str) or len(git_head) != 40:
-        raise RuntimeError("basecoat-css registry metadata has no authoritative gitHead")
+        raise RuntimeError(
+            "basecoat-css registry metadata has no authoritative gitHead"
+        )
     license_source = BASECOAT_LICENSE_URL.format(git_head=git_head)
     basecoat_license = fetch_bytes(license_source)
     validate_license(basecoat_license, license_source, required=BASECOAT_REQUIRED_TEXT)
@@ -205,7 +219,13 @@ def build_and_stage() -> Path:
     manifest = {
         name: {
             "filename": filename,
-            "version": read_version("basecoat-css" if name.startswith("basecoat-") else "htmx.org" if name == "htmx" else "alpinejs"),
+            "version": read_version(
+                "basecoat-css"
+                if name.startswith("basecoat-")
+                else "htmx.org"
+                if name == "htmx"
+                else "alpinejs"
+            ),
             "integrity": b64sha384(assets_stage / filename),
             "kind": kind,
         }
@@ -225,7 +245,11 @@ def build_and_stage() -> Path:
     if isinstance(repository_directory, str) and repository_directory:
         source += f" ({repository_directory})"
 
-    attribution = ["app-factory bundled platform assets", "", "Runtime/build provenance:"]
+    attribution = [
+        "app-factory bundled platform assets",
+        "",
+        "Runtime/build provenance:",
+    ]
     attribution.append(
         f"- basecoat-css {version}\n"
         f"  License: MIT\n"
@@ -234,10 +258,17 @@ def build_and_stage() -> Path:
         f"  Exact license: {license_source}\n"
         f"  License text: licenses/{BASECOAT_LICENSE_FILENAME}"
     )
-    for filename, (package, license_name, repository, source) in LICENSE_SOURCES.items():
+    for filename, (
+        package,
+        license_name,
+        repository,
+        source,
+    ) in LICENSE_SOURCES.items():
         package_name = (
-            "tailwindcss" if filename.startswith("tailwindcss")
-            else "htmx.org" if filename.startswith("htmx")
+            "tailwindcss"
+            if filename.startswith("tailwindcss")
+            else "htmx.org"
+            if filename.startswith("htmx")
             else "alpinejs"
         )
         attribution.append(
@@ -292,7 +323,9 @@ def _exchange_directories(left: Path, right: Path) -> None:
 def replace_assets(source: Path, destination: Path) -> None:
     """Replace the live tree with one atomic directory exchange."""
     destination.parent.mkdir(parents=True, exist_ok=True)
-    incoming = destination.with_name(f".{destination.name}.incoming-{os.urandom(4).hex()}")
+    incoming = destination.with_name(
+        f".{destination.name}.incoming-{os.urandom(4).hex()}"
+    )
     shutil.copytree(source, incoming)
     try:
         if destination.exists():
@@ -302,6 +335,7 @@ def replace_assets(source: Path, destination: Path) -> None:
     finally:
         shutil.rmtree(incoming, ignore_errors=True)
     print(f"Replaced {destination} with new assets.")
+
 
 def main() -> None:
     print("=== Refreshing local bundled platform assets ===")

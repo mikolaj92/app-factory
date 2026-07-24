@@ -3,14 +3,14 @@
 Core chrome is bundled locally; this registry contains only optional extras.
 """
 
-
 from __future__ import annotations
 
 import base64
 import hashlib
 import hmac
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, replace
-from typing import Callable, Iterable, Literal, Protocol
+from typing import Literal, Protocol, cast
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
@@ -24,11 +24,13 @@ class CDNVerificationError(ValueError):
 
 
 class CDNResponse(Protocol):
-    status: int
+    status: int | None
 
     def read(self) -> bytes: ...
 
     def geturl(self) -> str: ...
+
+    def getcode(self) -> int: ...
 
     def close(self) -> None: ...
 
@@ -44,7 +46,6 @@ class CDNAsset:
     defer: bool = False
     order: int = 0
     algorithm: Literal["sha384"] = "sha384"
-
 
 
 # Optional well-known extras (not in core validate count)
@@ -84,7 +85,8 @@ OPTIONAL_ASSETS: dict[str, CDNAsset] = {
 }
 
 CDN_ASSET_MANIFEST: tuple[CDNAsset, ...] = ()
-_APPROVED_BY_NAME: dict[str, CDNAsset] = {}
+_cdn_asset_manifest: tuple[CDNAsset, ...] = CDN_ASSET_MANIFEST
+_approved_by_name: dict[str, CDNAsset] = {}
 
 
 def _validate_manifest(manifest: tuple[CDNAsset, ...]) -> None:
@@ -96,17 +98,19 @@ def _validate_manifest(manifest: tuple[CDNAsset, ...]) -> None:
         if parsed.scheme != "https" or parsed.hostname != _ALLOWED_HOST:
             raise RuntimeError(f"CDN asset has an unapproved URL: {asset.url}")
         if not asset.integrity.startswith("sha384-"):
-            raise RuntimeError(f"CDN asset lacks a SHA-384 integrity value: {asset.name}")
+            raise RuntimeError(
+                f"CDN asset lacks a SHA-384 integrity value: {asset.name}"
+            )
         if asset.crossorigin != "anonymous":
             raise RuntimeError(f"CDN asset must use anonymous CORS: {asset.name}")
 
 
-_validate_manifest(CDN_ASSET_MANIFEST)
+_validate_manifest(_cdn_asset_manifest)
 
 
 def extend_manifest(extras: Iterable[CDNAsset | str]) -> tuple[CDNAsset, ...]:
     """Return the installed optional manifest plus named or explicit extras."""
-    assets: list[CDNAsset] = list(CDN_ASSET_MANIFEST)
+    assets: list[CDNAsset] = list(_cdn_asset_manifest)
     names = {a.name for a in assets}
     for item in extras:
         if isinstance(item, str):
@@ -126,15 +130,16 @@ def extend_manifest(extras: Iterable[CDNAsset | str]) -> tuple[CDNAsset, ...]:
 
 def install_manifest(manifest: tuple[CDNAsset, ...]) -> None:
     """Replace the process-wide approved manifest (used by apps with extras)."""
-    global CDN_ASSET_MANIFEST, _APPROVED_BY_NAME
+    global _cdn_asset_manifest, _approved_by_name
     _validate_manifest(manifest)
-    CDN_ASSET_MANIFEST = manifest
-    _APPROVED_BY_NAME = {a.name: a for a in manifest}
+    _cdn_asset_manifest = manifest
+    _approved_by_name = {a.name: a for a in manifest}
+    globals()["CDN_ASSET_MANIFEST"] = manifest
 
 
 def cdn_asset(name: str) -> CDNAsset:
     try:
-        return _APPROVED_BY_NAME[name]
+        return _approved_by_name[name]
     except KeyError as exc:
         # Fall back to optional catalog without installing
         if name in OPTIONAL_ASSETS:
@@ -147,7 +152,7 @@ Fetcher = Callable[[str], CDNResponse]
 
 def _open_url(url: str, *, timeout: float) -> CDNResponse:
     request = Request(url, headers={"Accept": "*/*"})
-    return urlopen(request, timeout=timeout)  # noqa: S310 - URL is manifest-pinned
+    return cast(CDNResponse, urlopen(request, timeout=timeout))
 
 
 def verify_cdn_asset(
@@ -156,32 +161,43 @@ def verify_cdn_asset(
     fetcher: Fetcher | None = None,
     timeout: float = 10.0,
 ) -> None:
-    approved = _APPROVED_BY_NAME.get(asset.name) or OPTIONAL_ASSETS.get(asset.name)
-    if approved is None or (
-        asset.version != approved.version
+    approved = _approved_by_name.get(asset.name) or OPTIONAL_ASSETS.get(asset.name)
+    if (
+        approved is None
+        or asset.version != approved.version
         or asset.url != approved.url
         or asset.kind != approved.kind
-    ):
-        # Allow verifying the exact object if it is the approved one by URL
-        if approved is None or asset.url != approved.url:
-            raise CDNVerificationError(f"unexpected requested CDN URL: {asset.url}")
+    ) and (approved is None or asset.url != approved.url):
+        raise CDNVerificationError(f"unexpected requested CDN URL: {asset.url}")
 
-    response = fetcher(asset.url) if fetcher is not None else _open_url(asset.url, timeout=timeout)
+    response = (
+        fetcher(asset.url)
+        if fetcher is not None
+        else _open_url(asset.url, timeout=timeout)
+    )
     try:
         status = getattr(response, "status", None)
         if status is None:
-            status = response.getcode()  # type: ignore[attr-defined]
+            status = response.getcode()
         if not 200 <= int(status) < 300:
-            raise CDNVerificationError(f"CDN response returned HTTP {status}: {asset.url}")
+            raise CDNVerificationError(
+                f"CDN response returned HTTP {status}: {asset.url}"
+            )
 
         final_url = response.geturl()
         final_parts = urlsplit(final_url)
         if final_parts.hostname != _ALLOWED_HOST:
-            raise CDNVerificationError(f"CDN redirect reached unexpected host: {final_url}")
+            raise CDNVerificationError(
+                f"CDN redirect reached unexpected host: {final_url}"
+            )
         if final_url != asset.url:
-            raise CDNVerificationError(f"CDN redirect reached unexpected URL: {final_url}")
+            raise CDNVerificationError(
+                f"CDN redirect reached unexpected URL: {final_url}"
+            )
         body = response.read()
-        digest = "sha384-" + base64.b64encode(hashlib.sha384(body).digest()).decode("ascii")
+        digest = "sha384-" + base64.b64encode(hashlib.sha384(body).digest()).decode(
+            "ascii"
+        )
         if not hmac.compare_digest(digest, asset.integrity):
             raise CDNVerificationError(f"CDN integrity digest mismatch: {asset.name}")
     finally:
@@ -193,7 +209,7 @@ def verify_cdn_manifest(
     fetcher: Fetcher | None = None,
     timeout: float = 10.0,
 ) -> None:
-    for asset in CDN_ASSET_MANIFEST:
+    for asset in _cdn_asset_manifest:
         verify_cdn_asset(asset, fetcher=fetcher, timeout=timeout)
 
 
