@@ -1,4 +1,4 @@
-"""Shared frontend chrome for FastAPI + Jinja + HTMX + basecoat-factory apps."""
+"""Shared frontend chrome for FastAPI + Jinja + HTMX + Basecoat UI apps."""
 
 from app_factory.assets import (
     BundledAsset,
@@ -18,9 +18,20 @@ from app_factory.cdn import (
     verify_cdn_manifest,
 )
 from app_factory.jinja import configure_jinja_env, factory_template_dirs
+try:
+    from app_factory.fastapi import (
+        AppFactoryUi,
+        AppFactoryUiConflict,
+        install_app_factory_ui,
+    )
+except ImportError:  # Optional fastapi extra is not installed.
+    AppFactoryUi = AppFactoryUiConflict = install_app_factory_ui = None
 
 __all__ = [
     "BundledAsset",
+    "AppFactoryUi",
+    "AppFactoryUiConflict",
+    "install_app_factory_ui",
     "bundled_asset",
     "get_assets_dir",
     "get_platform_static_app",
@@ -37,4 +48,4 @@ __all__ = [
     "verify_cdn_manifest",
 ]
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"

@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="{{ lang | default('en') }}">
+<head>
+  {% include "app_factory/theme_boot.html" %}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ app_name | default('App') }}{% endblock %}</title>
+  {% include "app_factory/head_assets.html" %}
+  {% block head_extra %}{% endblock %}
+</head>
+<body class="app-shell">
+  {% block navigation %}{% endblock %}
+  <main id="main-content" class="app-main">
+    {% block main %}{% endblock %}
+  </main>
+  {% block body_end %}{% endblock %}
+</body>
+</html>

@@ -1,12 +1,11 @@
-{# Shared head: locally bundled core assets. Mount get_platform_static_app() at platform_assets_prefix. #}
-{% set asset_prefix = platform_assets_prefix if platform_assets_prefix is defined else '/static/platform' %}
-<link rel="stylesheet" href="{{ platform_asset_url('basecoat-css', prefix=asset_prefix) }}">
+{# Shared head: locally bundled core assets, configured by install_app_factory_ui(). #}
+<link rel="stylesheet" href="{{ platform_asset_url('basecoat-css') }}">
 {% if product_css_url is defined and product_css_url %}
 <link rel="stylesheet" href="{{ product_css_url }}">
 {% endif %}
-<script src="{{ platform_asset_url('basecoat-js-all', prefix=asset_prefix) }}" defer></script>
-<script src="{{ platform_asset_url('htmx', prefix=asset_prefix) }}"></script>
-<script src="{{ platform_asset_url('alpine', prefix=asset_prefix) }}" defer></script>
+<script src="{{ platform_asset_url('basecoat-js-all') }}" defer></script>
+<script src="{{ platform_asset_url('htmx') }}"></script>
+<script src="{{ platform_asset_url('alpine') }}" defer></script>
 <script>
   document.addEventListener('htmx:configRequest', function (event) {
     if (event.detail && event.detail.xhr) {

@@ -1,14 +1,13 @@
 # app-factory
 
-Shared **frontend chrome** for FastAPI + Jinja2 + HTMX + Alpine apps that use
-[basecoat-factory](https://github.com/mikolaj92/basecoat-factory) and
-[my-auth](https://github.com/mikolaj92/my-auth) passkeys.
+Shared **frontend chrome** for FastAPI + Jinja2 + HTMX + Alpine applications,
+with locally bundled Basecoat UI assets and optional auth UI composition.
 
 The goal is one place to ship the resilient same-origin chrome, Jinja head
 partials, and optional CDN pins so product apps do **not** re-implement
 Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.3.0`
+**Tag:** `v0.4.0`
 
 ---
 
@@ -18,10 +17,10 @@ This package is the thin shared layer in a small platform. Together:
 
 | Piece | Role | How consumers get it |
 |-------|------|----------------------|
-| **app-factory** (this repo) | Bundled chrome assets + Jinja includes | `git` tag `v0.3.0` via uv |
-| **basecoat-factory** | Build source for Basecoat + utility safelist + **app-shell** classes (`.app-*`) | Bundled in app-factory |
-| **my-auth** (`fastapi-htmx`) | Passkey auth + **default** login/register UI | `git` tag `v0.2.0`; UI chrome uses app-factory |
-| **my-usermanager** | Identity, roles, grants, session principal helpers | `git` branch/tag (pin so it depends on my-auth@v0.2.0) |
+| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.4.0` via uv |
+| **basecoat-factory** | Maintainer-only build source for the generated Basecoat/UI asset bundle | Not a runtime dependency |
+| **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | Its compatible immutable tag |
+| **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | Its compatible immutable tag |
 | **FastAPI + Jinja2 + HTMX + Alpine** | Server-rendered app shell | App code; core scripts/CSS served by the app |
 
 ### Dependency rule
@@ -34,15 +33,15 @@ This package is the thin shared layer in a small platform. Together:
 
 | Concern | Owner |
 |---------|--------|
-| Bundled basecoat-factory / htmx / alpine files + manifest | **app-factory** |
-| Shared `<head>` includes, optional CDN pins, theme boot script | **app-factory** |
-| Login / register HTML + passkey UI static | **my-auth** `create_passkey_ui_router` |
-| Session principal, roles, grants after login | **my-usermanager** + app hooks |
+| Bundled Basecoat UI / HTMX / Alpine files + manifest | **app-factory** |
+| Shared `<head>`, shell, optional CDN pins, and theme boot | **app-factory** |
+| Login / register HTML + passkey UI static | **my-auth** `install_passkey_ui` |
+| Generic account/admin HTML + UI static | **my-usermanager** `install_usermanager_ui` |
 | Domain routes, ORM, product CSS | **the app** |
 
 Apps should not ship:
 
-- local `app-shell.css` as the platform shell (shell classes come from basecoat-factory),
+- a local platform shell or runtime dependency on basecoat-factory,
 - private copies of bundled `basecoat.css` / `htmx` / `alpine`,
 - a parallel hand-rolled full-page login that replaces package passkey UI,
 - a private copy of optional CDN pins (import `app_factory.cdn` instead).
@@ -56,6 +55,8 @@ Apps should not ship:
 | `app_factory.assets` | Verified bundled core assets, URL helper, and lazy Starlette static app |
 | `app_factory.cdn` | Optional CDN assets, `cdn_asset()`, SRI verification, `extend_manifest()` / `install_manifest()` |
 | `app_factory.jinja` | `configure_jinja_env()` — registers bundled/local and optional CDN helpers plus the template loader |
+| `app_factory.fastapi` | `install_app_factory_ui()` — the sole supported FastAPI mount/Jinja integration |
+| `app_factory/templates/app_factory/shell.html` | Shared five-block full-page shell |
 | `app_factory/templates/app_factory/head_assets.html` | Same-origin core CSS/JS tags + HTMX credentials + 401 → login redirect |
 | `app_factory/templates/app_factory/theme_boot.html` | Early dark/light/auto FOUC guard (`window.appTheme`) |
 
@@ -63,7 +64,7 @@ Apps should not ship:
 
 ---
 
-## Bundled core assets (`v0.3.0`)
+## Bundled core assets (`v0.4.0`)
 
 The wheel ships all core files. `MANIFEST.json` pins filenames, versions, and
 SHA-384 digests; the runtime verifies it on first access.
@@ -135,15 +136,9 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.3.0" }
-my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.2.0" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", branch = "main" }
-
-# One resolved URL when extras pull the same packages transitively
-[tool.uv]
-override-dependencies = [
-  "my-auth @ git+https://github.com/mikolaj92/my-auth.git@v0.2.0",
-  "app-factory @ git+https://github.com/mikolaj92/app-factory.git@v0.2.0",
+app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.4.0" }
+my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "<compatible-tag>" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "<compatible-tag>" }
 ]
 ```
 
@@ -153,67 +148,46 @@ uv lock && uv sync
 
 ---
 
-## Wire Jinja (every host app)
+## Install the platform once
 
 ```python
+from fastapi import FastAPI
 from fastapi.templating import Jinja2Templates
-from app_factory import configure_jinja_env
+from app_factory.fastapi import install_app_factory_ui
 
-templates = Jinja2Templates(directory="templates")  # or app/templates
-configure_jinja_env(templates.env)
-# Globals: bundled_asset, bundled_assets, platform_asset_url, cdn_asset, cdn_assets
-# Loader can resolve: app_factory/head_assets.html, app_factory/theme_boot.html
+app = FastAPI()
+templates = Jinja2Templates(directory="templates")
+platform = install_app_factory_ui(app, environments=[templates.env])
 ```
 
-Mount the bundled assets at the same prefix used by `head_assets.html`:
+This mounts the verified assets at `/static/platform`, installs the package
+template loader, and binds `platform_asset_url(name)` to that mount. Repeating
+the same installation configures newly supplied environments without adding a
+second mount. A different path or mount name raises `AppFactoryUiConflict`.
 
-```python
-from app_factory import get_platform_static_app
-
-app.mount(
-    "/static/platform",
-    get_platform_static_app(),
-    name="app_factory_platform",
-)
-```
-
-Use `{% set platform_assets_prefix = '/other-prefix' %}` before the head include
-when mounting elsewhere.
+Low-level asset/Jinja helpers remain available for non-application tooling, but
+hosts use `install_app_factory_ui` rather than mounting or wiring them manually.
 
 ---
 
-## Wire templates (shared chrome)
+## Shared shell
 
-Minimal host `base.html` pattern:
+Full-page templates extend the sole platform shell:
 
 ```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  {% include "app_factory/theme_boot.html" %}
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}App{% endblock %}</title>
-
-  {# Same-origin core: basecoat-factory + htmx + alpine #}
-  {% include "app_factory/head_assets.html" %}
-
-  {# Product-only CSS (optional) #}
-  <link rel="stylesheet" href="{{ static_asset_url('css/product.css') }}">
-
-  {# Product-only CDN extras (optional) #}
-  {% set chartjs = cdn_asset('chartjs') %}
-  <script src="{{ chartjs.url }}" integrity="{{ chartjs.integrity }}" crossorigin="{{ chartjs.crossorigin }}"></script>
-</head>
-<body class="app-shell" data-theme="light">
-  {% block body %}{% endblock %}
-</body>
-</html>
+{% extends "app_factory/shell.html" %}
+{% block title %}Example{% endblock %}
+{% block navigation %}<nav>Product navigation</nav>{% endblock %}
+{% block main %}<h1>Ready</h1>{% endblock %}
 ```
+
+The supported blocks are exactly `title`, `head_extra`, `navigation`, `main`,
+and `body_end`. The shell loads theme boot and one same-origin platform asset
+stack. Product CSS and domain behavior remain host-owned.
 
 ### `head_assets.html` behavior
 
-- Emits URLs for the four bundled core files under `platform_assets_prefix`.
+- Emits URLs for the four bundled core files under the installer-bound prefix.
 - Optional single product stylesheet via template variable:
 
   ```jinja
@@ -235,8 +209,8 @@ Runs before paint to set `document.documentElement` dark class from
 `localStorage.themeMode` (`light` | `dark` | `auto`). Exposes `window.appTheme`
 (`set` / `toggle` / `mode`). Host UIs may alias this for product naming.
 
-Shell layout classes (`.app-shell`, page chrome, etc.) come from
-**basecoat-factory**, not from a per-app CSS fork.
+Shell layout classes (`.app-shell`, page chrome, etc.) are compiled into the
+app-factory asset bundle; applications do not install the build-source project.
 
 ---
 
@@ -246,25 +220,28 @@ Default interactive login/register should come from **my-auth**, not app templat
 
 ```python
 from my_auth.fastapi import PasskeyCookies, PasskeyRouteHooks
-from my_auth.fastapi_htmx import PasskeyUiConfig, create_passkey_ui_router
+from my_auth.fastapi_htmx import PasskeyUiConfig, install_passkey_ui
 
-# hooks: session user, registration policy, login → session principal, logout, …
-ui = create_passkey_ui_router(
+# Install the platform first, then give both auth adapters the same typed value.
+passkeys = install_passkey_ui(
+    app,
+    platform=platform,
     service=passkey_service,
     hooks=hooks,
     config=PasskeyUiConfig(
         login_success_url="/",
         register_success_url="/",
         cookies=PasskeyCookies(secure=cookie_secure),
-        # optional path overrides:
-        # paths=PasskeyPaths(login_page="/login", …),
     ),
 )
-app.include_router(ui.router)
-app.mount(ui.static_mount_path, ui.static_files, name="my_auth_fastapi_htmx_static")
+
+# Optional generic account/admin composition:
+# users = install_usermanager_ui(
+#     app, platform=platform, hooks=user_hooks, config=user_ui_config
+# )
 ```
 
-- Package UI static defaults to `/auth/ui/static` (passkey-ui CSS/JS).
+- The installer owns the package-specific static mount; hosts do not mount it manually.
 - my-auth’s `fastapi-htmx` extra depends on **app-factory** so package login pages
   use the same Basecoat chrome (`btn`, `card`, dark mode) as host shells.
 - Domain recovery or one-off ceremony routes may stay app-owned; they must not
@@ -274,29 +251,27 @@ app.mount(ui.static_mount_path, ui.static_files, name="my_auth_fastapi_htmx_stat
 
 ## Recommended app checklist
 
-1. Depend on `app-factory@v0.3.0` + `my-auth[fastapi-htmx]@v0.2.0` via git tags.
-2. Mount `get_platform_static_app()` at `/static/platform`.
-3. `configure_jinja_env` on every Jinja environment that renders full pages.
-4. Include `app_factory/head_assets.html` (and usually `theme_boot.html`) in the shell.
-5. Mount `create_passkey_ui_router` + package static; delete dead local login HTML.
-6. Keep only product CSS / product CDN extras in the app.
-7. Contract-test that the local core assets and `/login` return 200.
+1. Depend on `app-factory[fastapi]@v0.4.0` and compatible auth-library tags.
+2. Call `install_app_factory_ui()` once with every Jinja environment.
+3. Extend `app_factory/shell.html`; keep navigation and domain UI in the host.
+4. Pass the returned `AppFactoryUi` to auth/usermanager adapter installers.
+5. Keep only product CSS and product CDN extras in the app.
+6. Contract-test that canonical local assets and enabled UI routes return 200.
 
 ---
 
 ## API sketch
 
-```text
+install_app_factory_ui(app, environments, static_path, mount_name) -> AppFactoryUi
 bundled_asset(name) -> BundledAsset
 list_bundled_assets()
 platform_asset_url(name, prefix="/static/platform")
-get_platform_static_app()
-cdn_asset(name) -> CDNAsset                 # optional extras only
+get_platform_static_app()                    # low-level
+cdn_asset(name) -> CDNAsset                  # optional extras only
 extend_manifest / install_manifest
 verify_cdn_asset / verify_cdn_manifest
-configure_jinja_env(env, include_factory_templates=True)
+configure_jinja_env(env)                     # low-level
 factory_template_dirs()
-```
 
 ---
 
@@ -304,7 +279,7 @@ factory_template_dirs()
 
 | app-factory | basecoat-css | Notes |
 |-------------|---------------|-------|
-| **v0.2.0** | **1.0.2** | Bundled same-origin chrome; apps mount `/static/platform` |
+| **v0.4.0** | **1.0.2** | One idempotent FastAPI installer and shared five-block shell |
 
 Bump platform assets only through `uv run python scripts/refresh_platform_assets.py`.
 The script uses the committed npm lockfile, rebuilds CSS, records licenses and
@@ -326,6 +301,6 @@ uv run python scripts/refresh_platform_assets.py
 
 ## Related
 
-- [basecoat-factory](https://github.com/mikolaj92/basecoat-factory) — CSS/JS dist on jsDelivr  
+- [basecoat-factory](https://github.com/mikolaj92/basecoat-factory) — maintainer-only generated asset source  
 - [my-auth](https://github.com/mikolaj92/my-auth) — passkeys + fastapi-htmx UI  
 - [my-usermanager](https://github.com/mikolaj92/my-usermanager) — users, grants, session principal  
