@@ -11,6 +11,7 @@ from starlette.testclient import TestClient
 
 from app_factory.platform import (
     FORBIDDEN_BASECOAT_CLASS_MARKERS,
+    MenuGroup,
     MenuItem,
     PlatformConfig,
     PlatformLocale,
@@ -157,6 +158,51 @@ def test_platform_theme_locale_partial() -> None:
     )
     client_html = env.get_template("header.html").render()
     assert "data-platform-locale-select" in client_html
+
+
+def test_head_assets_reinit_alpine_after_htmx_swap() -> None:
+    environment = _env_with_factory()
+    html = environment.get_template("app_factory/head_assets.html").render(
+        platform_asset_url=lambda name: f"/static/platform/{name}"
+    )
+    assert "htmx:afterSwap" in html
+    assert "Alpine.initTree" in html
+
+
+def test_grouped_menu_and_htmx_nav_in_sidebar() -> None:
+    app = FastAPI()
+    environment = _env_with_factory()
+    config = PlatformConfig(
+        app_name="Ops",
+        brand_href="/argus",
+        htmx_nav=True,
+        menu=(
+            MenuGroup(
+                "Product",
+                (
+                    MenuItem("Queue", "/queue", key="queue", use_htmx=True),
+                    MenuItem("Docs", "/docs", use_htmx=True),
+                ),
+            ),
+            MenuGroup(
+                "Admin",
+                (MenuItem("Users", "/admin/users", no_htmx=True),),
+            ),
+        ),
+        paths=PlatformPaths(),
+    )
+    install_platform(app, environments=[environment], config=config)
+    apply_platform_context(environment, config, current_path="/queue")
+    html = environment.get_template("page.html").render()
+    assert 'id="platform-group-1"' in html or "platform-group-1" in html
+    assert "Product" in html and "Admin" in html
+    assert 'hx-get="/queue"' in html
+    assert 'hx-target="#main-content"' in html
+    assert 'data-nav-key="queue"' in html
+    assert 'aria-current="page"' in html
+    # no_htmx admin link
+    assert 'href="/admin/users"' in html
+    assert 'hx-get="/admin/users"' not in html
 
 
 def test_platform_session_partial_is_logout_surface() -> None:

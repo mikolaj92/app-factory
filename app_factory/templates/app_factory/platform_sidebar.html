@@ -1,28 +1,47 @@
-{# Shared product sidebar: host menu + fixed platform foot (theme/auth). #}
-<aside class="sidebar app-sidebar" data-side="left" data-collapsible="icon" aria-label="Application">
+{# Shared product sidebar: brand + flat and/or grouped menu + platform foot.
+   platform_menu entries are MenuItem and/or MenuGroup (from build_platform_context). #}
+<aside
+  id="sidebar"
+  class="sidebar app-sidebar"
+  data-side="left"
+  data-collapsible="icon"
+  data-initial-open="true"
+  data-initial-mobile-open="false"
+  data-breakpoint="768"
+  aria-label="Application"
+>
   <nav class="app-sidebar__nav" aria-label="{{ app_name | default('App') }}">
-    <div class="app-sidebar__brand">
-      <a class="font-semibold" href="/">{{ app_name | default('App') }}</a>
-    </div>
-    <div class="app-sidebar__scroll">
-      <ul class="app-stack app-stack--tight" role="list">
-        {% for item in platform_menu | default([]) %}
-        <li>
-          <a
-            class="app-nav-link{% if item.active %} app-nav-link--active{% endif %}"
-            href="{{ item.href }}"
-            {% if item.no_htmx %}data-no-htmx="true"{% endif %}
-            {% if item.active %}aria-current="page"{% endif %}
-          >
-            {% if item.icon %}
-            <span class="app-nav-link__icon" aria-hidden="true">{{ item.icon }}</span>
-            {% endif %}
-            <span class="app-nav-link__label">{{ item.label }}</span>
-          </a>
-        </li>
+    <header class="app-sidebar__brand">
+      <a class="font-semibold" href="{{ platform_brand_href | default('/') }}">
+        {{ app_name | default('App') }}
+      </a>
+    </header>
+
+    <section class="scrollbar app-sidebar__scroll">
+      {% set menu = platform_menu | default([]) %}
+      {% set flat = menu | selectattr('__class__.__name__', 'ne', 'MenuGroup') | list %}
+      {% set groups = menu | selectattr('__class__.__name__', 'eq', 'MenuGroup') | list %}
+
+      {% if flat %}
+      <ul class="app-stack app-stack--tight" role="list" data-platform-flat-menu>
+        {% for item in flat %}
+        {% include "app_factory/_platform_nav_item.html" %}
         {% endfor %}
       </ul>
-    </div>
+      {% endif %}
+
+      {% for entry in groups %}
+      <div role="group" aria-labelledby="platform-group-{{ loop.index }}">
+        <h3 id="platform-group-{{ loop.index }}">{{ entry.label }}</h3>
+        <ul role="list">
+          {% for item in entry.items %}
+          {% include "app_factory/_platform_nav_item.html" %}
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </section>
+
     {% include "app_factory/platform_sidebar_foot.html" %}
   </nav>
 </aside>

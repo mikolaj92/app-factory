@@ -18,4 +18,12 @@
       window.location.href = {{ (login_url if login_url is defined else '/login') | tojson }};
     }
   });
+  // After HTMX swaps a fragment, re-init Alpine trees inside it (x-data/x-show).
+  document.addEventListener('htmx:afterSwap', function (event) {
+    var elt = event.detail && event.detail.elt;
+    if (!elt || typeof window.Alpine === 'undefined' || !window.Alpine.initTree) {
+      return;
+    }
+    window.Alpine.initTree(elt);
+  });
 </script>

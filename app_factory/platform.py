@@ -10,7 +10,7 @@ Hosts must not reimplement these or put logout in chrome.
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Callable
 
 from jinja2 import Environment
@@ -25,21 +25,40 @@ except ImportError as exc:  # pragma: no cover
 
 @dataclass(frozen=True, slots=True)
 class MenuItem:
-    """One host navigation entry in the shared product sidebar."""
+    """One host navigation entry in the shared product sidebar.
+
+    When ``use_htmx`` is true, the sidebar emits ``hx-get`` / ``hx-target`` /
+    ``hx-select`` / ``hx-swap`` / ``hx-push-url`` (Argus-style partial nav).
+    ``no_htmx`` forces a plain link (auth and full-page routes).
+    """
 
     label: str
     href: str
     icon: str | None = None
     active: bool = False
     no_htmx: bool = False
+    use_htmx: bool = False
+    key: str | None = None
+    badge: str | None = None
+    hx_target: str = "#main-content"
+    hx_select: str = "#main-content"
+    hx_swap: str = "outerHTML"
+
+
+@dataclass(frozen=True, slots=True)
+class MenuGroup:
+    """Named group of navigation items (product / admin / etc.)."""
+
+    label: str
+    items: tuple[MenuItem, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
 class PlatformLocale:
-    """One language option for the shared platform foot.
+    """One language option for shared chrome.
 
     Prefer ``href`` for server-side locale switching (query/cookie). Omit
-    ``href`` for client-side apps: the foot emits a button with
+    ``href`` for client-side apps: chrome emits a button with
     ``data-platform-locale-select`` and ``data-locale`` so the host can
     handle ``platform:locale`` (see theme_boot) or bind its own listener.
     """
@@ -71,17 +90,23 @@ class PlatformUser:
 
 @dataclass(frozen=True, slots=True)
 class PlatformConfig:
-    """Host-visible platform chrome configuration."""
+    """Host-visible platform chrome configuration.
+
+    ``menu`` accepts a flat list of :class:`MenuItem` and/or :class:`MenuGroup`.
+    Flat items render as a single unlabeled list; groups render with headings
+    (Basecoat ``role=group`` + ``h3``).
+    """
 
     app_name: str = "App"
-    menu: tuple[MenuItem, ...] = ()
+    brand_href: str = "/"
+    menu: tuple[MenuItem | MenuGroup, ...] = ()
     paths: PlatformPaths = field(default_factory=PlatformPaths)
     enable_admin_users: bool = False
     show_register: bool = True
-    # Static default locales (usually empty; per-request hrefs go via
-    # build_platform_context(..., locales=...)).
     locales: tuple[PlatformLocale, ...] = ()
     default_locale: str | None = None
+    # Default HTMX partial navigation for menu items that set use_htmx=True.
+    htmx_nav: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -108,20 +133,12 @@ def build_platform_context(
     ``locales`` / ``locale`` override config defaults so hosts can inject
     per-request language links (e.g. preserve query on the current path).
     """
-    menu = tuple(
-        MenuItem(
-            label=item.label,
-            href=item.href,
-            icon=item.icon,
-            active=item.active or _path_active(current_path, item.href),
-            no_htmx=item.no_htmx,
-        )
-        for item in config.menu
-    )
+    menu = tuple(_resolve_menu_entry(entry, current_path, config) for entry in config.menu)
     resolved_locales = tuple(locales) if locales is not None else config.locales
     resolved_locale = locale if locale is not None else config.default_locale
     return {
         "app_name": config.app_name,
+        "platform_brand_href": config.brand_href,
         "platform_menu": menu,
         "platform_user": user,
         "platform_paths": config.paths,
@@ -129,16 +146,46 @@ def build_platform_context(
         "platform_show_register": config.show_register,
         "platform_locales": resolved_locales,
         "platform_locale": resolved_locale,
+        "platform_htmx_nav": config.htmx_nav,
         "login_url": config.paths.login,
     }
+
+
+def _resolve_menu_entry(
+    entry: MenuItem | MenuGroup,
+    current_path: str,
+    config: PlatformConfig,
+) -> MenuItem | MenuGroup:
+    if isinstance(entry, MenuGroup):
+        return MenuGroup(
+            label=entry.label,
+            items=tuple(
+                _resolve_menu_item(item, current_path, config) for item in entry.items
+            ),
+        )
+    return _resolve_menu_item(entry, current_path, config)
+
+
+def _resolve_menu_item(
+    item: MenuItem,
+    current_path: str,
+    config: PlatformConfig,
+) -> MenuItem:
+    use_htmx = item.use_htmx or (config.htmx_nav and not item.no_htmx)
+    return replace(
+        item,
+        active=item.active or _path_active(current_path, item.href),
+        use_htmx=use_htmx and not item.no_htmx,
+    )
 
 
 def _path_active(current_path: str, href: str) -> bool:
     if not current_path or not href:
         return False
-    if current_path == href:
+    path_only = href.split("?", 1)[0]
+    if current_path == path_only or current_path == href:
         return True
-    if href != "/" and current_path.startswith(href.rstrip("/") + "/"):
+    if path_only != "/" and current_path.startswith(path_only.rstrip("/") + "/"):
         return True
     return False
 
