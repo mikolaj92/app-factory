@@ -1,0 +1,56 @@
+{# Theme + optional language — always visible chrome (main header).
+   Do not put these in the sidebar foot; auth lives there instead. #}
+<div class="app-cluster app-cluster--center" data-platform-theme-locale>
+  {% if platform_locales is defined and platform_locales %}
+  <nav class="app-cluster" data-platform-locales aria-label="Language">
+    {% for loc in platform_locales %}
+      {% if loc.href %}
+      <a
+        href="{{ loc.href }}"
+        class="btn"
+        data-variant="{% if platform_locale == loc.code %}primary{% else %}ghost{% endif %}"
+        data-size="sm"
+        data-locale="{{ loc.code }}"
+        {% if platform_locale == loc.code %}aria-current="page"{% endif %}
+      >{{ loc.label }}</a>
+      {% else %}
+      <button
+        type="button"
+        class="btn"
+        data-variant="{% if platform_locale == loc.code %}primary{% else %}ghost{% endif %}"
+        data-size="sm"
+        data-locale="{{ loc.code }}"
+        data-platform-locale-select
+        {% if platform_locale == loc.code %}aria-pressed="true"{% else %}aria-pressed="false"{% endif %}
+      >{{ loc.label }}</button>
+      {% endif %}
+    {% endfor %}
+  </nav>
+  {% endif %}
+
+  <button
+    type="button"
+    class="btn flex items-center justify-center"
+    data-variant="ghost"
+    data-size="icon-sm"
+    data-theme-toggle
+    data-tooltip="Toggle theme"
+    aria-label="Toggle theme"
+    onclick="window.appTheme && window.appTheme.toggle()"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-themed theme-toggle-icon theme-toggle-icon--light" aria-hidden="true">
+      <circle cx="12" cy="12" r="5"/>
+      <line x1="12" y1="1" x2="12" y2="3"/>
+      <line x1="12" y1="21" x2="12" y2="23"/>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.79"/>
+      <line x1="1" y1="12" x2="3" y2="12"/>
+      <line x1="21" y1="12" x2="23" y2="12"/>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+    </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-themed theme-toggle-icon theme-toggle-icon--dark" aria-hidden="true">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    </svg>
+  </button>
+</div>

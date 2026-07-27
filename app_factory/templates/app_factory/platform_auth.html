@@ -1,0 +1,37 @@
+{# Login / account / logout — sidebar foot only (identity). #}
+<div class="app-stack app-stack--tight w-full" data-platform-auth>
+  {% if platform_user %}
+  <a class="btn w-full justify-start" data-variant="ghost" data-size="sm" href="{{ platform_paths.account }}">
+    {{ platform_user.display_name }}
+  </a>
+  {% if platform_enable_admin_users and platform_user.is_admin %}
+  <a class="btn w-full justify-start" data-variant="ghost" data-size="sm" href="{{ platform_paths.admin_users }}">
+    Users
+  </a>
+  {% endif %}
+  <form method="post" action="{{ platform_paths.logout }}" data-no-htmx="true" class="w-full">
+    <button class="btn w-full" data-variant="outline" data-size="sm" type="submit">Logout</button>
+  </form>
+  {% else %}
+  <a
+    class="btn w-full"
+    data-variant="primary"
+    data-size="sm"
+    href="{{ platform_paths.login }}"
+    data-no-htmx="true"
+  >
+    Login
+  </a>
+  {% if platform_show_register %}
+  <a
+    class="btn w-full"
+    data-variant="ghost"
+    data-size="sm"
+    href="{{ platform_paths.register }}"
+    data-no-htmx="true"
+  >
+    Register
+  </a>
+  {% endif %}
+  {% endif %}
+</div>

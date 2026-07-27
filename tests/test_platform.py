@@ -76,15 +76,19 @@ def test_product_shell_renders_platform_foot_for_guest_and_user() -> None:
 
     guest_html = environment.get_template("page.html").render()
     assert "data-platform-foot" in guest_html
-    assert "data-platform-controls" in guest_html
+    assert "data-platform-auth" in guest_html
     assert "Login" in guest_html
     assert 'href="/login"' in guest_html
-    assert "Theme" in guest_html
+    # Theme lives in header partial, not the sidebar foot (script still mentions the attr).
+    foot_start = guest_html.find("data-platform-foot")
+    assert foot_start != -1
+    foot_chunk = guest_html[foot_start : foot_start + 1200]
+    assert "data-theme-toggle" not in foot_chunk
+    assert "data-platform-auth" in foot_chunk
     assert "btn-primary" not in guest_html
     assert 'data-variant="primary"' in guest_html
     assert "BODY" in guest_html
     assert "/static/platform/basecoat-factory.min.css" in guest_html
-    # No language row when host does not configure locales.
     assert "data-platform-locales" not in guest_html
 
     apply_platform_context(
@@ -99,40 +103,57 @@ def test_product_shell_renders_platform_foot_for_guest_and_user() -> None:
     assert "Login" not in user_html or "Logout" in user_html
 
 
-def test_platform_foot_renders_optional_locales() -> None:
-    app = FastAPI()
+def test_platform_theme_locale_partial() -> None:
     environment = _env_with_factory()
-    config = PlatformConfig(app_name="Demo", paths=PlatformPaths())
-    install_platform(app, environments=[environment], config=config)
+    environment.loader.loaders[0].mapping["header.html"] = (
+        "{% include 'app_factory/platform_theme_locale.html' %}"
+    )
+    # ChoiceLoader uses DictLoader first — rebuild env with partial
+    from jinja2 import ChoiceLoader, DictLoader, Environment, PackageLoader
+
+    env = Environment(
+        loader=ChoiceLoader(
+            [
+                DictLoader(
+                    {
+                        "header.html": (
+                            "{% include 'app_factory/platform_theme_locale.html' %}"
+                        )
+                    }
+                ),
+                PackageLoader("app_factory", "templates"),
+            ]
+        ),
+        autoescape=True,
+    )
     apply_platform_context(
-        environment,
-        config,
+        env,
+        PlatformConfig(paths=PlatformPaths()),
         locales=(
             PlatformLocale(code="pl", label="PL", href="/?lang=pl"),
             PlatformLocale(code="en", label="EN", href="/?lang=en"),
         ),
         locale="pl",
     )
-    html = environment.get_template("page.html").render()
+    html = env.get_template("header.html").render()
+    assert "data-platform-theme-locale" in html
+    assert "data-theme-toggle" in html
+    assert "theme-toggle-icon--light" in html
     assert "data-platform-locales" in html
     assert 'href="/?lang=pl"' in html
-    assert 'href="/?lang=en"' in html
-    assert 'data-locale="pl"' in html
-    assert 'aria-current="page"' in html
+    assert "data-platform-locale-select" not in html
 
-    # Client-side locale buttons (no href) for SPA/i18n hosts.
     apply_platform_context(
-        environment,
-        config,
+        env,
+        PlatformConfig(paths=PlatformPaths()),
         locales=(
             PlatformLocale(code="pl", label="PL"),
             PlatformLocale(code="en", label="EN"),
         ),
         locale="en",
     )
-    client_html = environment.get_template("page.html").render()
+    client_html = env.get_template("header.html").render()
     assert "data-platform-locale-select" in client_html
-    assert 'data-locale="en"' in client_html
 
 
 

@@ -1,9 +1,9 @@
 """Platform composition: shared chrome + optional passkey UI wiring.
 
 Hosts call :func:`install_platform` once instead of re-copying shell, theme boot,
-and auth foot across apps. Domain menu items are host-supplied; the platform
-foot (locale / theme / login / account / logout) is fixed. Hosts must not put
-those controls in the main header.
+and auth foot across apps. Domain menu items are host-supplied. Fixed chrome:
+main header = locale + theme (`platform_theme_locale`); sidebar foot = login /
+account / logout (`platform_auth`). Hosts must not reimplement either.
 """
 
 from __future__ import annotations
