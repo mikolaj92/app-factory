@@ -4,7 +4,7 @@ Single source of truth for host pins when using `app-factory[platform]`.
 
 | app-factory | my-auth | my-usermanager | Notes |
 |-------------|---------|----------------|-------|
-| **v0.5.0** | **v0.3.5** | **v0.3.1** | Platform composition + product shell foot |
+| **v0.5.0** | **v0.3.6** | **v0.3.1** | Platform composition + product shell foot |
 
 ## Host rule
 
