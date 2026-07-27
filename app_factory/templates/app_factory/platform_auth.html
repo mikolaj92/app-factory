@@ -1,7 +1,15 @@
-{# Login / account / logout — sidebar foot only (identity). #}
+{# Identity in the sidebar foot.
+   Guest → Login (+ Register). Signed-in → Account link only.
+   Logout is NOT here — it lives on the account page (platform_session). #}
 <div class="app-stack app-stack--tight w-full" data-platform-auth>
   {% if platform_user %}
-  <a class="btn w-full justify-start" data-variant="ghost" data-size="sm" href="{{ platform_paths.account }}">
+  <a
+    class="btn w-full justify-start"
+    data-variant="ghost"
+    data-size="sm"
+    href="{{ platform_paths.account }}"
+    data-platform-account-link
+  >
     {{ platform_user.display_name }}
   </a>
   {% if platform_enable_admin_users and platform_user.is_admin %}
@@ -9,9 +17,6 @@
     Users
   </a>
   {% endif %}
-  <form method="post" action="{{ platform_paths.logout }}" data-no-htmx="true" class="w-full">
-    <button class="btn w-full" data-variant="outline" data-size="sm" type="submit">Logout</button>
-  </form>
   {% else %}
   <a
     class="btn w-full"

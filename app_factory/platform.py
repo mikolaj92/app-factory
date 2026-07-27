@@ -2,8 +2,9 @@
 
 Hosts call :func:`install_platform` once instead of re-copying shell, theme boot,
 and auth foot across apps. Domain menu items are host-supplied. Fixed chrome:
-main header = locale + theme (`platform_theme_locale`); sidebar foot = login /
-account / logout (`platform_auth`). Hosts must not reimplement either.
+main header = locale + theme (`platform_theme_locale`); sidebar foot = Login or
+Account link (`platform_auth`); account page = Log out (`platform_session`).
+Hosts must not reimplement these or put logout in chrome.
 """
 
 from __future__ import annotations

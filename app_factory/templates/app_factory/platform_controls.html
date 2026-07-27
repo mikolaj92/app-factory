@@ -1,5 +1,5 @@
 {# Combined chrome for shells without a split header/sidebar (e.g. client portal).
-   Prefer platform_theme_locale in the main header + platform_auth in the foot. #}
+   Theme/locale + identity. Logout still belongs on an account/session surface. #}
 <div class="app-cluster app-cluster--center items-center" data-platform-controls>
   {% include "app_factory/platform_theme_locale.html" %}
   {% include "app_factory/platform_auth.html" %}

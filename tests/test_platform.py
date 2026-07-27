@@ -98,9 +98,12 @@ def test_product_shell_renders_platform_foot_for_guest_and_user() -> None:
     )
     user_html = environment.get_template("page.html").render()
     assert "Alice" in user_html
-    assert "Logout" in user_html
-    assert 'action="/logout"' in user_html
-    assert "Login" not in user_html or "Logout" in user_html
+    assert 'data-platform-account-link' in user_html
+    # Logout is not in chrome — only on the account page partial.
+    foot = user_html[user_html.find("data-platform-foot") :][:1500]
+    assert "Log out" not in foot
+    assert "Logout" not in foot
+    assert "Login" not in foot
 
 
 def test_platform_theme_locale_partial() -> None:
@@ -154,6 +157,32 @@ def test_platform_theme_locale_partial() -> None:
     )
     client_html = env.get_template("header.html").render()
     assert "data-platform-locale-select" in client_html
+
+
+def test_platform_session_partial_is_logout_surface() -> None:
+    from jinja2 import ChoiceLoader, DictLoader, Environment, PackageLoader
+
+    env = Environment(
+        loader=ChoiceLoader(
+            [
+                DictLoader(
+                    {
+                        "account.html": (
+                            "{% include 'app_factory/platform_session.html' %}"
+                        )
+                    }
+                ),
+                PackageLoader("app_factory", "templates"),
+            ]
+        ),
+        autoescape=True,
+    )
+    apply_platform_context(env, PlatformConfig(paths=PlatformPaths()))
+    html = env.get_template("account.html").render()
+    assert "data-platform-session" in html
+    assert "Log out" in html
+    assert 'action="/logout"' in html
+    assert 'data-variant="destructive"' in html
 
 
 
