@@ -275,3 +275,29 @@ def test_passkey_partial_install_requires_both_args() -> None:
             passkey_service=object(),
             passkey_hooks=None,
         )
+
+
+def test_shell_boot_template_exports_config_contract() -> None:
+    """shell_boot is the shared residual host JS; config keys stay stable."""
+    env = Environment(loader=PackageLoader("app_factory", "templates"), autoescape=True)
+    html = env.get_template("app_factory/shell_boot.html").render()
+    assert "window.appShellConfig" in html
+    assert "window.__appShellBooted" in html
+    assert "getSidebar" in html
+    assert "initBasecoat" in html
+    assert "data-sidebar-toggle" in html
+    assert "htmx:afterSwap" in html
+    assert "htmx:historyCacheHit" in html
+    assert "basecoat:sidebar" in html
+    assert "app-nav-link--active" in html
+    assert "reinitPageScripts" in html
+    assert "useDataNavActive" in html
+
+
+def test_shell_includes_shell_boot_after_head_extra() -> None:
+    env = Environment(loader=PackageLoader("app_factory", "templates"), autoescape=True)
+    html = env.get_template("app_factory/shell.html").render(
+        platform_asset_url=lambda name: f"/static/platform/{name}"
+    )
+    assert "window.__appShellBooted" in html
+    assert html.index("htmx:configRequest") < html.index("window.__appShellBooted")

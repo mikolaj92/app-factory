@@ -4,7 +4,8 @@ Single source of truth for host pins when using `app-factory[platform]`.
 
 | app-factory | my-auth | my-usermanager | Notes |
 |-------------|---------|----------------|-------|
-| **v0.5.4** | **v0.3.10** | **v0.3.3** | Host shell hooks on usermanager (`environment`, `base_template`, labels/`page_context`) |
+| **v0.5.5** | **v0.3.10** | **v0.3.3** | Shared `shell_boot.html` (`window.appShellConfig`) — hosts drop duplicated sidebar/basecoat IIFEs |
+| v0.5.4 | v0.3.10 | v0.3.3 | Host shell hooks on usermanager (`environment`, `base_template`, labels/`page_context`) |
 | v0.5.4 | v0.3.10 | v0.3.2 | Grouped HTMX sidebar (`MenuGroup`) + Alpine afterSwap reinit in head_assets |
 | v0.5.3 | v0.3.9 | v0.3.2 | Header theme/locale; foot Login/Account; **Log out only on account page** |
 | v0.5.2 | v0.3.8 | v0.3.1 | Header theme/locale; foot had logout (superseded) |
@@ -18,11 +19,11 @@ Prefer:
 ```toml
 dependencies = ["app-factory[platform]"]
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.5.4" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.5.5" }
 ```
 
 Do **not** float `my-usermanager` on `branch = "main"` for production hosts.
-Do **not** re-copy theme boot or platform foot templates into hosts.
+Do **not** re-copy theme boot, shell boot, or platform foot templates into hosts.
 
 ### Chrome placement (hosts must not fork)
 

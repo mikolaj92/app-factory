@@ -1,0 +1,197 @@
+{# Shared product/operator shell JS: sidebar, active nav, basecoat, theme clicks.
+   Configure BEFORE this include:
+
+     <script>window.appShellConfig = { titleSuffix: 'Argus', ... };</script>
+     {% include "app_factory/shell_boot.html" %}
+
+   Options (all optional):
+     titleSuffix          string — document title = pageTitle or `${pageTitle} · ${suffix}`
+     activeNavAliases     object — map data-nav-key → canonical key (e.g. runs→queue)
+     useDataNavActive     bool   — resolve active from #main-content[data-nav-active] + [data-nav-key]
+     activeLinkClass      string|false — CSS class on active nav links (default app-nav-link--active)
+     reinitPageScripts    bool   — re-load #main-content script[src] after HTMX swap of main-content
+     syncToggleAria       bool   — keep [data-sidebar-toggle] aria-expanded in sync
+     themeApi             string — window property for theme API (default appTheme)
+#}
+<script>
+(() => {
+  if (window.__appShellBooted) return;
+  window.__appShellBooted = true;
+
+  const cfg = window.appShellConfig || {};
+  const activeLinkClass = cfg.activeLinkClass === false || cfg.activeLinkClass === null
+    ? null
+    : (cfg.activeLinkClass || 'app-nav-link--active');
+  const aliases = cfg.activeNavAliases || {};
+
+  const themeApi = () => {
+    const name = cfg.themeApi || 'appTheme';
+    return window[name] || window.appTheme || null;
+  };
+
+  const getSidebar = (id = 'sidebar') => {
+    const sidebar = document.getElementById(id) || document.querySelector('.sidebar');
+    return sidebar && typeof sidebar.toggle === 'function' ? sidebar : null;
+  };
+
+  const syncSidebarToggle = (sidebar) => {
+    if (!cfg.syncToggleAria || !sidebar) return;
+    const toggle = document.querySelector(`[data-sidebar-toggle="${sidebar.id}"]`);
+    if (toggle) {
+      toggle.setAttribute(
+        'aria-expanded',
+        sidebar.getAttribute('aria-hidden') !== 'true' ? 'true' : 'false'
+      );
+    }
+  };
+
+  const activeNavKey = (key) => {
+    if (!key) return key;
+    return aliases[key] || key;
+  };
+
+  const updateSidebarActiveLink = () => {
+    const currentPath = window.location.pathname;
+    const content = document.querySelector('#main-content');
+    const rawKey = content?.getAttribute('data-nav-active');
+    const activeKey = cfg.useDataNavActive ? activeNavKey(rawKey) : null;
+    const links = document.querySelectorAll('#sidebar a[href], #sidebar nav a[href]');
+    links.forEach((link) => {
+      const path = new URL(link.href, window.location.href).pathname;
+      const key = link.getAttribute('data-nav-key');
+      let active;
+      if (cfg.useDataNavActive && activeKey) {
+        active = key === activeKey;
+      } else {
+        active = path === currentPath;
+      }
+      if (active) link.setAttribute('aria-current', 'page');
+      else link.removeAttribute('aria-current');
+      if (activeLinkClass) link.classList.toggle(activeLinkClass, active);
+    });
+  };
+
+  const updateShellChrome = () => {
+    const content = document.querySelector('#main-content');
+    const title = content?.getAttribute('data-page-title');
+    const headerTitle = document.querySelector('[data-shell-page-title]');
+    if (title && headerTitle) headerTitle.textContent = title;
+    if (title && cfg.titleSuffix) {
+      document.title = title === cfg.titleSuffix ? title : `${title} · ${cfg.titleSuffix}`;
+    }
+    document.querySelectorAll('[data-locale]').forEach((link) => {
+      if (!link.hasAttribute('href') && !link.getAttribute('data-locale')) return;
+      if (link.tagName !== 'A') return;
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('lang', link.getAttribute('data-locale'));
+        link.href = `${url.pathname}${url.search}${url.hash}`;
+      } catch (_) {}
+    });
+  };
+
+  const initBasecoat = (force = false) => {
+    const sidebar = document.getElementById('sidebar');
+    const initialVisibility = sidebar?.getAttribute('aria-hidden');
+    const wasOpen = initialVisibility === 'false'
+      || (initialVisibility === null && sidebar?.dataset.initialOpen === 'true');
+    if (window.basecoat && typeof window.basecoat.initAll === 'function') {
+      window.basecoat.initAll(force ? { force: true } : undefined);
+      if (force) {
+        const initializedSidebar = getSidebar();
+        if (initializedSidebar) {
+          if (wasOpen) initializedSidebar.open();
+          else if (initialVisibility === 'false') initializedSidebar.close();
+        }
+      }
+    }
+  };
+
+  const reinitPageScripts = () => {
+    if (!cfg.reinitPageScripts) return;
+    document.querySelectorAll('#main-content script[src]').forEach((old) => {
+      const src = old.getAttribute('src');
+      if (!src) return;
+      const s = document.createElement('script');
+      s.src = src + (src.includes('?') ? '&' : '?') + 't=' + Date.now();
+      old.replaceWith(s);
+    });
+  };
+
+  const refreshChrome = (forceBasecoat = false, event) => {
+    initBasecoat(forceBasecoat);
+    if (cfg.syncToggleAria) syncSidebarToggle(getSidebar());
+    updateSidebarActiveLink();
+    updateShellChrome();
+    themeApi()?.refresh?.();
+    if (event?.detail?.target?.id === 'main-content' || event?.detail?.elt?.id === 'main-content') {
+      reinitPageScripts();
+    }
+  };
+
+  document.addEventListener('click', (event) => {
+    const sidebarToggle = event.target.closest?.('[data-sidebar-toggle]');
+    if (sidebarToggle) {
+      event.preventDefault();
+      const id = sidebarToggle.dataset.sidebarToggle || 'sidebar';
+      getSidebar(id)?.toggle();
+      if (cfg.syncToggleAria) {
+        requestAnimationFrame(() => syncSidebarToggle(getSidebar(id)));
+      }
+      return;
+    }
+
+    const themeButton = event.target.closest?.('[data-theme]');
+    if (themeButton) {
+      event.preventDefault();
+      themeApi()?.set?.(themeButton.dataset.theme);
+      return;
+    }
+
+    const themeToggle = event.target.closest?.('[data-theme-toggle]');
+    if (themeToggle) {
+      event.preventDefault();
+      themeApi()?.toggle?.();
+    }
+  });
+
+  document.addEventListener('basecoat:sidebar', (event) => {
+    const sidebar = getSidebar(event.detail?.id || 'sidebar');
+    if (!sidebar) return;
+    const action = event.detail?.action || 'toggle';
+    if (action === 'open') sidebar.open();
+    else if (action === 'close') sidebar.close();
+    else sidebar.toggle();
+    if (cfg.syncToggleAria) requestAnimationFrame(() => syncSidebarToggle(sidebar));
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    const sidebar = getSidebar();
+    const breakpoint = Number(sidebar?.dataset.breakpoint || 768);
+    if (!sidebar || window.innerWidth >= breakpoint || sidebar.getAttribute('aria-hidden') !== 'false') {
+      return;
+    }
+    sidebar.close();
+    event.preventDefault();
+    if (cfg.syncToggleAria) syncSidebarToggle(sidebar);
+    const trigger = document.querySelector(`[data-sidebar-toggle="${sidebar.id}"]`);
+    if (trigger && trigger.offsetParent !== null) trigger.focus();
+  });
+
+  document.addEventListener('DOMContentLoaded', () => refreshChrome(false));
+  document.addEventListener('htmx:afterSwap', (event) => refreshChrome(false, event));
+  document.addEventListener('htmx:historyCacheHit', () => refreshChrome(true));
+  window.addEventListener('popstate', () => {
+    updateSidebarActiveLink();
+    updateShellChrome();
+  });
+
+  // If the document already loaded (late include), run once.
+  if (document.readyState !== 'loading') {
+    refreshChrome(false);
+  } else {
+    updateSidebarActiveLink();
+  }
+})();
+</script>

@@ -59,6 +59,7 @@ Apps should not ship:
 | `app_factory/templates/app_factory/shell.html` | Shared five-block full-page shell |
 | `app_factory/templates/app_factory/head_assets.html` | Same-origin core CSS/JS tags + HTMX credentials + 401 → login redirect |
 | `app_factory/templates/app_factory/theme_boot.html` | Early dark/light/auto FOUC guard (`window.appTheme`) |
+| `app_factory/templates/app_factory/shell_boot.html` | Shared shell JS (sidebar, active nav, basecoat, theme clicks) via `window.appShellConfig` |
 
 **Not included:** domain models, product routes, auth ceremony logic, product CSS.
 
@@ -208,6 +209,36 @@ stack. Product CSS and domain behavior remain host-owned.
 Runs before paint to set `document.documentElement` dark class from
 `localStorage.themeMode` (`light` | `dark` | `auto`). Exposes `window.appTheme`
 (`set` / `toggle` / `mode`). Host UIs may alias this for product naming.
+
+### `shell_boot.html`
+
+One shared IIFE for product/operator chrome behaviour previously copied into
+each host `base.html`:
+
+- sidebar toggle (`[data-sidebar-toggle]`, `basecoat:sidebar`, Escape)
+- Basecoat `initAll` on load / HTMX swap / history cache
+- active nav (`aria-current`, optional `.app-nav-link--active`)
+- theme clicks (`[data-theme]`, `[data-theme-toggle]`) via `window.appTheme`
+
+Configure **before** the include (or in `head_extra` when extending `shell.html`):
+
+```html
+<script>
+  window.appShellConfig = {
+    titleSuffix: 'Argus',              // optional document title suffix
+    useDataNavActive: true,            // #main-content[data-nav-active] + [data-nav-key]
+    activeNavAliases: { runs: 'queue' },
+    reinitPageScripts: true,           // reload #main-content script[src] after swap
+    syncToggleAria: true,              // keep toggle aria-expanded in sync
+    activeLinkClass: false,            // disable class toggle (aria-current only)
+  };
+</script>
+{% include "app_factory/shell_boot.html" %}
+```
+
+`shell.html` includes `shell_boot` after `head_extra`. Standalone host bases that
+only include `head_assets` should also include `shell_boot` once and delete any
+local copy of the sidebar/basecoat IIFE.
 
 Shell layout classes (`.app-shell`, page chrome, etc.) are compiled into the
 app-factory asset bundle; applications do not install the build-source project.

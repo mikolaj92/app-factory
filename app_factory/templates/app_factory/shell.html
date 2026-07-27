@@ -7,6 +7,8 @@
   <title>{% block title %}{{ app_name | default('App') }}{% endblock %}</title>
   {% include "app_factory/head_assets.html" %}
   {% block head_extra %}{% endblock %}
+  {# Hosts may set window.appShellConfig in head_extra before this runs. #}
+  {% include "app_factory/shell_boot.html" %}
 </head>
 <body class="app-shell">
   {% block navigation %}{% endblock %}
