@@ -2,7 +2,8 @@
 
 Hosts call :func:`install_platform` once instead of re-copying shell, theme boot,
 and auth foot across apps. Domain menu items are host-supplied; the platform
-foot (theme / login / account / logout) is fixed.
+foot (locale / theme / login / account / logout) is fixed. Hosts must not put
+those controls in the main header.
 """
 
 from __future__ import annotations
@@ -30,6 +31,21 @@ class MenuItem:
     icon: str | None = None
     active: bool = False
     no_htmx: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class PlatformLocale:
+    """One language option for the shared platform foot.
+
+    Prefer ``href`` for server-side locale switching (query/cookie). Omit
+    ``href`` for client-side apps: the foot emits a button with
+    ``data-platform-locale-select`` and ``data-locale`` so the host can
+    handle ``platform:locale`` (see theme_boot) or bind its own listener.
+    """
+
+    code: str
+    label: str
+    href: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,6 +77,10 @@ class PlatformConfig:
     paths: PlatformPaths = field(default_factory=PlatformPaths)
     enable_admin_users: bool = False
     show_register: bool = True
+    # Static default locales (usually empty; per-request hrefs go via
+    # build_platform_context(..., locales=...)).
+    locales: tuple[PlatformLocale, ...] = ()
+    default_locale: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,10 +97,15 @@ def build_platform_context(
     *,
     user: PlatformUser | None = None,
     current_path: str = "",
+    locales: Sequence[PlatformLocale] | None = None,
+    locale: str | None = None,
 ) -> dict[str, Any]:
     """Build Jinja globals/context for product shell + platform foot.
 
     Pure function — safe for unit tests without FastAPI or WebAuthn.
+
+    ``locales`` / ``locale`` override config defaults so hosts can inject
+    per-request language links (e.g. preserve query on the current path).
     """
     menu = tuple(
         MenuItem(
@@ -92,6 +117,8 @@ def build_platform_context(
         )
         for item in config.menu
     )
+    resolved_locales = tuple(locales) if locales is not None else config.locales
+    resolved_locale = locale if locale is not None else config.default_locale
     return {
         "app_name": config.app_name,
         "platform_menu": menu,
@@ -99,6 +126,8 @@ def build_platform_context(
         "platform_paths": config.paths,
         "platform_enable_admin_users": config.enable_admin_users,
         "platform_show_register": config.show_register,
+        "platform_locales": resolved_locales,
+        "platform_locale": resolved_locale,
         "login_url": config.paths.login,
     }
 
@@ -119,9 +148,17 @@ def apply_platform_context(
     *,
     user: PlatformUser | None = None,
     current_path: str = "",
+    locales: Sequence[PlatformLocale] | None = None,
+    locale: str | None = None,
 ) -> Mapping[str, Any]:
     """Merge platform context into a Jinja environment's globals."""
-    ctx = build_platform_context(config, user=user, current_path=current_path)
+    ctx = build_platform_context(
+        config,
+        user=user,
+        current_path=current_path,
+        locales=locales,
+        locale=locale,
+    )
     globals_dict = environment.globals
     globals_dict.update(ctx)
     return ctx

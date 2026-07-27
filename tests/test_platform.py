@@ -13,6 +13,7 @@ from app_factory.platform import (
     FORBIDDEN_BASECOAT_CLASS_MARKERS,
     MenuItem,
     PlatformConfig,
+    PlatformLocale,
     PlatformPaths,
     PlatformUser,
     apply_platform_context,
@@ -75,6 +76,7 @@ def test_product_shell_renders_platform_foot_for_guest_and_user() -> None:
 
     guest_html = environment.get_template("page.html").render()
     assert "data-platform-foot" in guest_html
+    assert "data-platform-controls" in guest_html
     assert "Login" in guest_html
     assert 'href="/login"' in guest_html
     assert "Theme" in guest_html
@@ -82,6 +84,8 @@ def test_product_shell_renders_platform_foot_for_guest_and_user() -> None:
     assert 'data-variant="primary"' in guest_html
     assert "BODY" in guest_html
     assert "/static/platform/basecoat-factory.min.css" in guest_html
+    # No language row when host does not configure locales.
+    assert "data-platform-locales" not in guest_html
 
     apply_platform_context(
         environment,
@@ -93,6 +97,43 @@ def test_product_shell_renders_platform_foot_for_guest_and_user() -> None:
     assert "Logout" in user_html
     assert 'action="/logout"' in user_html
     assert "Login" not in user_html or "Logout" in user_html
+
+
+def test_platform_foot_renders_optional_locales() -> None:
+    app = FastAPI()
+    environment = _env_with_factory()
+    config = PlatformConfig(app_name="Demo", paths=PlatformPaths())
+    install_platform(app, environments=[environment], config=config)
+    apply_platform_context(
+        environment,
+        config,
+        locales=(
+            PlatformLocale(code="pl", label="PL", href="/?lang=pl"),
+            PlatformLocale(code="en", label="EN", href="/?lang=en"),
+        ),
+        locale="pl",
+    )
+    html = environment.get_template("page.html").render()
+    assert "data-platform-locales" in html
+    assert 'href="/?lang=pl"' in html
+    assert 'href="/?lang=en"' in html
+    assert 'data-locale="pl"' in html
+    assert 'aria-current="page"' in html
+
+    # Client-side locale buttons (no href) for SPA/i18n hosts.
+    apply_platform_context(
+        environment,
+        config,
+        locales=(
+            PlatformLocale(code="pl", label="PL"),
+            PlatformLocale(code="en", label="EN"),
+        ),
+        locale="en",
+    )
+    client_html = environment.get_template("page.html").render()
+    assert "data-platform-locale-select" in client_html
+    assert 'data-locale="en"' in client_html
+
 
 
 def test_install_platform_mounts_chrome_and_registers_state() -> None:

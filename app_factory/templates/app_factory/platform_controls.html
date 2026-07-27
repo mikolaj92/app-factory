@@ -1,0 +1,77 @@
+{# Canonical chrome controls: optional locale, theme, login/account/logout.
+   Used by platform_sidebar_foot and by hosts without a sidebar (e.g. client portal).
+   Hosts must not reimplement these in the main header. #}
+<div class="app-stack app-stack--tight" data-platform-controls>
+  {% if platform_locales is defined and platform_locales %}
+  <nav class="app-cluster" data-platform-locales aria-label="Language">
+    {% for loc in platform_locales %}
+      {% if loc.href %}
+      <a
+        href="{{ loc.href }}"
+        class="btn"
+        data-variant="{% if platform_locale == loc.code %}primary{% else %}ghost{% endif %}"
+        data-size="sm"
+        data-locale="{{ loc.code }}"
+        {% if platform_locale == loc.code %}aria-current="page"{% endif %}
+      >{{ loc.label }}</a>
+      {% else %}
+      <button
+        type="button"
+        class="btn"
+        data-variant="{% if platform_locale == loc.code %}primary{% else %}ghost{% endif %}"
+        data-size="sm"
+        data-locale="{{ loc.code }}"
+        data-platform-locale-select
+        {% if platform_locale == loc.code %}aria-pressed="true"{% else %}aria-pressed="false"{% endif %}
+      >{{ loc.label }}</button>
+      {% endif %}
+    {% endfor %}
+  </nav>
+  {% endif %}
+
+  <button
+    type="button"
+    class="btn"
+    data-variant="ghost"
+    data-size="sm"
+    data-theme-toggle
+    onclick="window.appTheme && window.appTheme.toggle()"
+  >
+    Theme
+  </button>
+
+  {% if platform_user %}
+  <a class="btn" data-variant="ghost" data-size="sm" href="{{ platform_paths.account }}">
+    {{ platform_user.display_name }}
+  </a>
+  {% if platform_enable_admin_users and platform_user.is_admin %}
+  <a class="btn" data-variant="ghost" data-size="sm" href="{{ platform_paths.admin_users }}">
+    Users
+  </a>
+  {% endif %}
+  <form method="post" action="{{ platform_paths.logout }}" data-no-htmx="true">
+    <button class="btn" data-variant="outline" data-size="sm" type="submit">Logout</button>
+  </form>
+  {% else %}
+  <a
+    class="btn"
+    data-variant="primary"
+    data-size="sm"
+    href="{{ platform_paths.login }}"
+    data-no-htmx="true"
+  >
+    Login
+  </a>
+  {% if platform_show_register %}
+  <a
+    class="btn"
+    data-variant="ghost"
+    data-size="sm"
+    href="{{ platform_paths.register }}"
+    data-no-htmx="true"
+  >
+    Register
+  </a>
+  {% endif %}
+  {% endif %}
+</div>

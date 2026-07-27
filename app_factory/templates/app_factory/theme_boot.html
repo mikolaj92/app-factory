@@ -48,5 +48,13 @@
     const requested = event.detail?.mode;
     if (requested === 'dark' || requested === 'light') window.appTheme.set(requested);
   });
+  // Client-side locale buttons from platform foot (no href).
+  document.addEventListener('click', (event) => {
+    const btn = event.target && event.target.closest && event.target.closest('[data-platform-locale-select]');
+    if (!btn) return;
+    const code = btn.getAttribute('data-locale');
+    if (!code) return;
+    document.dispatchEvent(new CustomEvent('platform:locale', { detail: { code } }));
+  });
 })();
 </script>
