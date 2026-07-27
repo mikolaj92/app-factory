@@ -1,0 +1,15 @@
+{% extends "app_factory/shell.html" %}
+
+{# Canonical logged-in product chrome: sidebar + main. Branding stays on landings. #}
+
+{% block navigation %}
+  {% include "app_factory/platform_sidebar.html" %}
+{% endblock %}
+
+{% block main %}
+  <div class="app-main-content">
+    <div class="app-content-inner app-stack">
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+{% endblock %}
