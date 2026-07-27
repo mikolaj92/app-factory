@@ -30,9 +30,11 @@ except ImportError:  # Optional fastapi extra is not installed.
 
 try:
     from app_factory.platform import (
+        MenuGroup,
         MenuItem,
         PlatformConfig,
         PlatformInstall,
+        PlatformLocale,
         PlatformPaths,
         PlatformUser,
         apply_platform_context,
@@ -40,7 +42,8 @@ try:
         install_platform,
     )
 except ImportError:  # Optional fastapi extra is not installed.
-    MenuItem = PlatformConfig = PlatformInstall = PlatformPaths = PlatformUser = None
+    MenuGroup = MenuItem = PlatformConfig = PlatformInstall = None
+    PlatformLocale = PlatformPaths = PlatformUser = None
     apply_platform_context = build_platform_context = install_platform = None
 
 __all__ = [
@@ -50,9 +53,11 @@ __all__ = [
     "BundledAsset",
     "CDNAsset",
     "CDNVerificationError",
+    "MenuGroup",
     "MenuItem",
     "PlatformConfig",
     "PlatformInstall",
+    "PlatformLocale",
     "PlatformPaths",
     "PlatformUser",
     "apply_platform_context",
@@ -72,4 +77,4 @@ __all__ = [
     "verify_cdn_manifest",
 ]
 
-__version__ = "0.5.0"
+__version__ = "0.5.4"
