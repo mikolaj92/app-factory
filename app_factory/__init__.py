@@ -28,6 +28,21 @@ try:
 except ImportError:  # Optional fastapi extra is not installed.
     AppFactoryUi = AppFactoryUiConflict = install_app_factory_ui = None
 
+try:
+    from app_factory.platform import (
+        MenuItem,
+        PlatformConfig,
+        PlatformInstall,
+        PlatformPaths,
+        PlatformUser,
+        apply_platform_context,
+        build_platform_context,
+        install_platform,
+    )
+except ImportError:  # Optional fastapi extra is not installed.
+    MenuItem = PlatformConfig = PlatformInstall = PlatformPaths = PlatformUser = None
+    apply_platform_context = build_platform_context = install_platform = None
+
 __all__ = [
     "CDN_ASSET_MANIFEST",
     "AppFactoryUi",
@@ -35,6 +50,13 @@ __all__ = [
     "BundledAsset",
     "CDNAsset",
     "CDNVerificationError",
+    "MenuItem",
+    "PlatformConfig",
+    "PlatformInstall",
+    "PlatformPaths",
+    "PlatformUser",
+    "apply_platform_context",
+    "build_platform_context",
     "bundled_asset",
     "cdn_asset",
     "configure_jinja_env",
@@ -43,10 +65,11 @@ __all__ = [
     "get_assets_dir",
     "get_platform_static_app",
     "install_app_factory_ui",
+    "install_platform",
     "list_bundled_assets",
     "platform_asset_url",
     "verify_cdn_asset",
     "verify_cdn_manifest",
 ]
 
-__version__ = "0.4.1"
+__version__ = "0.5.0"

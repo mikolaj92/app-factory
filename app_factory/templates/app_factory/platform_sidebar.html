@@ -1,0 +1,28 @@
+{# Shared product sidebar: host menu + fixed platform foot (theme/auth). #}
+<aside class="sidebar app-sidebar" data-side="left" data-collapsible="icon" aria-label="Application">
+  <nav class="app-sidebar__nav" aria-label="{{ app_name | default('App') }}">
+    <div class="app-sidebar__brand">
+      <a class="font-semibold" href="/">{{ app_name | default('App') }}</a>
+    </div>
+    <div class="app-sidebar__scroll">
+      <ul class="app-stack app-stack--tight" role="list">
+        {% for item in platform_menu | default([]) %}
+        <li>
+          <a
+            class="app-nav-link{% if item.active %} app-nav-link--active{% endif %}"
+            href="{{ item.href }}"
+            {% if item.no_htmx %}data-no-htmx="true"{% endif %}
+            {% if item.active %}aria-current="page"{% endif %}
+          >
+            {% if item.icon %}
+            <span class="app-nav-link__icon" aria-hidden="true">{{ item.icon }}</span>
+            {% endif %}
+            <span class="app-nav-link__label">{{ item.label }}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% include "app_factory/platform_sidebar_foot.html" %}
+  </nav>
+</aside>

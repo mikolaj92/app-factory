@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "app-factory"
-version = "0.4.1"
+version = "0.5.0"
 description = "Resilient same-origin frontend chrome for FastAPI, Jinja, HTMX, Alpine, and Basecoat apps"
 requires-python = ">=3.11"
 dependencies = [
@@ -16,9 +16,19 @@ fastapi = [
     "fastapi>=0.115",
     "starlette>=0.37",
 ]
+# platform = fastapi surface for install_platform + product shell.
+# Hosts also pin my-auth / my-usermanager per COMPAT.md (BOM). We intentionally
+# do not nest those git sources here: my-auth pins app-factory and would
+# conflict with this workspace while developing.
+platform = [
+    "fastapi>=0.115",
+    "starlette>=0.37",
+]
 dev = [
     "pytest>=8",
-    "httpx2>=0.1",
+    "httpx>=0.27",
+    "fastapi>=0.115",
+    "starlette>=0.37",
 ]
 
 [tool.hatch.build.targets.wheel]
