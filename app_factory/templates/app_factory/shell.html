@@ -17,7 +17,17 @@
   {% block body %}
   {% block navigation %}{% endblock %}
   <main class="main app-main" id="app-main">
-    {% block header %}{% endblock %}
+    {# Default header: theme + locale only (login/passkey shells).
+       product_shell overrides this block with the full product chrome. #}
+    {% block header %}
+    <header class="app-main-header bg-background">
+      <div class="app-main-header__inner">
+        <div class="app-main-header__controls">
+          {% include "app_factory/platform_theme_locale.html" %}
+        </div>
+      </div>
+    </header>
+    {% endblock %}
     <div class="app-main-content">
       {% block loading_overlay %}
       <div class="loading htmx-indicator app-loading-overlay" aria-hidden="true">

@@ -28,6 +28,8 @@
   </nav>
   {% endif %}
 
+  {# No onclick: shell_boot already handles [data-theme-toggle] clicks.
+     Double handlers cancel each other (toggle twice = no visual change). #}
   <button
     type="button"
     class="btn flex items-center justify-center"
@@ -36,7 +38,6 @@
     data-theme-toggle
     data-tooltip="Toggle theme"
     aria-label="Toggle theme"
-    onclick="window.appTheme && window.appTheme.toggle()"
   >
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-themed theme-toggle-icon theme-toggle-icon--light" aria-hidden="true">
       <circle cx="12" cy="12" r="5"/>

@@ -66,6 +66,9 @@ class PlatformLocale:
     ``href`` for client-side apps: chrome emits a button with
     ``data-platform-locale-select`` and ``data-locale`` so the host can
     handle ``platform:locale`` (see theme_boot) or bind its own listener.
+
+    ``label`` is rendered as-is — prefer flag emoji (e.g. ``🇵🇱`` / ``🇬🇧``)
+    for a compact language picker.
     """
 
     code: str

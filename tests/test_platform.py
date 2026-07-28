@@ -149,6 +149,7 @@ def test_platform_theme_locale_partial() -> None:
     assert "data-platform-theme-locale" in html
     assert "data-theme-toggle" in html
     assert "theme-toggle-icon--light" in html
+    assert "onclick=" not in html  # shell_boot owns the click (no double toggle)
     assert "data-platform-locales" in html
     assert 'href="/?lang=pl"' in html
     assert "data-platform-locale-select" not in html
