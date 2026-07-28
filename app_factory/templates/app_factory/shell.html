@@ -1,8 +1,5 @@
 <!doctype html>
-<html
-  lang="{{ lang | default('en') }}"
-  {% if theme is defined and theme %}data-theme="{{ theme }}"{% if theme == 'dark' %} class="dark"{% endif %}{% endif %}
->
+<html lang="{{ lang | default('en') }}"{% if theme is defined and theme %} data-theme="{{ theme }}"{% if theme == 'dark' %} class="dark"{% endif %}{% endif %}>
 <head>
   {% include "app_factory/theme_boot.html" %}
   <meta charset="utf-8">
