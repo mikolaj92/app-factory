@@ -150,9 +150,13 @@ def test_platform_theme_locale_partial() -> None:
     assert "data-theme-toggle" in html
     assert "theme-toggle-icon--light" in html
     assert "onclick=" not in html  # shell_boot owns the click (no double toggle)
+    assert "data-platform-locale-picker" in html
     assert "data-platform-locales" in html
-    assert 'href="/?lang=pl"' in html
+    assert 'data-href="/?lang=pl"' in html
     assert "data-platform-locale-select" not in html
+    # Single dropdown, not a row of language buttons.
+    assert html.count("<select") == 1
+    assert html.count("<option") >= 2
 
     apply_platform_context(
         env,
@@ -164,7 +168,8 @@ def test_platform_theme_locale_partial() -> None:
         locale="en",
     )
     client_html = env.get_template("header.html").render()
-    assert "data-platform-locale-select" in client_html
+    assert "data-platform-locale-picker" in client_html
+    assert "data-href=" not in client_html
 
 
 def test_head_assets_reinit_alpine_after_htmx_swap() -> None:

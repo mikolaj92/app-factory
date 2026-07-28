@@ -48,13 +48,24 @@
     const requested = event.detail?.mode;
     if (requested === 'dark' || requested === 'light') window.appTheme.set(requested);
   });
-  // Client-side locale buttons from platform foot (no href).
-  document.addEventListener('click', (event) => {
-    const btn = event.target && event.target.closest && event.target.closest('[data-platform-locale-select]');
-    if (!btn) return;
-    const code = btn.getAttribute('data-locale');
-    if (!code) return;
-    document.dispatchEvent(new CustomEvent('platform:locale', { detail: { code } }));
+  // Locale dropdown: navigate when option has data-href (server i18n),
+  // otherwise emit platform:locale for client-side hosts (e.g. emitype).
+  document.addEventListener('change', (event) => {
+    const picker = event.target && event.target.closest
+      ? event.target.closest('[data-platform-locale-picker]')
+      : null;
+    if (!picker || String(picker.tagName || '').toUpperCase() !== 'SELECT') return;
+    const opt = picker.selectedOptions && picker.selectedOptions[0];
+    if (!opt) return;
+    const href = opt.getAttribute('data-href');
+    const code = picker.value;
+    if (href) {
+      window.location.assign(href);
+      return;
+    }
+    if (code) {
+      document.dispatchEvent(new CustomEvent('platform:locale', { detail: { code } }));
+    }
   });
 })();
 </script>

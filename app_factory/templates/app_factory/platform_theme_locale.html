@@ -1,35 +1,28 @@
 {# Theme + optional language — always visible chrome (main header).
+   Language is a single flag dropdown (not a row of PL/EN buttons).
    Do not put these in the sidebar foot; auth lives there instead. #}
 <div class="app-cluster app-cluster--center" data-platform-theme-locale>
   {% if platform_locales is defined and platform_locales %}
-  <nav class="app-cluster" data-platform-locales aria-label="Language">
+  <label class="sr-only" for="platform-locale-picker">Language</label>
+  <select
+    id="platform-locale-picker"
+    class="input platform-locale-select"
+    data-platform-locale-picker
+    data-platform-locales
+    aria-label="Language"
+    title="Language"
+  >
     {% for loc in platform_locales %}
-      {% if loc.href %}
-      <a
-        href="{{ loc.href }}"
-        class="btn"
-        data-variant="{% if platform_locale == loc.code %}primary{% else %}ghost{% endif %}"
-        data-size="sm"
-        data-locale="{{ loc.code }}"
-        {% if platform_locale == loc.code %}aria-current="page"{% endif %}
-      >{{ loc.label }}</a>
-      {% else %}
-      <button
-        type="button"
-        class="btn"
-        data-variant="{% if platform_locale == loc.code %}primary{% else %}ghost{% endif %}"
-        data-size="sm"
-        data-locale="{{ loc.code }}"
-        data-platform-locale-select
-        {% if platform_locale == loc.code %}aria-pressed="true"{% else %}aria-pressed="false"{% endif %}
-      >{{ loc.label }}</button>
-      {% endif %}
+    <option
+      value="{{ loc.code }}"
+      {% if loc.href %}data-href="{{ loc.href }}"{% endif %}
+      {% if platform_locale == loc.code %}selected{% endif %}
+    >{{ loc.label }}</option>
     {% endfor %}
-  </nav>
+  </select>
   {% endif %}
 
-  {# No onclick: shell_boot already handles [data-theme-toggle] clicks.
-     Double handlers cancel each other (toggle twice = no visual change). #}
+  {# No onclick: shell_boot already handles [data-theme-toggle] clicks. #}
   <button
     type="button"
     class="btn flex items-center justify-center"
