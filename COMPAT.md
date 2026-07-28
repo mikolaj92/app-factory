@@ -4,7 +4,8 @@ Single source of truth for host pins when using `app-factory[platform]`.
 
 | app-factory | my-auth | my-usermanager | Notes |
 |-------------|---------|----------------|-------|
-| **v0.5.7** | **v0.3.13** | **v0.3.3** | product_shell frame; compact html theme attrs |
+| **v0.5.8** | **v0.3.16** | **v0.4.3** | BOM stamp for mandatory username + product_shell; hosts pin equal tags |
+| v0.5.7 | v0.3.13 | v0.3.3 | product_shell frame; compact html theme attrs |
 | v0.5.6 | v0.3.12 | v0.3.3 | Full `product_shell` frame (sidebar+header+#main-content); hosts `extends` + menu data only |
 | v0.5.5 | v0.3.11 | v0.3.3 | Shared `shell_boot.html` (`window.appShellConfig`); my-auth nested pin also on app-factory v0.5.5 |
 | v0.5.4 | v0.3.10 | v0.3.3 | Host shell hooks on usermanager (`environment`, `base_template`, labels/`page_context`) |
@@ -21,7 +22,7 @@ Prefer:
 ```toml
 dependencies = ["app-factory[platform]"]
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.5.7" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.5.8" }
 ```
 
 Do **not** float `my-usermanager` on `branch = "main"` for production hosts.
