@@ -2,18 +2,39 @@
    platform_menu entries are MenuItem and/or MenuGroup (from build_platform_context). #}
 <aside
   id="sidebar"
-  class="sidebar app-sidebar"
+  class="sidebar z-40 app-sidebar"
   data-side="left"
   data-collapsible="icon"
   data-initial-open="true"
   data-initial-mobile-open="false"
   data-breakpoint="768"
-  aria-label="Application"
+  aria-label="{{ platform_navigation_label | default(app_name | default('Application')) }}"
 >
-  <nav class="app-sidebar__nav" aria-label="{{ app_name | default('App') }}">
+  <nav
+    class="app-sidebar__nav"
+    aria-label="{{ platform_navigation_label | default(app_name | default('Application')) }}"
+  >
     <header class="app-sidebar__brand">
-      <a class="font-semibold" href="{{ platform_brand_href | default('/') }}">
-        {{ app_name | default('App') }}
+      <a
+        class="font-semibold"
+        href="{{ platform_brand_href | default('/') }}"
+        {% if platform_brand_htmx | default(false) %}
+        hx-get="{{ platform_brand_href | default('/') }}"
+        hx-target="#main-content"
+        hx-swap="{{ platform_brand_hx_swap | default('innerHTML') }}"
+        hx-push-url="true"
+        hx-indicator=".loading"
+        {% else %}
+        data-no-htmx="true"
+        {% endif %}
+      >
+        {% if platform_brand_icon is defined and platform_brand_icon %}
+        <span class="app-sidebar__brand-icon" aria-hidden="true">{{ platform_brand_icon | safe }}</span>
+        {% endif %}
+        <span>{{ app_name | default('App') }}</span>
+        {% if platform_brand_meta is defined and platform_brand_meta %}
+        <span class="text-xs text-muted-foreground">{{ platform_brand_meta }}</span>
+        {% endif %}
       </a>
     </header>
 
@@ -32,7 +53,10 @@
 
       {% for entry in groups %}
       <div role="group" aria-labelledby="platform-group-{{ loop.index }}">
-        <h3 id="platform-group-{{ loop.index }}">{{ entry.label }}</h3>
+        <h3
+          id="platform-group-{{ loop.index }}"
+          {% if entry.i18n is defined and entry.i18n %}data-i18n="{{ entry.i18n }}"{% endif %}
+        >{{ entry.label }}</h3>
         <ul role="list">
           {% for item in entry.items %}
           {% include "app_factory/_platform_nav_item.html" %}
@@ -42,6 +66,8 @@
       {% endfor %}
     </section>
 
-    {% include "app_factory/platform_sidebar_foot.html" %}
+    <footer>
+      {% include "app_factory/platform_sidebar_foot.html" %}
+    </footer>
   </nav>
 </aside>

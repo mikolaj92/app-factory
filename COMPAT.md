@@ -4,7 +4,8 @@ Single source of truth for host pins when using `app-factory[platform]`.
 
 | app-factory | my-auth | my-usermanager | Notes |
 |-------------|---------|----------------|-------|
-| **v0.5.5** | **v0.3.11** | **v0.3.3** | Shared `shell_boot.html` (`window.appShellConfig`); my-auth nested pin also on app-factory v0.5.5 |
+| **v0.5.6** | **v0.3.11** | **v0.3.3** | Full `product_shell` frame (sidebar+header+#main-content); hosts `extends` + menu data only |
+| v0.5.5 | v0.3.11 | v0.3.3 | Shared `shell_boot.html` (`window.appShellConfig`); my-auth nested pin also on app-factory v0.5.5 |
 | v0.5.4 | v0.3.10 | v0.3.3 | Host shell hooks on usermanager (`environment`, `base_template`, labels/`page_context`) |
 | v0.5.4 | v0.3.10 | v0.3.2 | Grouped HTMX sidebar (`MenuGroup`) + Alpine afterSwap reinit in head_assets |
 | v0.5.3 | v0.3.9 | v0.3.2 | Header theme/locale; foot Login/Account; **Log out only on account page** |
@@ -19,7 +20,7 @@ Prefer:
 ```toml
 dependencies = ["app-factory[platform]"]
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.5.5" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.5.6" }
 ```
 
 Do **not** float `my-usermanager` on `branch = "main"` for production hosts.

@@ -182,9 +182,29 @@ Full-page templates extend the sole platform shell:
 {% block main %}<h1>Ready</h1>{% endblock %}
 ```
 
-The supported blocks are exactly `title`, `head_extra`, `navigation`, `main`,
-and `body_end`. The shell loads theme boot and one same-origin platform asset
-stack. Product CSS and domain behavior remain host-owned.
+The supported blocks include `title`, `head_extra`, `body` / `navigation` /
+`header` / `content` / `page_scripts` / `loading_label` / `content_class` /
+`body_end`, plus product-shell header slots `header_controls_start` /
+`header_controls_end` / `sidebar_toggle_icon`. The shell loads theme boot,
+platform assets, and `shell_boot`. Product CSS and domain behavior remain
+host-owned.
+
+### Product shell (logged-in chrome)
+
+```html
+{% extends "app_factory/product_shell.html" %}
+{% block head_extra %}
+  <script>window.appShellConfig = { /* optional */ };</script>
+{% endblock %}
+{% block content %}
+  <h1>Queue</h1>
+{% endblock %}
+```
+
+Host supplies **data** via `build_platform_context` / per-request context:
+`platform_menu`, `platform_user`, `platform_paths`, locales. Do not fork
+sidebar or main-header markup — inject extras only through blocks
+(`header_controls_start` for notifications, `body_end` for toasts).
 
 ### `head_assets.html` behavior
 

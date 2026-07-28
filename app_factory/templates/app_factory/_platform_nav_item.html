@@ -1,14 +1,15 @@
 {# Single sidebar link. Expects ``item`` as MenuItem (or mapping with same keys). #}
-{% set href = item.href if item.href is defined else item['href'] %}
-{% set label = item.label if item.label is defined else item['label'] %}
+{% set href = item.href if item.href is defined else item.get('href', item.get('url', '#')) if item is mapping else '#' %}
+{% set label = item.label if item.label is defined else item.get('label', '') if item is mapping else '' %}
 {% set icon = item.icon if item.icon is defined else item.get('icon') if item is mapping else none %}
 {% set active = item.active if item.active is defined else item.get('active', false) if item is mapping else false %}
 {% set no_htmx = item.no_htmx if item.no_htmx is defined else item.get('no_htmx', false) if item is mapping else false %}
 {% set use_htmx = item.use_htmx if item.use_htmx is defined else item.get('use_htmx', false) if item is mapping else false %}
 {% set key = item.key if item.key is defined else item.get('key') if item is mapping else none %}
 {% set badge = item.badge if item.badge is defined else item.get('badge') if item is mapping else none %}
+{% set i18n = item.i18n if item.i18n is defined else item.get('i18n') if item is mapping else none %}
 {% set hx_target = item.hx_target if item.hx_target is defined else item.get('hx_target', '#main-content') if item is mapping else '#main-content' %}
-{% set hx_select = item.hx_select if item.hx_select is defined else item.get('hx_select', '#main-content') if item is mapping else '#main-content' %}
+{% set hx_select = item.hx_select if item.hx_select is defined else item.get('hx_select') if item is mapping else none %}
 {% set hx_swap = item.hx_swap if item.hx_swap is defined else item.get('hx_swap', 'outerHTML') if item is mapping else 'outerHTML' %}
 <li>
   <a
@@ -21,7 +22,7 @@
     {% else %}
     hx-get="{{ href }}"
     hx-target="{{ hx_target }}"
-    hx-select="{{ hx_select }}"
+    {% if hx_select %}hx-select="{{ hx_select }}"{% endif %}
     hx-swap="{{ hx_swap }}"
     hx-push-url="true"
     hx-indicator=".loading"
@@ -30,7 +31,7 @@
     {% if icon %}
     <span class="app-nav-link__icon" aria-hidden="true">{{ icon | safe }}</span>
     {% endif %}
-    <span class="app-nav-link__label">{{ label }}</span>
+    <span class="app-nav-link__label"{% if i18n %} data-i18n="{{ i18n }}"{% endif %}>{{ label }}</span>
     {% if badge is not none %}
     <span class="ml-auto text-xs mono">{{ badge }}</span>
     {% endif %}

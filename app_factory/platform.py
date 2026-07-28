@@ -28,8 +28,11 @@ class MenuItem:
     """One host navigation entry in the shared product sidebar.
 
     When ``use_htmx`` is true, the sidebar emits ``hx-get`` / ``hx-target`` /
-    ``hx-select`` / ``hx-swap`` / ``hx-push-url`` (Argus-style partial nav).
+    optional ``hx-select`` / ``hx-swap`` / ``hx-push-url``.
     ``no_htmx`` forces a plain link (auth and full-page routes).
+    ``i18n`` sets ``data-i18n`` on the label span for client-side dictionaries.
+    Empty ``hx_select`` omits the attribute (innerHTML partials that are not
+    full-page fragments).
     """
 
     label: str
@@ -40,8 +43,9 @@ class MenuItem:
     use_htmx: bool = False
     key: str | None = None
     badge: str | None = None
+    i18n: str | None = None
     hx_target: str = "#main-content"
-    hx_select: str = "#main-content"
+    hx_select: str | None = "#main-content"
     hx_swap: str = "outerHTML"
 
 
@@ -51,6 +55,7 @@ class MenuGroup:
 
     label: str
     items: tuple[MenuItem, ...] = ()
+    i18n: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -99,14 +104,23 @@ class PlatformConfig:
 
     app_name: str = "App"
     brand_href: str = "/"
+    brand_icon: str | None = None
+    brand_meta: str | None = None
+    brand_htmx: bool = False
+    brand_hx_swap: str = "innerHTML"
+    navigation_label: str | None = None
     menu: tuple[MenuItem | MenuGroup, ...] = ()
     paths: PlatformPaths = field(default_factory=PlatformPaths)
     enable_admin_users: bool = False
     show_register: bool = True
     locales: tuple[PlatformLocale, ...] = ()
     default_locale: str | None = None
-    # Default HTMX partial navigation for menu items that set use_htmx=True.
+    # When true, menu items without no_htmx get use_htmx=True.
     htmx_nav: bool = False
+    # Defaults applied when htmx_nav enables an item that still has stock values.
+    default_hx_target: str = "#main-content"
+    default_hx_select: str | None = "#main-content"
+    default_hx_swap: str = "outerHTML"
 
 
 @dataclass(frozen=True, slots=True)
@@ -139,6 +153,11 @@ def build_platform_context(
     return {
         "app_name": config.app_name,
         "platform_brand_href": config.brand_href,
+        "platform_brand_icon": config.brand_icon,
+        "platform_brand_meta": config.brand_meta,
+        "platform_brand_htmx": config.brand_htmx or config.htmx_nav,
+        "platform_brand_hx_swap": config.brand_hx_swap,
+        "platform_navigation_label": config.navigation_label or config.app_name,
         "platform_menu": menu,
         "platform_user": user,
         "platform_paths": config.paths,
@@ -159,6 +178,7 @@ def _resolve_menu_entry(
     if isinstance(entry, MenuGroup):
         return MenuGroup(
             label=entry.label,
+            i18n=entry.i18n,
             items=tuple(
                 _resolve_menu_item(item, current_path, config) for item in entry.items
             ),
@@ -171,11 +191,22 @@ def _resolve_menu_item(
     current_path: str,
     config: PlatformConfig,
 ) -> MenuItem:
-    use_htmx = item.use_htmx or (config.htmx_nav and not item.no_htmx)
+    use_htmx = (item.use_htmx or config.htmx_nav) and not item.no_htmx
+    # When HTMX is enabled via config defaults, fill stock hx_* from PlatformConfig.
+    hx_target = item.hx_target
+    hx_select = item.hx_select
+    hx_swap = item.hx_swap
+    if use_htmx and config.htmx_nav and not item.use_htmx:
+        hx_target = config.default_hx_target
+        hx_select = config.default_hx_select
+        hx_swap = config.default_hx_swap
     return replace(
         item,
         active=item.active or _path_active(current_path, item.href),
-        use_htmx=use_htmx and not item.no_htmx,
+        use_htmx=use_htmx,
+        hx_target=hx_target,
+        hx_select=hx_select,
+        hx_swap=hx_swap,
     )
 
 

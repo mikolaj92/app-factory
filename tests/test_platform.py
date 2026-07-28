@@ -89,6 +89,12 @@ def test_product_shell_renders_platform_foot_for_guest_and_user() -> None:
     assert "btn-primary" not in guest_html
     assert 'data-variant="primary"' in guest_html
     assert "BODY" in guest_html
+    assert 'id="app-main"' in guest_html
+    assert 'id="main-content"' in guest_html
+    assert 'id="sidebar"' in guest_html
+    assert "data-sidebar-toggle" in guest_html
+    assert "data-platform-theme-locale" in guest_html
+    assert "app-main-header" in guest_html
     assert "/static/platform/basecoat-factory.min.css" in guest_html
     assert "data-platform-locales" not in guest_html
 
@@ -301,3 +307,37 @@ def test_shell_includes_shell_boot_after_head_extra() -> None:
     )
     assert "window.__appShellBooted" in html
     assert html.index("htmx:configRequest") < html.index("window.__appShellBooted")
+
+
+def test_product_shell_is_full_operator_frame() -> None:
+    app = FastAPI()
+    env = _env_with_factory()
+    config = PlatformConfig(
+        app_name="Demo",
+        brand_href="/home",
+        htmx_nav=True,
+        default_hx_swap="innerHTML",
+        default_hx_select=None,
+        menu=(
+            MenuGroup(
+                "Main",
+                items=(MenuItem("Home", "/home", icon="<i>h</i>"),),
+            ),
+        ),
+        paths=PlatformPaths(),
+    )
+    install_platform(app, environments=[env], config=config)
+    apply_platform_context(env, config, current_path="/home")
+    html = env.get_template("page.html").render(page_title="Home")
+    assert 'id="app-main"' in html
+    assert 'id="main-content"' in html
+    assert 'data-page-title="Home"' in html
+    assert "app-main-header" in html
+    assert "data-platform-theme-locale" in html
+    assert "data-platform-foot" in html
+    assert 'hx-get="/home"' in html
+    assert 'hx-swap="innerHTML"' in html
+    # default_hx_select=None → no hx-select on nav items
+    nav_chunk = html.split('hx-get="/home"')[1][:240]
+    assert "hx-select=" not in nav_chunk
+    assert 'href="/home"' in html

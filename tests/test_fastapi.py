@@ -16,7 +16,7 @@ def _environment(content: str = "Ready") -> Environment:
             {
                 "page.html": (
                     "{% extends 'app_factory/shell.html' %}"
-                    + "{% block main %}"
+                    + "{% block content %}"
                     + content
                     + "{% endblock %}"
                 )
@@ -34,6 +34,8 @@ def test_install_mounts_assets_and_configures_shell():
     assert installed.asset_prefix == "/static/platform"
     assert "Ready" in html
     assert "/static/platform/basecoat-factory.min.css" in html
+    assert 'id="app-main"' in html
+    assert 'id="main-content"' in html
     mounts = [route for route in app.routes if isinstance(route, Mount)]
     assert [(route.path, route.name) for route in mounts] == [
         ("/static/platform", "app-factory-platform")
@@ -56,11 +58,25 @@ def test_install_is_idempotent_configures_new_environments_and_rejects_conflicts
         )
 
 
-def test_shell_exposes_only_the_supported_blocks():
+def test_shell_exposes_supported_product_frame_blocks():
     environment = _environment()
     _ = install_app_factory_ui(FastAPI(), environments=[environment])
-    blocks = environment.get_template("app_factory/shell.html").blocks
-    assert set(blocks) == {"title", "head_extra", "navigation", "main", "body_end"}
+    blocks = set(environment.get_template("app_factory/shell.html").blocks)
+    assert {
+        "title",
+        "head_extra",
+        "body_class",
+        "body_attrs",
+        "body",
+        "navigation",
+        "header",
+        "loading_overlay",
+        "loading_label",
+        "content_class",
+        "content",
+        "page_scripts",
+        "body_end",
+    } <= blocks
 
 
 @pytest.mark.parametrize("static_path", ["", "/", "relative"])
