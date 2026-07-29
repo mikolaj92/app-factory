@@ -185,7 +185,9 @@ Full-page templates extend the sole platform shell:
 The supported blocks include `title`, `head_extra`, `body` / `navigation` /
 `header` / `content` / `page_scripts` / `loading_label` / `content_class` /
 `body_end`, plus product-shell header slots `header_controls_start` /
-`header_controls_end` / `sidebar_toggle_icon`. The shell loads theme boot,
+`header_controls_end` / `sidebar_toggle_icon`. Signed-in identity and its
+deterministic initial avatar render in the product header; the sidebar footer is
+reserved for guest login/register. The shell loads theme boot,
 platform assets, and `shell_boot`. Product CSS and domain behavior remain
 host-owned.
 
@@ -202,8 +204,9 @@ host-owned.
 ```
 
 Host supplies **data** via `build_platform_context` / per-request context:
-`platform_menu`, `platform_user`, `platform_paths`, locales. Do not fork
-sidebar or main-header markup — inject extras only through blocks
+`platform_menu`, `platform_user`, `platform_paths`, locales. `PlatformUser`
+derives a stable background and initial for its high-contrast fallback avatar.
+Do not fork sidebar or main-header markup — inject extras only through blocks
 (`header_controls_start` for notifications, `body_end` for toasts).
 
 ### `head_assets.html` behavior

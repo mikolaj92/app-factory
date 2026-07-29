@@ -2,9 +2,9 @@
 
 Hosts call :func:`install_platform` once instead of re-copying shell, theme boot,
 and auth foot across apps. Domain menu items are host-supplied. Fixed chrome:
-main header = locale + theme (`platform_theme_locale`); sidebar foot = Login or
-Account link (`platform_auth`); account page = Log out (`platform_session`).
-Hosts must not reimplement these or put logout in chrome.
+main header = signed-in identity + locale + theme; sidebar foot = guest Login
+(`platform_auth`); account page = Log out (`platform_session`). Hosts must not
+reimplement these or put logout in chrome.
 """
 
 from __future__ import annotations
@@ -94,6 +94,26 @@ class PlatformUser:
     display_name: str
     is_admin: bool = False
     user_id: str | None = None
+
+    @property
+    def avatar_initial(self) -> str:
+        """First visible alphanumeric character for the fallback avatar."""
+        return next(
+            (character.upper() for character in self.display_name if character.isalnum()),
+            "?",
+        )
+
+    @property
+    def avatar_background(self) -> str:
+        """Stable, dependency-free avatar color derived from the user identity."""
+        palette = ("#9f1239", "#9a3412", "#3f6212", "#0f766e", "#1d4ed8", "#6d28d9")
+        identity = self.user_id or self.display_name
+        return palette[sum(identity.encode("utf-8")) % len(palette)]
+
+    @property
+    def avatar_foreground(self) -> str:
+        """High-contrast foreground shared by the deliberately dark palette."""
+        return "#ffffff"
 
 
 @dataclass(frozen=True, slots=True)

@@ -66,8 +66,10 @@
       {% endfor %}
     </section>
 
+    {% if not platform_user %}
     <footer>
       {% include "app_factory/platform_sidebar_foot.html" %}
     </footer>
+    {% endif %}
   </nav>
 </aside>

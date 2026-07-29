@@ -4,6 +4,7 @@ Single source of truth for host pins when using `app-factory[platform]`.
 
 | app-factory | my-auth | my-usermanager | Notes |
 |-------------|---------|----------------|-------|
+| **v0.5.12** | **v0.3.23** | **v0.4.3** | Signed-in identity + deterministic accessible avatar in product header; guest-only sidebar foot |
 | **v0.5.11** | **v0.3.23** | **v0.4.3** | Passkey login/register **de** (DE) copy in my-auth; default locales pl/en/de |
 | v0.5.10 | v0.3.19 | v0.4.3 | Locale flag **dropdown** (single select); theme single-fire |
 | v0.5.9 | v0.3.17 | v0.4.3 | Theme toggle single handler (no double-fire); default shell header theme/locale; flag labels for locales |
@@ -25,7 +26,7 @@ Prefer:
 ```toml
 dependencies = ["app-factory[platform]"]
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.5.11" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.5.12" }
 ```
 
 Do **not** float `my-usermanager` on `branch = "main"` for production hosts.
@@ -35,9 +36,9 @@ Do **not** re-copy theme boot, shell boot, or platform foot templates into hosts
 
 | Surface | Partial | Contents |
 |---------|---------|----------|
-| **Main header** | `platform_theme_locale` | language (optional) + icon theme toggle |
-| **Sidebar foot** | `platform_auth` | guest: Login (+ Register); signed-in: **Account link only** (name) |
+| **Main header** | `product_shell` + `platform_theme_locale` | signed-in identity/avatar + language (optional) + icon theme toggle |
+| **Sidebar foot** | `platform_auth` | guest: Login (+ Register); hidden for signed-in users |
 | **Account page** | `platform_session` | **Log out** form (only place) |
 | **No-sidebar shells** | `platform_controls` | theme/locale + auth (still no logout — include `platform_session` on the account/home surface) |
 
-Forbidden host forks: theme in sidebar, logout in nav menu, logout next to the account name in the foot.
+Forbidden host forks: identity/avatar in sidebar, theme in sidebar, logout in nav menu, or logout next to the account name in the header.

@@ -63,6 +63,9 @@ def test_build_platform_context_guest_vs_user() -> None:
     )
     assert user["platform_user"].display_name == "Ops"
     assert user["platform_user"].is_admin is True
+    assert user["platform_user"].avatar_initial == "O"
+    assert user["platform_user"].avatar_background.startswith("#")
+    assert user["platform_user"].avatar_foreground == "#ffffff"
 
 
 def test_product_shell_renders_platform_foot_for_guest_and_user() -> None:
@@ -106,12 +109,15 @@ def test_product_shell_renders_platform_foot_for_guest_and_user() -> None:
     user_html = environment.get_template("page.html").render()
     assert "Alice" in user_html
     assert 'data-platform-account-link' in user_html
+    assert 'class="platform-avatar"' in user_html
+    assert ">A</span>" in user_html
+    assert "--platform-avatar-bg: #" in user_html
+    assert "--platform-avatar-fg: #ffffff" in user_html
+    assert "data-platform-foot" not in user_html
     # Logout is not in chrome — only on the account page partial.
-    foot = user_html[user_html.find("data-platform-foot") :][:1500]
-    assert "Log out" not in foot
-    assert "Logout" not in foot
-    assert "Login" not in foot
-
+    assert "Log out" not in user_html
+    assert "Logout" not in user_html
+    assert "Login" not in user_html
 
 def test_platform_theme_locale_partial() -> None:
     environment = _env_with_factory()
