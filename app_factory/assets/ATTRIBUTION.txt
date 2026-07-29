@@ -24,7 +24,7 @@ Runtime/build provenance:
   License text: licenses/tailwindcss.LICENSE
 
 Runtime files:
-- basecoat-css 1.0.2: basecoat-factory.min.css (sha384-QevylCdEUfURKS0D2RCQS4OIk381ZGhGULmnXQ87XfkCciCRNY8sz0vS/CaFNNrO)
+- basecoat-css 1.0.2: basecoat-factory.min.css (sha384-maiQKjHFeDPRFizeRK8RquDbbSj4rlDhQFsaVeRwmSEQSeUOerjBd7eCN+IN6Rv/)
 - basecoat-js-all 1.0.2: basecoat-js.min.js (sha384-rD2ZCuReXV7nIneJcn1lsTn6yOv87YARLQyUsemVAxrYYHdy5hcAW8XZEQxx87Dj)
 - htmx 2.0.10: htmx.min.js (sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V)
 - alpine 3.15.12: alpine.min.js (sha384-pb6hrQvo4s23cEUFtj0CZkzGE3jyK3pj26RIupXXxhSrrcUA/Cn0lZgcCrGH0t6L)

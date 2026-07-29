@@ -1,23 +1,6 @@
-{# Identity in the sidebar foot.
-   Guest → Login (+ Register). Signed-in → Account link only.
-   Logout is NOT here — it lives on the account page (platform_session). #}
+{# Sidebar foot is guest-only. Signed-in identity lives in the main header. #}
 <div class="app-stack app-stack--tight w-full" data-platform-auth>
-  {% if platform_user %}
-  <a
-    class="btn w-full justify-start"
-    data-variant="ghost"
-    data-size="sm"
-    href="{{ platform_paths.account }}"
-    data-platform-account-link
-  >
-    {{ platform_user.display_name }}
-  </a>
-  {% if platform_enable_admin_users and platform_user.is_admin %}
-  <a class="btn w-full justify-start" data-variant="ghost" data-size="sm" href="{{ platform_paths.admin_users }}">
-    Users
-  </a>
-  {% endif %}
-  {% else %}
+  {% if not platform_user %}
   <a
     class="btn w-full"
     data-variant="primary"
