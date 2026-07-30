@@ -3,7 +3,8 @@
 (() => {
   const media = window.matchMedia('(prefers-color-scheme: dark)');
   const validModes = new Set(['light', 'dark', 'auto']);
-  let mode = 'auto';
+  const serverMode = document.documentElement.dataset.theme;
+  let mode = validModes.has(serverMode) ? serverMode : 'auto';
   try {
     const stored = localStorage.getItem('themeMode');
     if (validModes.has(stored)) mode = stored;
@@ -24,6 +25,7 @@
       mode = validModes.has(value) ? value : 'auto';
     }
     document.documentElement.classList.toggle('dark', isDark());
+    document.documentElement.dataset.theme = isDark() ? 'dark' : 'light';
     if (persist) {
       try { localStorage.setItem('themeMode', mode); } catch (_) {}
     }
@@ -47,6 +49,14 @@
   document.addEventListener('basecoat:themechange', (event) => {
     const requested = event.detail?.mode;
     if (requested === 'dark' || requested === 'light') window.appTheme.set(requested);
+  });
+  document.addEventListener('click', (event) => {
+    const control = event.target.closest?.('[data-theme], [data-theme-toggle]');
+    if (!control) return;
+    event.preventDefault();
+    const requested = control.dataset.theme;
+    if (requested) window.appTheme.set(requested);
+    else window.appTheme.toggle();
   });
   // Locale dropdown: navigate when option has data-href (server i18n),
   // otherwise emit platform:locale for client-side hosts (e.g. emitype).

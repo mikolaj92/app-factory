@@ -155,7 +155,7 @@ def test_platform_theme_locale_partial() -> None:
     assert "data-platform-theme-locale" in html
     assert "data-theme-toggle" in html
     assert "theme-toggle-icon--light" in html
-    assert "onclick=" not in html  # shell_boot owns the click (no double toggle)
+    assert "themeApi()?.toggle?.()" not in html  # theme_boot owns the click
     assert "data-platform-locale-picker" in html
     assert "data-platform-locales" in html
     assert 'data-href="/?lang=pl"' in html
@@ -176,6 +176,46 @@ def test_platform_theme_locale_partial() -> None:
     client_html = env.get_template("header.html").render()
     assert "data-platform-locale-picker" in client_html
     assert "data-href=" not in client_html
+
+
+def test_platform_hides_single_locale_picker() -> None:
+    from jinja2 import ChoiceLoader, DictLoader, Environment, PackageLoader
+
+    env = Environment(
+        loader=ChoiceLoader(
+            [
+                DictLoader(
+                    {
+                        "header.html": (
+                            "{% include 'app_factory/platform_theme_locale.html' %}"
+                        )
+                    }
+                ),
+                PackageLoader("app_factory", "templates"),
+            ]
+        ),
+        autoescape=True,
+    )
+    apply_platform_context(
+        env,
+        PlatformConfig(paths=PlatformPaths()),
+        locales=(PlatformLocale(code="pl", label="PL"),),
+        locale="pl",
+    )
+
+    html = env.get_template("header.html").render()
+    assert "data-platform-locale-picker" not in html
+    assert "data-theme-toggle" in html
+
+
+def test_theme_boot_uses_server_theme_and_syncs_html_attribute() -> None:
+    environment = _env_with_factory()
+    html = environment.get_template("app_factory/theme_boot.html").render()
+    assert "document.documentElement.dataset.theme" in html
+    assert "validModes.has(serverMode) ? serverMode : 'auto'" in html
+    assert "dataset.theme = isDark() ? 'dark' : 'light'" in html
+    assert "event.target.closest?.('[data-theme], [data-theme-toggle]')" in html
+    assert "window.appTheme.toggle()" in html
 
 
 def test_head_assets_reinit_alpine_after_htmx_swap() -> None:

@@ -140,19 +140,7 @@
       }
       return;
     }
-
-    const themeButton = event.target.closest?.('[data-theme]');
-    if (themeButton) {
-      event.preventDefault();
-      themeApi()?.set?.(themeButton.dataset.theme);
-      return;
-    }
-
-    const themeToggle = event.target.closest?.('[data-theme-toggle]');
-    if (themeToggle) {
-      event.preventDefault();
-      themeApi()?.toggle?.();
-    }
+    // Theme controls are owned by theme_boot.html so every shell has one handler.
   });
 
   document.addEventListener('basecoat:sidebar', (event) => {

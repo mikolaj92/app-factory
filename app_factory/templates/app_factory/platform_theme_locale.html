@@ -2,7 +2,7 @@
    Language is a single flag dropdown (not a row of PL/EN buttons).
    Do not put these in the sidebar foot; auth lives there instead. #}
 <div class="app-cluster app-cluster--center" data-platform-theme-locale>
-  {% if platform_locales is defined and platform_locales %}
+  {% if platform_locales is defined and platform_locales | length > 1 %}
   <label class="sr-only" for="platform-locale-picker">Language</label>
   <select
     id="platform-locale-picker"
