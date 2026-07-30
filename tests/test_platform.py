@@ -220,8 +220,9 @@ def test_theme_boot_uses_server_theme_and_syncs_html_attribute() -> None:
     assert "document.documentElement.dataset.theme" in html
     assert "validModes.has(serverMode) ? serverMode : 'auto'" in html
     assert "dataset.theme = isDark() ? 'dark' : 'light'" in html
-    assert "event.target.closest?.('[data-theme], [data-theme-toggle]')" in html
+    assert "event.target.closest?.('[data-theme-toggle], button[data-theme], [role=\"button\"][data-theme]')" in html
     assert "window.appTheme.toggle()" in html
+    assert "closest?.('[data-theme], [data-theme-toggle]')" not in html
 
 
 def test_head_assets_reinit_alpine_after_htmx_swap() -> None:

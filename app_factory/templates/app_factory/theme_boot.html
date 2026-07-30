@@ -51,7 +51,7 @@
     if (requested === 'dark' || requested === 'light') window.appTheme.set(requested);
   });
   document.addEventListener('click', (event) => {
-    const control = event.target.closest?.('[data-theme], [data-theme-toggle]');
+    const control = event.target.closest?.('[data-theme-toggle], button[data-theme], [role="button"][data-theme]');
     if (!control) return;
     event.preventDefault();
     const requested = control.dataset.theme;
