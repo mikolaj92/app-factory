@@ -66,10 +66,28 @@
       {% endfor %}
     </section>
 
-    {% if not platform_user %}
     <footer>
+      {% if platform_user and platform_paths.account %}
+      <div class="app-sidebar__footer" data-platform-foot>
+        <a
+          class="btn w-full justify-start"
+          data-variant="ghost"
+          data-size="sm"
+          href="{{ platform_paths.account }}"
+          data-platform-account-link
+          aria-label="{{ platform_user.display_name }}"
+        >
+          <span
+            class="platform-avatar"
+            style="--platform-avatar-bg: {{ platform_user.avatar_background }}; --platform-avatar-fg: {{ platform_user.avatar_foreground }}"
+            aria-hidden="true"
+          >{{ platform_user.avatar_initial }}</span>
+          <span class="truncate">{{ platform_user.display_name }}</span>
+        </a>
+      </div>
+      {% elif not platform_user %}
       {% include "app_factory/platform_sidebar_foot.html" %}
+      {% endif %}
     </footer>
-    {% endif %}
   </nav>
 </aside>

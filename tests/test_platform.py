@@ -108,12 +108,16 @@ def test_product_shell_renders_platform_foot_for_guest_and_user() -> None:
     )
     user_html = environment.get_template("page.html").render()
     assert "Alice" in user_html
-    assert 'data-platform-account-link' in user_html
+    assert user_html.count("data-platform-account-link") == 1
+    assert 'href="/account"' in user_html
     assert 'class="platform-avatar"' in user_html
     assert ">A</span>" in user_html
     assert "--platform-avatar-bg: #" in user_html
     assert "--platform-avatar-fg: #ffffff" in user_html
-    assert "data-platform-foot" not in user_html
+    assert "data-platform-foot" in user_html
+    header_start = user_html.find("app-main-header__controls")
+    header_chunk = user_html[header_start : header_start + 1200]
+    assert "data-platform-account-link" not in header_chunk
     # Logout is not in chrome — only on the account page partial.
     assert "Log out" not in user_html
     assert "Logout" not in user_html
@@ -156,6 +160,8 @@ def test_platform_theme_locale_partial() -> None:
     assert "data-theme-toggle" in html
     assert "theme-toggle-icon--light" in html
     assert "themeApi()?.toggle?.()" not in html  # theme_boot owns the click
+    assert 'data-side="bottom"' in html
+    assert 'data-align="end"' in html
     assert "data-platform-locale-picker" in html
     assert "data-platform-locales" in html
     assert 'data-href="/?lang=pl"' in html
