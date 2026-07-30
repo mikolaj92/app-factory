@@ -294,6 +294,38 @@ def test_platform_session_partial_is_logout_surface() -> None:
     assert "Log out" in html
     assert 'action="/logout"' in html
     assert 'data-variant="destructive"' in html
+    assert "<footer>" in html
+    assert html.index("<footer>") < html.index("<form") < html.index("</footer>")
+
+
+def test_platform_session_partial_accepts_host_labels() -> None:
+    from jinja2 import ChoiceLoader, DictLoader, Environment, PackageLoader
+
+    env = Environment(
+        loader=ChoiceLoader(
+            [
+                DictLoader(
+                    {
+                        "account.html": (
+                            "{% include 'app_factory/platform_session.html' %}"
+                        )
+                    }
+                ),
+                PackageLoader("app_factory", "templates"),
+            ]
+        ),
+        autoescape=True,
+    )
+    apply_platform_context(env, PlatformConfig(paths=PlatformPaths()))
+    html = env.get_template("account.html").render(
+        platform_session_title="Sesja",
+        platform_session_description="Wyloguj się na tym urządzeniu.",
+        platform_logout_label="Wyloguj",
+    )
+    assert "Sesja" in html
+    assert "Wyloguj się na tym urządzeniu." in html
+    assert "Wyloguj" in html
+    assert "Log out" not in html
 
 
 

@@ -2,14 +2,16 @@
    Hosts include this on the signed-in account surface — never in chrome foot. #}
 <section class="card" data-platform-session aria-labelledby="platform-session-title">
   <header>
-    <h2 id="platform-session-title" class="text-lg font-semibold">Session</h2>
+    <h2 id="platform-session-title" class="text-lg font-semibold">{{ platform_session_title | default("Session") }}</h2>
     <p class="text-sm text-muted-foreground">
-      Sign out of this app on this device.
+      {{ platform_session_description | default("Sign out of this app on this device.") }}
     </p>
   </header>
-  <form method="post" action="{{ platform_paths.logout }}" data-no-htmx="true">
-    <button type="submit" class="btn" data-variant="destructive" data-size="sm">
-      Log out
-    </button>
-  </form>
+  <footer>
+    <form method="post" action="{{ platform_paths.logout }}" data-no-htmx="true">
+      <button type="submit" class="btn" data-variant="destructive" data-size="sm">
+        {{ platform_logout_label | default("Log out") }}
+      </button>
+    </form>
+  </footer>
 </section>
