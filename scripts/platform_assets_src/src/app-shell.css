@@ -1,10 +1,8 @@
 /*! App shell — layout for Basecoat sidebar + main.
  *
- * Lives here (factory), not in each app. Consumers use classes like
- * .app-shell / .app-main / .app-stack — no local app-shell.css.
- *
- * Basecoat owns .sidebar. Tailwind utilities come from safelist + @import.
- * This file is only the app chrome we share across rnkstr / wolnyrolnik / emitype.
+ * Lives here (factory), not in each app. No local Tailwind/npm in products.
+ * UI components: Basecoat. Layout: shipped .app-* primitives + safelist utilities.
+ * Basecoat owns .sidebar / .card / .btn / .table / .table-container / .field …
  */
 
 html,
@@ -13,15 +11,13 @@ body {
   margin: 0;
 }
 
-.app-shell,
-.factory-shell {
+.app-shell {
   min-height: 100vh;
   overflow-x: hidden;
 }
 
 /* Main column; Basecoat owns sidebar-side and visibility margins. */
-.app-main,
-.factory-main {
+.app-main {
   display: flex;
   min-width: 0;
   min-height: 100vh;
@@ -29,8 +25,7 @@ body {
   flex-direction: column;
 }
 
-.app-main-content,
-.factory-main-content {
+.app-main-content {
   position: relative;
   min-width: 0;
   min-height: 0;
@@ -39,8 +34,7 @@ body {
   overflow-y: auto;
 }
 
-.app-content-inner,
-.factory-content {
+.app-content-inner {
   box-sizing: border-box;
   width: 100%;
   max-width: 64rem;
@@ -341,8 +335,7 @@ html.dark .theme-toggle-icon--dark {
   max-width: 72rem;
 }
 
-.app-stack,
-.factory-stack {
+.app-stack {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -352,8 +345,7 @@ html.dark .theme-toggle-icon--dark {
   gap: 0.5rem;
 }
 
-.app-stack--sm,
-.factory-stack-sm {
+.app-stack--sm {
   gap: 0.75rem;
 }
 
@@ -366,8 +358,7 @@ html.dark .theme-toggle-icon--dark {
   gap: 2rem;
 }
 
-.app-header,
-.factory-page-header {
+.app-header {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -380,8 +371,7 @@ html.dark .theme-toggle-icon--dark {
   gap: 1rem;
 }
 
-.app-cluster,
-.factory-cluster {
+.app-cluster {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -523,9 +513,7 @@ html.dark .theme-toggle-icon--dark {
 @media (max-width: 767px) {
   .app-sidebar + .app-main,
   .sidebar + .app-main,
-  .sidebar ~ .app-main,
-  .sidebar + .factory-main,
-  .sidebar ~ .factory-main {
+  .sidebar ~ .app-main {
     width: 100%;
     margin-left: 0;
   }

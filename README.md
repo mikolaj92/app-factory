@@ -85,22 +85,29 @@ url = platform_asset_url(css.name)  # /static/platform/basecoat-factory.min.css
 ```
 
 Exact sources, licenses, and digests are stored under `app_factory/assets/`.
-### Shared presentation primitives
+### Shared presentation contract (Basecoat-first, no npm in hosts)
 
-The bundled stylesheet keeps product markup Basecoat-first and adds only a
-small domain-blind layer where utilities alone do not express the behavior:
+Products link the factory CSS/JS bundle only. They do **not** install Tailwind
+or Basecoat via npm. Layout and chrome come from this package; UI components
+come from Basecoat inside the same bundle.
 
-- `.app-page`, `.app-stack`, `.app-header`, `.app-cluster`, and `.app-card-grid`
-  compose responsive pages around Basecoat components.
-- `.app-table-wrap` gives wide Basecoat tables a mobile overflow boundary.
-- `.app-dropzone` styles a native file-input label or another correctly
-  keyboard-enabled file target; set `data-dragover="true"` during drag-over.
-- `.app-progress` normalizes native `<progress>` elements without replacing
-  their semantics.
+| Layer | Use | Examples |
+|-------|-----|----------|
+| **UI components** | Basecoat | `.card`, `.btn`, `.input`, `.field`, `.table` + `.table-container`, `.sidebar`, `.dialog`, … |
+| **Layout primitives** | shipped `.app-*` (keep using these) | `.app-page`, `.app-stack` (+ `--tight`/`--sm`/`--compact`/`--section`), `.app-header`, `.app-cluster`, `.app-card-grid`, `.app-form__field` |
+| **Shell chrome** | factory only | `.app-shell`, `.app-main*`, sidebar brand/foot glue, theme/locale |
+| **Extra utilities** | safelist in factory build | `flex`, `grid`, `gap-*`, `md:grid-cols-*`, … — grow safelist when a host needs a new one |
 
-Product-specific statuses, worker states, and document actions stay in product
-HTML and use Basecoat variants or semantic `data-*` attributes, not shared CSS.
-Importing app-factory never performs network I/O.
+Also shipped for product surfaces without inventing a second design system:
+
+- `.app-table-wrap` — overflow boundary for wide tables (Basecoat `.table-container` is equivalent; either is fine)
+- `.app-dropzone` — native file-input label / drag target (`data-dragover="true"`)
+- `.app-progress` — native `<progress>` styling (Basecoat `.progress` is the div+span pattern)
+
+Do **not** add new `.app-*` components for things Basecoat already has.
+Product-specific statuses and actions stay in product HTML with Basecoat
+variants or semantic `data-*` attributes. Importing app-factory never performs
+network I/O.
 
 ### Optional CDN extras
 
