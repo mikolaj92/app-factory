@@ -1,0 +1,36 @@
+{% extends "app_factory/shell.html" %}
+
+{% block title %}Bare shell · app-factory{% endblock %}
+
+{% block head_extra %}
+<script>
+  window.appShellConfig = { titleSuffix: 'app-factory' };
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="app-page">
+  <header class="app-header">
+    <div class="app-stack app-stack--tight">
+      <p class="text-sm text-muted-foreground mono">story · bare shell</p>
+      <h1 class="text-2xl font-semibold">Bare shell</h1>
+      <p class="text-sm text-muted-foreground max-w-prose">
+        Extends <code class="mono">app_factory/shell.html</code> without the product
+        sidebar. Default header keeps theme/locale only — passkey/login hosts use
+        this frame.
+      </p>
+    </div>
+  </header>
+
+  <div class="card max-w-md">
+    <header>
+      <h2 class="text-base font-semibold">Example card</h2>
+      <p class="text-sm text-muted-foreground">Basecoat card on bare chrome.</p>
+    </header>
+    <section class="app-stack">
+      <a class="btn" data-variant="primary" href="/stories/login">Go to login stub</a>
+      <a class="btn" data-variant="ghost" href="/">Back to catalog</a>
+    </section>
+  </div>
+</section>
+{% endblock %}

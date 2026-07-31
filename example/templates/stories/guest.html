@@ -1,0 +1,38 @@
+{% extends "app_factory/product_shell.html" %}
+
+{% block title %}Guest · app-factory{% endblock %}
+
+{% block head_extra %}
+<script>
+  window.appShellConfig = { titleSuffix: 'app-factory', useDataNavActive: true };
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="app-page">
+  <header class="app-header">
+    <div class="app-stack app-stack--tight">
+      <p class="text-sm text-muted-foreground mono">story · guest</p>
+      <h1 class="text-2xl font-semibold">Guest product shell</h1>
+      <p class="text-sm text-muted-foreground max-w-prose">
+        Sidebar foot shows Login / Register. Header has theme (and locale when
+        configured). No signed-in identity.
+      </p>
+    </div>
+  </header>
+
+  <div class="card">
+    <header>
+      <h2 class="text-base font-semibold">Checklist</h2>
+    </header>
+    <section>
+      <ul class="app-stack app-stack--tight text-sm" role="list">
+        <li>Sidebar foot: primary Login + ghost Register</li>
+        <li>No avatar / account name in chrome</li>
+        <li>Theme toggle does not submit host forms</li>
+        <li>Sidebar toggle only owns <code class="mono">#sidebar</code> open state</li>
+      </ul>
+    </section>
+  </div>
+</section>
+{% endblock %}

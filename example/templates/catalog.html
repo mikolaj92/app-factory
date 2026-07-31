@@ -1,0 +1,72 @@
+{% extends "app_factory/product_shell.html" %}
+
+{% block title %}app-factory storybook{% endblock %}
+
+{% block head_extra %}
+<script>
+  window.appShellConfig = {
+    titleSuffix: 'app-factory',
+    useDataNavActive: true,
+    syncToggleAria: true,
+  };
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="app-page">
+  <header class="app-header">
+    <div class="app-stack app-stack--tight">
+      <p class="text-sm text-muted-foreground mono">local storybook</p>
+      <h1 class="text-2xl font-semibold tracking-tight">Chrome catalog</h1>
+      <p class="text-sm text-muted-foreground max-w-prose">
+        Iterate shared shell, theme, locale, sidebar, and presentation primitives
+        in this repo. Product hosts should consume a tag — not re-test every
+        chrome tweak in isolation.
+      </p>
+    </div>
+  </header>
+
+  <div class="app-card-grid">
+    {% for story in stories %}
+    <a class="card hover:bg-muted/40 transition-colors" href="{{ story.href }}" data-no-htmx="true">
+      <header>
+        <h2 class="text-base font-semibold">{{ story.title }}</h2>
+      </header>
+      <section>
+        <p class="text-sm text-muted-foreground">{{ story.blurb }}</p>
+      </section>
+    </a>
+    {% endfor %}
+  </div>
+
+  <section class="card">
+    <header>
+      <h2 class="text-base font-semibold">Native host controls</h2>
+      <p class="text-sm text-muted-foreground">
+        Unrelated form/link used to prove chrome handlers stay isolated.
+      </p>
+    </header>
+    <section class="app-stack">
+      <a class="btn self-start" data-variant="outline" data-size="sm" href="/stories/components" data-demo-host-link>
+        Host link (native navigation)
+      </a>
+      <form
+        class="app-stack app-stack--tight max-w-md"
+        hx-post="/stories/demo-form"
+        hx-target="#demo-form-result"
+        hx-swap="innerHTML"
+        data-demo-host-form
+      >
+        <label class="app-stack app-stack--tight" for="demo-message">
+          <span class="text-sm font-medium">Host form message</span>
+          <input id="demo-message" class="input" name="message" placeholder="Type and submit" />
+        </label>
+        <button type="submit" class="btn self-start" data-variant="primary" data-size="sm">
+          Submit host form
+        </button>
+      </form>
+      <div id="demo-form-result" class="text-sm text-muted-foreground" aria-live="polite"></div>
+    </section>
+  </section>
+</section>
+{% endblock %}

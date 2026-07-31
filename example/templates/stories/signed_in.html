@@ -1,0 +1,53 @@
+{% extends "app_factory/product_shell.html" %}
+
+{% block title %}Signed-in · app-factory{% endblock %}
+
+{% block head_extra %}
+<script>
+  window.appShellConfig = { titleSuffix: 'app-factory', useDataNavActive: true };
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="app-page">
+  <header class="app-header">
+    <div class="app-stack app-stack--tight">
+      <p class="text-sm text-muted-foreground mono">story · signed-in</p>
+      <h1 class="text-2xl font-semibold">Signed-in product shell</h1>
+      <p class="text-sm text-muted-foreground max-w-prose">
+        Identity uses <code class="mono">PlatformUser</code> (stable avatar colors).
+        Logout must not appear in chrome — only on the account story.
+      </p>
+    </div>
+  </header>
+
+  <div class="app-card-grid">
+    <div class="card">
+      <header><h2 class="text-base font-semibold">User</h2></header>
+      <section class="app-stack app-stack--tight text-sm">
+        <p><span class="text-muted-foreground">display_name</span> · {{ platform_user.display_name }}</p>
+        <p><span class="text-muted-foreground">is_admin</span> · {{ platform_user.is_admin }}</p>
+        <p><span class="text-muted-foreground">avatar_initial</span> · {{ platform_user.avatar_initial }}</p>
+        <p class="app-cluster app-cluster--center">
+          <span class="text-muted-foreground">avatar</span>
+          <span
+            class="platform-avatar"
+            style="--platform-avatar-bg: {{ platform_user.avatar_background }}; --platform-avatar-fg: {{ platform_user.avatar_foreground }}"
+            aria-hidden="true"
+          >{{ platform_user.avatar_initial }}</span>
+        </p>
+      </section>
+    </div>
+    <div class="card">
+      <header><h2 class="text-base font-semibold">Chrome rules</h2></header>
+      <section>
+        <ul class="app-stack app-stack--tight text-sm" role="list">
+          <li>No Login / Register in sidebar foot</li>
+          <li>Account link available for the session principal</li>
+          <li>No Log out button outside account surface</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+</section>
+{% endblock %}

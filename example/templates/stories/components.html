@@ -1,0 +1,113 @@
+{% extends "app_factory/product_shell.html" %}
+
+{% block title %}Components · app-factory{% endblock %}
+
+{% block head_extra %}
+<script>
+  window.appShellConfig = { titleSuffix: 'app-factory', useDataNavActive: true };
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="app-page">
+  <header class="app-header">
+    <div class="app-stack app-stack--tight">
+      <p class="text-sm text-muted-foreground mono">story · components</p>
+      <h1 class="text-2xl font-semibold">Presentation primitives</h1>
+      <p class="text-sm text-muted-foreground max-w-prose">
+        Basecoat components plus the small domain-blind <code class="mono">.app-*</code>
+        layer shipped in the factory CSS bundle.
+      </p>
+    </div>
+  </header>
+
+  <div class="app-stack">
+    <section class="card">
+      <header><h2 class="text-base font-semibold">Buttons</h2></header>
+      <section class="app-cluster">
+        <button type="button" class="btn" data-variant="primary">Primary</button>
+        <button type="button" class="btn" data-variant="secondary">Secondary</button>
+        <button type="button" class="btn" data-variant="outline">Outline</button>
+        <button type="button" class="btn" data-variant="ghost">Ghost</button>
+        <button type="button" class="btn" data-variant="destructive">Destructive</button>
+        <button type="button" class="btn" data-variant="ghost" data-size="icon-sm" aria-label="Icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </section>
+    </section>
+
+    <section class="card">
+      <header><h2 class="text-base font-semibold">Form controls</h2></header>
+      <section class="app-stack max-w-md">
+        <label class="app-stack app-stack--tight" for="sample-input">
+          <span class="text-sm font-medium">Input</span>
+          <input id="sample-input" class="input" placeholder="Placeholder" />
+        </label>
+        <label class="app-stack app-stack--tight" for="sample-select">
+          <span class="text-sm font-medium">Select</span>
+          <select id="sample-select" class="input">
+            <option>One</option>
+            <option>Two</option>
+          </select>
+        </label>
+        <label class="app-dropzone" data-dropzone>
+          <input type="file" class="sr-only" />
+          <span class="text-sm font-medium">Dropzone</span>
+          <span class="text-sm text-muted-foreground">Native file input label</span>
+        </label>
+        <label class="app-stack app-stack--tight" for="sample-progress">
+          <span class="text-sm font-medium">Progress</span>
+          <progress id="sample-progress" class="app-progress" max="100" value="42">42%</progress>
+        </label>
+      </section>
+    </section>
+
+    <section class="card">
+      <header><h2 class="text-base font-semibold">Table wrap</h2></header>
+      <section>
+        <div class="app-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Ada Lovelace</td>
+                <td>Admin</td>
+                <td><span class="badge" data-variant="secondary">active</span></td>
+                <td class="mono text-sm">2026-07-31</td>
+              </tr>
+              <tr>
+                <td>Grace Hopper</td>
+                <td>Operator</td>
+                <td><span class="badge" data-variant="outline">idle</span></td>
+                <td class="mono text-sm">2026-07-30</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <section class="app-card-grid">
+      <div class="card">
+        <header><h2 class="text-base font-semibold">Card A</h2></header>
+        <section class="text-sm text-muted-foreground">app-card-grid item</section>
+      </div>
+      <div class="card">
+        <header><h2 class="text-base font-semibold">Card B</h2></header>
+        <section class="text-sm text-muted-foreground">responsive grid primitive</section>
+      </div>
+      <div class="card">
+        <header><h2 class="text-base font-semibold">Card C</h2></header>
+        <section class="text-sm text-muted-foreground">no product-specific CSS</section>
+      </div>
+    </section>
+  </div>
+</section>
+{% endblock %}

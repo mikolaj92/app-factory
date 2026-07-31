@@ -1,0 +1,25 @@
+{% extends "app_factory/shell.html" %}
+
+{% block title %}Login · app-factory{% endblock %}
+
+{% block content %}
+<section class="app-page" style="max-width: 28rem; margin-inline: auto;">
+  <div class="card">
+    <header>
+      <h1 class="text-xl font-semibold">Login stub</h1>
+      <p class="text-sm text-muted-foreground">
+        Real passkey UI comes from <code class="mono">my-auth</code> via
+        <code class="mono">install_platform(..., passkey_service=..., passkey_hooks=...)</code>.
+        This page only exercises bare shell chrome.
+      </p>
+    </header>
+    <section class="app-stack">
+      <button type="button" class="btn w-full" data-variant="primary" disabled>
+        Continue with passkey (not wired)
+      </button>
+      <a class="btn w-full" data-variant="ghost" href="/stories/register">Create account stub</a>
+      <a class="btn w-full" data-variant="outline" href="/">Back to catalog</a>
+    </section>
+  </div>
+</section>
+{% endblock %}

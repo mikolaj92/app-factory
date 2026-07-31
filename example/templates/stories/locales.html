@@ -1,0 +1,47 @@
+{% extends "app_factory/product_shell.html" %}
+
+{% block title %}Locales · app-factory{% endblock %}
+
+{% block head_extra %}
+<script>
+  window.appShellConfig = { titleSuffix: 'app-factory', useDataNavActive: true };
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="app-page">
+  <header class="app-header">
+    <div class="app-stack app-stack--tight">
+      <p class="text-sm text-muted-foreground mono">story · locales</p>
+      <h1 class="text-2xl font-semibold">Locale picker</h1>
+      <p class="text-sm text-muted-foreground max-w-prose">
+        Header shows the flag <code class="mono">&lt;select&gt;</code> only when
+        <code class="mono">platform_locales | length &gt; 1</code>. Changing the
+        option follows <code class="mono">data-href</code> on the selected
+        <code class="mono">&lt;option&gt;</code>.
+      </p>
+    </div>
+  </header>
+
+  <div class="card max-w-lg">
+    <header><h2 class="text-base font-semibold">Active locale</h2></header>
+    <section class="app-stack app-stack--tight text-sm">
+      <p>
+        <span class="text-muted-foreground">platform_locale</span>
+        · <strong class="mono">{{ platform_locale }}</strong>
+      </p>
+      <p>
+        <span class="text-muted-foreground">options</span>
+        ·
+        {% for loc in platform_locales %}
+          <span class="mono">{{ loc.code }}={{ loc.label }}</span>{% if not loop.last %}, {% endif %}
+        {% endfor %}
+      </p>
+      <p class="text-muted-foreground">
+        Single-locale hosts must omit the picker entirely — covered by unit tests,
+        not this multi-locale story.
+      </p>
+    </section>
+  </div>
+</section>
+{% endblock %}

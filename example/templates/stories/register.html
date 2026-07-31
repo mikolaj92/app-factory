@@ -1,0 +1,22 @@
+{% extends "app_factory/shell.html" %}
+
+{% block title %}Register · app-factory{% endblock %}
+
+{% block content %}
+<section class="app-page" style="max-width: 28rem; margin-inline: auto;">
+  <div class="card">
+    <header>
+      <h1 class="text-xl font-semibold">Register stub</h1>
+      <p class="text-sm text-muted-foreground">
+        Placeholder for the my-auth register surface.
+      </p>
+    </header>
+    <section class="app-stack">
+      <button type="button" class="btn w-full" data-variant="primary" disabled>
+        Register with passkey (not wired)
+      </button>
+      <a class="btn w-full" data-variant="outline" href="/stories/login">Back to login</a>
+    </section>
+  </div>
+</section>
+{% endblock %}
