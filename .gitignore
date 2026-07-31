@@ -6,3 +6,4 @@ dist/
 .ruff_cache/
 uv.lock
 scripts/platform_assets_src/node_modules/
+.runtime/

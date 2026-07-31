@@ -60,3 +60,12 @@ def test_demo_form_accepts_post() -> None:
     response = client.post("/stories/demo-form", data={"message": "hello"})
     assert response.status_code == 200
     assert "Submitted: hello" in response.text
+
+
+def test_locale_flags_are_real_emoji() -> None:
+    response = client.get("/stories/locales")
+    assert response.status_code == 200
+    # PL / GB / DE regional-indicator pairs (not mojibake)
+    assert "\U0001f1f5\U0001f1f1" in response.text
+    assert "\U0001f1ec\U0001f1e7" in response.text
+    assert "\U0001f1e9\U0001f1ea" in response.text

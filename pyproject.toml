@@ -38,3 +38,7 @@ packages = ["app_factory"]
 
 [tool.hatch.build.targets.sdist]
 include = ["app_factory", "README.md", "pyproject.toml"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

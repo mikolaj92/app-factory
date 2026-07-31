@@ -347,9 +347,10 @@ SHA-384 digests, and replaces `app_factory/assets/` after validation.
 uv sync --extra dev
 uv run pytest
 
-# Local chrome storybook (iterate shell/CSS/JS here, not in every host)
-uv run uvicorn example.app:app --reload --port 8765
-# open http://127.0.0.1:8765
+# Local chrome storybook (LAN-visible; iterate shell/CSS/JS here)
+uv run uvicorn example.app:app --host 0.0.0.0 --port 8765 --app-dir .
+# open http://127.0.0.1:8765 or http://<lan-ip>:8765
+# launchd unit: gui/$(id -u)/dev.app-factory.storybook
 
 # Regenerate bundled platform assets
 uv run python scripts/refresh_platform_assets.py
@@ -358,6 +359,7 @@ uv run python scripts/refresh_platform_assets.py
 The `example/` package is a small FastAPI host that mounts the real product
 shell and walks guest/signed-in/bare/account/HTMX/locale/component states.
 Use it as the default place to visual-check chrome changes before tagging.
+`pythonpath = ["."]` keeps `example.app` importable for pytest and uvicorn.
 
 ---
 
