@@ -171,12 +171,18 @@ html.dark .theme-toggle-icon--dark {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
   height: 100%;
 }
 
 .app-sidebar__scroll {
   overflow-y: auto;
   flex: 1 1 auto;
+}
+
+/* Flat menus sit outside Basecoat [role=group]; keep the same inset. */
+.app-sidebar__scroll > ul {
+  padding: 0.5rem;
 }
 
 .app-sidebar__brand {
@@ -319,6 +325,9 @@ html.dark .theme-toggle-icon--dark {
 /* Page / stack / grid layout primitives (shared across apps) */
 .app-page {
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
   width: 100%;
   max-width: 100%;
   margin-inline: auto;
@@ -441,12 +450,6 @@ html.dark .theme-toggle-icon--dark {
   min-width: 0;
 }
 
-.card > section + section,
-.card > header + section,
-.card > section + footer {
-  margin-top: 0.75rem;
-}
-
 .app-form__field {
   display: flex;
   flex-direction: column;
@@ -458,6 +461,12 @@ html.dark .theme-toggle-icon--dark {
 .app-table-wrap {
   width: 100%;
   overflow-x: auto;
+}
+
+/* Basecoat styles target .table; keep bare tables usable inside the wrap. */
+.app-table-wrap > table,
+.app-table-wrap > .table {
+  width: 100%;
 }
 
 .app-dropzone {
