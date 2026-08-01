@@ -7,7 +7,7 @@ The goal is one place to ship the resilient same-origin chrome, Jinja head
 partials, and optional CDN pins so product apps do **not** re-implement
 Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.4.0`
+**Tag:** `v0.5.17`
 
 ---
 
@@ -17,7 +17,7 @@ This package is the thin shared layer in a small platform. Together:
 
 | Piece | Role | How consumers get it |
 |-------|------|----------------------|
-| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.4.0` via uv |
+| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.5.17` via uv |
 | **basecoat-factory** | Maintainer-only build source for the generated Basecoat/UI asset bundle | Not a runtime dependency |
 | **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | Its compatible immutable tag |
 | **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | Its compatible immutable tag |
@@ -65,7 +65,7 @@ Apps should not ship:
 
 ---
 
-## Bundled core assets (`v0.4.0`)
+## Bundled core assets (`v0.5.17`)
 
 The wheel ships all core files. `MANIFEST.json` pins filenames, versions, and
 SHA-384 digests; the runtime verifies it on first access.
@@ -144,10 +144,9 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.4.0" }
-my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "<compatible-tag>" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "<compatible-tag>" }
-]
+app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.5.17" }
+my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.3.23" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.4.3" }
 ```
 
 ```bash
@@ -312,7 +311,7 @@ passkeys = install_passkey_ui(
 
 ## Recommended app checklist
 
-1. Depend on `app-factory[fastapi]@v0.4.0` and compatible auth-library tags.
+1. Depend on `app-factory[platform]@v0.5.17` and auth tags from `COMPAT.md`.
 2. Call `install_app_factory_ui()` once with every Jinja environment.
 3. Extend `app_factory/shell.html`; keep navigation and domain UI in the host.
 4. Pass the returned `AppFactoryUi` to auth/usermanager adapter installers.
@@ -340,7 +339,8 @@ factory_template_dirs()
 
 | app-factory | basecoat-css | Notes |
 |-------------|---------------|-------|
-| **v0.4.0** | **1.0.2** | One idempotent FastAPI installer and shared five-block shell |
+| **v0.5.17** | **1.0.2** | Full Basecoat + HTMX + Alpine + app shell + Tailwind safelist in one same-origin bundle; hosts do not install Tailwind/Basecoat |
+| v0.4.0 | 1.0.2 | One idempotent FastAPI installer and shared five-block shell |
 
 Bump platform assets only through `uv run python scripts/refresh_platform_assets.py`.
 The script uses the committed npm lockfile, rebuilds CSS, records licenses and

@@ -99,17 +99,50 @@ def test_local_bundled_assets_are_present_via_importlib_resources():
     # Read CSS content and check for concrete required selectors (new baseline contract)
     content = css.read_text(encoding="utf-8")
     required = [
-        ".btn",  # basecoat
-        ".card",  # basecoat
+        # Basecoat UI (hosts must not install basecoat/tailwind themselves)
+        ".btn",
+        ".card",
+        ".input",
+        ".field",
+        ".table",
+        ".table-container",
+        ".sidebar",
+        ".dialog",
+        # Factory-shipped Tailwind utilities (safelist)
         ".mt-4",
         ".flex",
         ".grid-cols-3",
         ".hidden",
         ".items-center",
         ".justify-between",
+        ".gap-6",
+        # Host-facing layout primitives (keep-list; rnkstr/emitype depend on these)
+        ".app-page",
+        ".app-stack",
+        ".app-stack--tight",
+        ".app-stack--sm",
+        ".app-header",
+        ".app-cluster",
+        ".app-card-grid",
+        ".app-form__field",
+        ".app-shell",
+        ".app-main",
+        # Product surface helpers
         ".app-table-wrap",
         ".app-dropzone",
         ".app-progress",
     ]
     missing = [sel for sel in required if sel not in content]
     assert not missing, f"bundled baseline CSS missing selectors: {missing}"
+
+    # Dead dual-class aliases must stay gone (not part of the host contract).
+    forbidden_aliases = (
+        "factory-shell",
+        "factory-main",
+        "factory-stack",
+        "factory-cluster",
+        "factory-page-header",
+        "factory-content",
+    )
+    present = [name for name in forbidden_aliases if name in content]
+    assert not present, f"bundled CSS still contains removed factory-* aliases: {present}"

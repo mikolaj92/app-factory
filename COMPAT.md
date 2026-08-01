@@ -4,9 +4,13 @@ Single source of truth for host pins when using `app-factory[platform]`.
 
 | app-factory | my-auth | my-usermanager | Notes |
 |-------------|---------|----------------|-------|
-| **v0.5.13** | **v0.3.23** | **v0.4.3** | Reliable server/client light-dark state sync; hide locale picker when only one locale is configured |
-| **v0.5.12** | **v0.3.23** | **v0.4.3** | Signed-in identity + deterministic accessible avatar in product header; guest-only sidebar foot |
-| **v0.5.11** | **v0.3.23** | **v0.4.3** | Passkey login/register **de** (DE) copy in my-auth; default locales pl/en/de |
+| **v0.5.17** | **v0.3.23** | **v0.4.3** | Basecoat-first no-npm contract; CSS keep-list for layout primitives; chrome spacing + LAN storybook; drop dead `factory-*` aliases |
+| v0.5.16 | v0.3.23 | v0.4.3 | Session card layout (#10) |
+| v0.5.15 | v0.3.23 | v0.4.3 | interim pin (see git history) |
+| v0.5.14 | v0.3.23 | v0.4.3 | interim pin (see git history) |
+| v0.5.13 | v0.3.23 | v0.4.3 | Reliable server/client light-dark state sync; hide locale picker when only one locale is configured |
+| v0.5.12 | v0.3.23 | v0.4.3 | Signed-in identity + deterministic accessible avatar in product header; guest-only sidebar foot |
+| v0.5.11 | v0.3.23 | v0.4.3 | Passkey login/register **de** (DE) copy in my-auth; default locales pl/en/de |
 | v0.5.10 | v0.3.19 | v0.4.3 | Locale flag **dropdown** (single select); theme single-fire |
 | v0.5.9 | v0.3.17 | v0.4.3 | Theme toggle single handler (no double-fire); default shell header theme/locale; flag labels for locales |
 | v0.5.8 | v0.3.16 | v0.4.3 | BOM stamp for mandatory username + product_shell; hosts pin equal tags |
@@ -27,7 +31,7 @@ Prefer:
 ```toml
 dependencies = ["app-factory[platform]"]
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.5.13" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.5.17" }
 ```
 
 Do **not** float `my-usermanager` on `branch = "main"` for production hosts.

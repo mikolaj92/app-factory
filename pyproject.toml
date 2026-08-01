@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "app-factory"
-version = "0.5.16"
+version = "0.5.17"
 description = "Resilient same-origin frontend chrome for FastAPI, Jinja, HTMX, Alpine, and Basecoat apps"
 requires-python = ">=3.11"
 dependencies = [
