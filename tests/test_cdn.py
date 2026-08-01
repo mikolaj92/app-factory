@@ -146,3 +146,108 @@ def test_local_bundled_assets_are_present_via_importlib_resources():
     )
     present = [name for name in forbidden_aliases if name in content]
     assert not present, f"bundled CSS still contains removed factory-* aliases: {present}"
+
+
+def test_bundled_css_hosts_need_no_tailwind_or_basecoat_install():
+    """Hard guarantee: product hosts consume this package only.
+
+    The shipped CSS must include Basecoat components, the Tailwind safelist,
+    and host-facing .app-* layout primitives. Integrity/size checks stop an
+    empty or swapped bundle from greening tests.
+    """
+    root = files("app_factory").joinpath("assets")
+    css_name = "basecoat-factory.min.css"
+    css_path = root.joinpath(css_name)
+    raw = css_path.read_bytes()
+    content = raw.decode("utf-8")
+
+    # Manifest integrity must match the bytes hosts actually download.
+    css_asset = bundled_asset("basecoat-css")
+    digest = "sha384-" + base64.b64encode(hashlib.sha384(raw).digest()).decode("ascii")
+    assert css_asset.filename == css_name
+    assert css_asset.integrity == digest
+    assert css_asset.version == "1.0.2"
+
+    # Size floors: a stub/minified-away bundle must fail loudly.
+    assert len(raw) > 100_000, f"CSS too small to be full Basecoat+safelist: {len(raw)}"
+    for name, minimum in (
+        ("basecoat-js.min.js", 10_000),
+        ("htmx.min.js", 10_000),
+        ("alpine.min.js", 10_000),
+    ):
+        size = root.joinpath(name).stat().st_size
+        assert size > minimum, f"{name} too small ({size} <= {minimum})"
+
+    basecoat = [
+        ".btn",
+        ".card",
+        ".input",
+        ".textarea",
+        ".select",
+        ".label",
+        ".field",
+        ".fieldset",
+        ".table",
+        ".table-container",
+        ".sidebar",
+        ".dialog",
+        ".dropdown-menu",
+        ".popover",
+        ".tabs",
+        ".accordion",
+        ".toast",
+        ".toaster",
+        ".badge",
+        ".alert",
+        ".progress",
+        ".spinner",
+        ".avatar",
+    ]
+    tailwind = [
+        ".flex",
+        ".grid",
+        ".hidden",
+        ".items-center",
+        ".justify-between",
+        ".gap-2",
+        ".gap-6",
+        ".mt-4",
+        ".w-full",
+        ".min-h-screen",
+        ".space-y-4",
+        ".text-muted-foreground",
+        ".bg-background",
+        ".md\\:grid-cols-2",
+        ".lg\\:grid-cols-3",
+        ".sm\\:flex-row",
+        ".dark\\:hidden",
+    ]
+    layout = [
+        ".app-page",
+        ".app-stack",
+        ".app-stack--tight",
+        ".app-stack--sm",
+        ".app-stack--compact",
+        ".app-header",
+        ".app-cluster",
+        ".app-card-grid",
+        ".app-form__field",
+        ".app-shell",
+        ".app-main",
+        ".app-table-wrap",
+        ".app-dropzone",
+        ".app-progress",
+    ]
+    missing = [sel for sel in (*basecoat, *tailwind, *layout) if sel not in content]
+    assert not missing, f"bundle missing host-facing selectors: {missing}"
+
+    forbidden = (
+        "factory-shell",
+        "factory-main",
+        "factory-stack",
+        "factory-cluster",
+        "factory-page-header",
+        "factory-content",
+    )
+    present = [name for name in forbidden if name in content]
+    assert not present, f"removed factory-* aliases still in bundle: {present}"
