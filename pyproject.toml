@@ -32,6 +32,15 @@ dev = [
     "uvicorn[standard]>=0.32",
     "python-multipart>=0.0.12",
 ]
+browser = [
+    "playwright>=1.49",
+    "pytest>=8",
+    "httpx>=0.27",
+    "fastapi>=0.115",
+    "starlette>=0.37",
+    "uvicorn[standard]>=0.32",
+    "python-multipart>=0.0.12",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["app_factory"]

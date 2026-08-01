@@ -368,6 +368,14 @@ shell and walks guest/signed-in/bare/account/HTMX/locale/component states.
 Use it as the default place to visual-check chrome changes before tagging.
 `pythonpath = ["."]` keeps `example.app` importable for pytest and uvicorn.
 
+Optional browser isolation (issue #9) skips unless Playwright is installed:
+
+```bash
+uv sync --extra browser
+uv run playwright install chromium
+uv run pytest tests/test_browser_chrome.py
+```
+
 ---
 
 ## Related
