@@ -15,9 +15,16 @@ from typing import TYPE_CHECKING, Literal, cast
 if TYPE_CHECKING:
     from starlette.types import ASGIApp
 
-AssetKind = Literal["script", "style"]
+AssetKind = Literal["script", "style", "font"]
 
-_CORE_NAMES = {"basecoat-css", "basecoat-js-all", "htmx", "alpine"}
+_CORE_NAMES = {
+    "alpine",
+    "basecoat-css",
+    "basecoat-js-all",
+    "htmx",
+    "material-symbols-css",
+    "material-symbols-font",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,7 +69,7 @@ def _bundled_assets() -> dict[str, BundledAsset]:
             or not version
             or not isinstance(integrity, str)
             or not integrity.startswith("sha384-")
-            or kind not in ("script", "style")
+            or kind not in ("script", "style", "font")
         ):
             raise RuntimeError(f"invalid bundled asset manifest entry: {name}")
         resource = root.joinpath(filename)

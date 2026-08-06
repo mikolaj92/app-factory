@@ -7,6 +7,10 @@ Runtime/build provenance:
   Exact source commit: 6953a4adbe63cb5ba25e2bda30d7b76202d4f2b4
   Exact license: https://raw.githubusercontent.com/hunvreus/basecoat/6953a4adbe63cb5ba25e2bda30d7b76202d4f2b4/LICENSE.md
   License text: licenses/basecoat-css.LICENSE
+- Material Symbols Outlined v364
+  License: Apache-2.0
+  Source: https://fonts.gstatic.com/s/materialsymbolsoutlined/v364/kJF4BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p5Y0J1Llf.woff2
+  License text: licenses/material-symbols.LICENSE
 - htmx.org 2.0.10
   License: 0BSD
   Source: https://github.com/bigskysoftware/htmx
@@ -24,7 +28,9 @@ Runtime/build provenance:
   License text: licenses/tailwindcss.LICENSE
 
 Runtime files:
-- basecoat-css 1.0.2: basecoat-factory.min.css (sha384-WDFw+XBJPLv7KepdZhW+VcHKfSpDbNwGekF8U5d2Jc8Ug38KVg8MUrTbdaTcNwr0)
+- basecoat-css 1.0.2: basecoat-factory.min.css (sha384-Ql0IeN0RoFWsNdPTaE7gRqcy4Q31OcomrvAonD+yA2Uaoe0d52T/qY+9OwWeoB8u)
 - basecoat-js-all 1.0.2: basecoat-js.min.js (sha384-rD2ZCuReXV7nIneJcn1lsTn6yOv87YARLQyUsemVAxrYYHdy5hcAW8XZEQxx87Dj)
 - htmx 2.0.10: htmx.min.js (sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V)
 - alpine 3.15.12: alpine.min.js (sha384-pb6hrQvo4s23cEUFtj0CZkzGE3jyK3pj26RIupXXxhSrrcUA/Cn0lZgcCrGH0t6L)
+- material-symbols-css v364: material-symbols.css (sha384-iF4Vvd7YAZOCE50fFafGLJmjI+pNuCXSOQoJTW0Vo6COa1mu7dw9DCVTVgQEGQY6)
+- material-symbols-font v364: material-symbols-outlined.woff2 (sha384-zWFJ47rRvgTzWn7XnBshCIlSw15zVb1rjYzHeQoIQY9oERj3TeDdMR60ikEw9ft0)

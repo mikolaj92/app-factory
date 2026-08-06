@@ -2,9 +2,9 @@
 
 Single source of truth for host pins when using `app-factory[platform]`.
 
-| app-factory | my-auth | my-usermanager | Notes |
 |-------------|---------|----------------|-------|
-| **v0.5.18** | **v0.3.23** | **v0.4.3** | Hard in-bundle no-npm contract (Basecoat + Tailwind safelist + layout keep-list + MANIFEST integrity/size) |
+| **v0.5.19** | **v0.3.23** | **v0.4.5** | Material Symbols Outlined v364 bundled under same-origin `/static/platform`; profile validation failures return HTTP 400; hard in-bundle no-npm contract |
+| v0.5.18 | v0.3.23 | v0.4.5 | Profile validation failures return HTTP 400; hard in-bundle no-npm contract (Basecoat + Tailwind safelist + layout keep-list + MANIFEST integrity/size) |
 | v0.5.17 | v0.3.23 | v0.4.3 | Basecoat-first contract docs; CSS keep-list; chrome spacing + LAN storybook; drop dead `factory-*` aliases |
 | v0.5.16 | v0.3.23 | v0.4.3 | Session card layout (#10) |
 | v0.5.15 | v0.3.23 | v0.4.3 | interim pin (see git history) |
@@ -32,7 +32,7 @@ Prefer:
 ```toml
 dependencies = ["app-factory[platform]"]
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.5.18" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.5.19" }
 ```
 
 Do **not** float `my-usermanager` on `branch = "main"` for production hosts.

@@ -28,6 +28,8 @@ def test_core_assets_are_local_and_manifest_verified():
         "basecoat-css",
         "basecoat-js-all",
         "htmx",
+        "material-symbols-css",
+        "material-symbols-font",
     ]
     root = files("app_factory").joinpath("assets")
     for asset in assets:
@@ -71,6 +73,7 @@ def test_head_partial_uses_only_same_origin_core_assets():
     assert "/static/platform/basecoat-js.min.js" in rendered
     assert "/static/platform/htmx.min.js" in rendered
     assert "/static/platform/alpine.min.js" in rendered
+    assert "/static/platform/material-symbols.css" in rendered
 
 
 # --- Local bundled assets contract (package data) ---

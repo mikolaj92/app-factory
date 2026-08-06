@@ -7,7 +7,7 @@
   },
   "basecoat-css": {
     "filename": "basecoat-factory.min.css",
-    "integrity": "sha384-WDFw+XBJPLv7KepdZhW+VcHKfSpDbNwGekF8U5d2Jc8Ug38KVg8MUrTbdaTcNwr0",
+    "integrity": "sha384-Ql0IeN0RoFWsNdPTaE7gRqcy4Q31OcomrvAonD+yA2Uaoe0d52T/qY+9OwWeoB8u",
     "kind": "style",
     "version": "1.0.2"
   },
@@ -22,5 +22,17 @@
     "integrity": "sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V",
     "kind": "script",
     "version": "2.0.10"
+  },
+  "material-symbols-css": {
+    "filename": "material-symbols.css",
+    "integrity": "sha384-iF4Vvd7YAZOCE50fFafGLJmjI+pNuCXSOQoJTW0Vo6COa1mu7dw9DCVTVgQEGQY6",
+    "kind": "style",
+    "version": "v364"
+  },
+  "material-symbols-font": {
+    "filename": "material-symbols-outlined.woff2",
+    "integrity": "sha384-zWFJ47rRvgTzWn7XnBshCIlSw15zVb1rjYzHeQoIQY9oERj3TeDdMR60ikEw9ft0",
+    "kind": "font",
+    "version": "v364"
   }
 }

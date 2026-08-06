@@ -10,14 +10,15 @@ What it does:
 - Uses scripts/platform_assets_src (package.json + lock) as the single source of truth.
 - Runs `npm ci` from the committed lockfile.
 - Runs the CSS build.
-- Copies the 4 runtime files (CSS + 3 JS) into a staging directory.
+- Copies the 6 runtime files (CSS + 3 JS + Material Symbols CSS/font) into a staging directory.
+- Copies and validates the Material Symbols Apache-2.0 license.
 - Fetches real license texts from the exact upstream sources for the pinned versions.
 - Validates that license content is non-empty and looks like a license (no 404/empty).
-- Computes sha384 for the 4 core files.
+- Computes sha384 for all 6 bundled files.
 - Writes a small MANIFEST.json inside the assets (for verification and for code to read).
 - Replaces app_factory/assets with rollback protection.
 
-This is the ONLY way new versions of the 4 files should enter the tree.
+This is the ONLY way new versions of the 6 files should enter the tree.
 No ad-hoc curl in shell history. No manual copy.
 
 After running, commit the changes to app_factory/assets/* and the lockfile if it changed.
@@ -77,6 +78,29 @@ CORE_FILES: dict[str, tuple[Path, str, str]] = {
         "alpine.min.js",
         "script",
     ),
+}
+MATERIAL_SYMBOLS_VERSION = "v364"
+MATERIAL_SYMBOLS_SOURCE_URL = (
+    "https://fonts.gstatic.com/s/materialsymbolsoutlined/v364/"
+    "kJF4BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-"
+    "jCxv3fzvRNU22ZXGJpEpjC_1v-p5Y0J1Llf.woff2"
+)
+MATERIAL_SYMBOLS_FILES: dict[str, tuple[Path, str, str]] = {
+    "material-symbols-css": (
+        BUILD_SRC / "material-symbols" / "material-symbols.css",
+        "material-symbols.css",
+        "style",
+    ),
+    "material-symbols-font": (
+        BUILD_SRC / "material-symbols" / "material-symbols-outlined.woff2",
+        "material-symbols-outlined.woff2",
+        "font",
+    ),
+}
+MATERIAL_SYMBOLS_LICENSE_FILENAME = "material-symbols.LICENSE"
+BUNDLED_FILES: dict[str, tuple[Path, str, str]] = {
+    **CORE_FILES,
+    **MATERIAL_SYMBOLS_FILES,
 }
 
 LICENSE_SOURCES = {
@@ -144,7 +168,7 @@ def build_and_stage() -> Path:
     assets_stage = stage / "assets"
     assets_stage.mkdir()
 
-    for source, filename, _kind in CORE_FILES.values():
+    for source, filename, _kind in BUNDLED_FILES.values():
         if not source.is_file():
             raise RuntimeError(f"expected asset not found: {source}")
         shutil.copy2(source, assets_stage / filename)
@@ -152,6 +176,16 @@ def build_and_stage() -> Path:
     # 4. Licenses from exact sources + validation
     licenses_dir = assets_stage / "licenses"
     licenses_dir.mkdir()
+    material_license = BUILD_SRC / "material-symbols" / MATERIAL_SYMBOLS_LICENSE_FILENAME
+    if not material_license.is_file():
+        raise RuntimeError(f"expected asset license not found: {material_license}")
+    material_license_bytes = material_license.read_bytes()
+    validate_license(
+        material_license_bytes,
+        str(material_license),
+        required=(b"Apache License", b"TERMS AND CONDITIONS"),
+    )
+    shutil.copy2(material_license, licenses_dir / MATERIAL_SYMBOLS_LICENSE_FILENAME)
 
     for filename, (
         _package,
@@ -219,17 +253,21 @@ def build_and_stage() -> Path:
     manifest = {
         name: {
             "filename": filename,
-            "version": read_version(
-                "basecoat-css"
-                if name.startswith("basecoat-")
-                else "htmx.org"
-                if name == "htmx"
-                else "alpinejs"
+            "version": (
+                MATERIAL_SYMBOLS_VERSION
+                if name in MATERIAL_SYMBOLS_FILES
+                else read_version(
+                    "basecoat-css"
+                    if name.startswith("basecoat-")
+                    else "htmx.org"
+                    if name == "htmx"
+                    else "alpinejs"
+                )
             ),
             "integrity": b64sha384(assets_stage / filename),
             "kind": kind,
         }
-        for name, (_source, filename, kind) in CORE_FILES.items()
+        for name, (_source, filename, kind) in BUNDLED_FILES.items()
     }
 
     (assets_stage / "MANIFEST.json").write_text(
@@ -258,6 +296,13 @@ def build_and_stage() -> Path:
         f"  Exact license: {license_source}\n"
         f"  License text: licenses/{BASECOAT_LICENSE_FILENAME}"
     )
+    attribution.append(
+        f"- Material Symbols Outlined {MATERIAL_SYMBOLS_VERSION}\n"
+        "  License: Apache-2.0\n"
+        f"  Source: {MATERIAL_SYMBOLS_SOURCE_URL}\n"
+        f"  License text: licenses/{MATERIAL_SYMBOLS_LICENSE_FILENAME}"
+    )
+
     for filename, (
         package,
         license_name,
@@ -343,7 +388,8 @@ def main() -> None:
     try:
         stage_assets = stage / "assets"
         required = {"MANIFEST.json", "ATTRIBUTION.txt"}
-        required.update(filename for _, filename, _ in CORE_FILES.values())
+        required.update(filename for _, filename, _ in BUNDLED_FILES.values())
+        required.add(f"licenses/{MATERIAL_SYMBOLS_LICENSE_FILENAME}")
         missing = [name for name in required if not (stage_assets / name).is_file()]
         if missing:
             raise RuntimeError(f"staging failed; missing: {missing}")
