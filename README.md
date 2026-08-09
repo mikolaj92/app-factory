@@ -194,8 +194,8 @@ The supported blocks include `title`, `head_extra`, `body` / `navigation` /
 `header` / `content` / `page_scripts` / `loading_label` / `content_class` /
 `body_end`, plus product-shell header slots `header_controls_start` /
 `header_controls_end` / `sidebar_toggle_icon`. Signed-in identity and its
-deterministic initial avatar render in the product header; the sidebar footer is
-reserved for guest login/register. The shell loads theme boot,
+deterministic initial avatar render in the product sidebar footer; guest users
+see login/register there instead. The shell loads theme boot,
 platform assets, and `shell_boot`. Product CSS and domain behavior remain
 host-owned.
 

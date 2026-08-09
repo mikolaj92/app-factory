@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from starlette.testclient import TestClient
 
 from example.app import app
@@ -38,6 +40,29 @@ def test_catalog_and_core_stories_render() -> None:
         assert 'id="main-content"' in response.text
 
 
+@pytest.mark.parametrize(
+    ("path", "uses_product_shell"),
+    (
+        ("/stories/login", False),
+        ("/stories/account", True),
+        ("/stories/admin-users", True),
+    ),
+)
+def test_auth_surfaces_load_same_origin_platform_stack(
+    path: str, uses_product_shell: bool
+) -> None:
+    html = client.get(path).text
+    for asset_path in (
+        "/static/platform/basecoat-factory.min.css",
+        "/static/platform/basecoat-js.min.js",
+        "/static/platform/htmx.min.js",
+        "/static/platform/alpine.min.js",
+    ):
+        assert asset_path in html
+    assert "unpkg.com" not in html
+    assert "cdn.jsdelivr.net" not in html
+    assert ("id=\"sidebar\"" in html) is uses_product_shell
+
 def test_guest_chrome_foot_vs_header() -> None:
     html = client.get("/stories/guest").text
     foot = _chunk(html, "data-platform-foot")
@@ -66,20 +91,21 @@ def test_guest_chrome_foot_vs_header() -> None:
 def test_signed_in_chrome_foot_vs_header() -> None:
     html = client.get("/stories/signed-in").text
     foot = _chunk(html, "data-platform-foot")
-    header = _chunk(html, "app-main-header__controls")
+    header = _chunk(html, "app-main-header__controls", size=6000)
 
-    # Identity lives in sidebar foot, not header chrome.
-    assert "data-platform-account-link" in foot
-    assert "platform-avatar" in foot
-    assert "Ada Lovelace" in foot
     assert "data-platform-auth" not in foot
+    assert "data-platform-account-link" not in foot
+    assert "platform-avatar" not in foot
+    assert "Ada Lovelace" not in foot
     assert 'href="/stories/login"' not in foot
     assert "data-theme-toggle" not in foot
     assert 'action="/stories/logout"' not in foot
 
     assert "data-theme-toggle" in header
     assert "data-platform-locale-picker" in header
-    assert "data-platform-account-link" not in header
+    assert "data-platform-account-link" in header
+    assert "platform-avatar" in header
+    assert "Ada Lovelace" in header
     assert "data-platform-session" not in html
     assert 'action="/stories/logout"' not in html
 
