@@ -68,7 +68,7 @@ def test_build_platform_context_guest_vs_user() -> None:
     assert user["platform_user"].avatar_foreground == "#ffffff"
 
 
-def test_product_shell_renders_guest_foot_and_user_header_identity() -> None:
+def test_product_shell_renders_guest_and_user_sidebar_foot() -> None:
     app = FastAPI()
     environment = _env_with_factory()
     config = PlatformConfig(
@@ -114,12 +114,17 @@ def test_product_shell_renders_guest_foot_and_user_header_identity() -> None:
     assert ">A</span>" in user_html
     assert "--platform-avatar-bg: #" in user_html
     assert "--platform-avatar-fg: #ffffff" in user_html
-    assert "data-platform-foot" not in user_html
+    assert "data-platform-foot" in user_html
+    sidebar_start = user_html.find('id="sidebar"')
+    sidebar_end = user_html.find("</aside>", sidebar_start)
+    sidebar_chunk = user_html[sidebar_start:sidebar_end]
+    assert "data-platform-account-link" in sidebar_chunk
+    assert "platform-avatar" in sidebar_chunk
+    assert "Alice" in sidebar_chunk
     header_start = user_html.find("app-main-header__controls")
-    header_chunk = user_html[header_start : header_start + 2000]
-    assert "data-platform-account-link" in header_chunk
-    assert "platform-avatar" in header_chunk
-    assert "Alice" in header_chunk
+    header_end = user_html.find("</header>", header_start)
+    header_chunk = user_html[header_start:header_end]
+    assert "data-platform-account-link" not in header_chunk
     # Logout is not in chrome — only on the account page partial.
     assert "Log out" not in user_html
     assert "Logout" not in user_html

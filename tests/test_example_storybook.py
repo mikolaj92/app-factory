@@ -91,21 +91,22 @@ def test_guest_chrome_foot_vs_header() -> None:
 def test_signed_in_chrome_foot_vs_header() -> None:
     html = client.get("/stories/signed-in").text
     foot = _chunk(html, "data-platform-foot")
-    header = _chunk(html, "app-main-header__controls", size=6000)
+    header_start = html.find("app-main-header__controls")
+    header = html[header_start : html.find("</header>", header_start)]
 
-    assert "data-platform-auth" not in foot
-    assert "data-platform-account-link" not in foot
-    assert "platform-avatar" not in foot
-    assert "Ada Lovelace" not in foot
+    assert "data-platform-auth" in foot
+    assert "data-platform-account-link" in foot
+    assert "platform-avatar" in foot
+    assert "Ada Lovelace" in foot
     assert 'href="/stories/login"' not in foot
     assert "data-theme-toggle" not in foot
     assert 'action="/stories/logout"' not in foot
 
     assert "data-theme-toggle" in header
     assert "data-platform-locale-picker" in header
-    assert "data-platform-account-link" in header
-    assert "platform-avatar" in header
-    assert "Ada Lovelace" in header
+    assert "data-platform-account-link" not in header
+    assert "platform-avatar" not in header
+    assert "Ada Lovelace" not in header
     assert "data-platform-session" not in html
     assert 'action="/stories/logout"' not in html
 

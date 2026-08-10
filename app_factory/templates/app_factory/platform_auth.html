@@ -1,6 +1,22 @@
-{# Sidebar foot is guest-only. Signed-in identity lives in the main header. #}
+{# Sidebar identity: signed-in account, or guest login/register. #}
 <div class="app-stack app-stack--tight w-full" data-platform-auth>
-  {% if not platform_user %}
+  {% if platform_user %}
+  <a
+    class="btn w-full justify-start"
+    data-variant="ghost"
+    data-size="sm"
+    href="{{ platform_paths.account }}"
+    data-platform-account-link
+    aria-label="{{ platform_user.display_name }}"
+  >
+    <span
+      class="platform-avatar"
+      style="--platform-avatar-bg: {{ platform_user.avatar_background }}; --platform-avatar-fg: {{ platform_user.avatar_foreground }}"
+      aria-hidden="true"
+    >{{ platform_user.avatar_initial }}</span>
+    <span class="truncate">{{ platform_user.display_name }}</span>
+  </a>
+  {% else %}
   <a
     class="btn w-full"
     data-variant="primary"
