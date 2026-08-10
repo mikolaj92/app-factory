@@ -1,14 +1,14 @@
 /* app-factory landing frame: visible by default, staged only after JS enhancement. */
 html[data-theme="light"] {
-  --landing-background: #fafafa;
-  --landing-surface: #ffffff;
-  --landing-surface-muted: #f4f4f5;
-  --landing-foreground: #18181b;
-  --landing-muted: #71717a;
-  --landing-border: #e4e4e7;
-  --landing-accent: #18181b;
-  --landing-accent-contrast: #fafafa;
-  --landing-glow: rgba(24, 24, 27, 0.08);
+  --landing-background: oklch(0.96 0.018 88);
+  --landing-surface: oklch(0.985 0.012 88);
+  --landing-surface-muted: oklch(0.91 0.022 86);
+  --landing-foreground: oklch(0.24 0.018 70);
+  --landing-muted: oklch(0.50 0.025 70);
+  --landing-border: oklch(0.83 0.028 82);
+  --landing-accent: oklch(0.32 0.035 66);
+  --landing-accent-contrast: oklch(0.98 0.012 88);
+  --landing-glow: oklch(0.60 0.065 72 / 12%);
 }
 
 html[data-theme="dark"] {

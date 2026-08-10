@@ -7,7 +7,7 @@
   },
   "basecoat-css": {
     "filename": "basecoat-factory.min.css",
-    "integrity": "sha384-ztX/Mr3EFz/M1/wN/W/KxL8oFHYjtUvQadQiZvqkD1FKKVjt71RF5kiHFYyCqQL3",
+    "integrity": "sha384-P4YFFPylqagJ5r8EWUBxEcNAqI816kuoLZU4j0+oWSovE3/3yRmPBPhbhf/eyPXy",
     "kind": "style",
     "version": "1.0.2"
   },
@@ -25,7 +25,7 @@
   },
   "landing-css": {
     "filename": "landing.css",
-    "integrity": "sha384-48xy6zHfloFg5BFM5JLvTmmnv84ND5q3Ja/3dXIYDPFAYGNPke5eB74wfthW4Ja0",
+    "integrity": "sha384-0JjSIKbhgQps3TQkmLJA+XycXw3ebbRcVDtRjeGKmbw/YocEesIzFVMMzWLkTWbX",
     "kind": "style",
     "version": "1.0.0"
   },

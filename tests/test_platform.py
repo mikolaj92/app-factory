@@ -206,6 +206,15 @@ def test_factory_light_theme_uses_warm_paper_tokens() -> None:
     assert "--card: oklch(0.985 0.012 88)" in source
     assert "--sidebar: oklch(0.935 0.022 86)" in source
     assert "--background:oklch(96% .018 88)" in bundled
+    warm_block_start = source.index('html[data-theme="light"] {')
+    warm_block = source[warm_block_start : source.index("}", warm_block_start)]
+    assert ":root" not in warm_block
+    assert ':root,\nhtml[data-theme="light"]' not in source
+    assert "html[data-theme=light]" in bundled
+    assert ".dark{" in bundled
+    dark_start = bundled.index(".dark{")
+    light_start = bundled.index("html[data-theme=light]")
+    assert dark_start < light_start
 
 
 def test_platform_theme_locale_partial() -> None:

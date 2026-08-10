@@ -4,6 +4,7 @@ Single source of truth for host pins when using `app-factory[platform]`.
 
 | app-factory | my-auth | my-usermanager | Contract |
 |-------------|---------|----------------|----------|
+| **v0.5.23** | **v0.3.25** | **v0.4.5** | Warm paper light palette across landing and product shells; dark theme precedence preserved; shared progressive landing frame |
 | **v0.5.22** | **v0.3.24** | **v0.4.5** | Theme-aware public landing frame with bundled progressive-reveal assets; signed-in identity/avatar remains in the product sidebar foot |
 | **v0.5.21** | **v0.3.24** | **v0.4.5** | Signed-in identity/avatar in the product sidebar foot; theme/locale remain in the header |
 | **v0.5.20** | **v0.3.24** | **v0.4.5** | Basecoat product header with mobile sidebar trigger; passkey phone/QR entry and registration link |
@@ -35,7 +36,7 @@ Prefer:
 
 ```toml
 dependencies = ["app-factory[platform]"]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.5.22" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.5.23" }
 ```
 
 Do **not** float `my-usermanager` on `branch = "main"` for production hosts.
