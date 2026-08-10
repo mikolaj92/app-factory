@@ -15,3 +15,38 @@
 /* Scan safelist (+ optional app templates under src/apps/) */
 @source "./safelist.html";
 @source "./apps/**/*.html";
+
+
+/* app-factory light palette: warm paper, never clinical white. Dark remains Basecoat. */
+:root,
+html[data-theme="light"] {
+  --background: oklch(0.96 0.018 88);
+  --foreground: oklch(0.24 0.018 70);
+  --card: oklch(0.985 0.012 88);
+  --card-foreground: oklch(0.24 0.018 70);
+  --popover: oklch(0.985 0.012 88);
+  --popover-foreground: oklch(0.24 0.018 70);
+  --primary: oklch(0.32 0.035 66);
+  --primary-foreground: oklch(0.98 0.012 88);
+  --secondary: oklch(0.91 0.025 86);
+  --secondary-foreground: oklch(0.29 0.025 70);
+  --muted: oklch(0.91 0.022 86);
+  --muted-foreground: oklch(0.50 0.025 70);
+  --accent: oklch(0.89 0.035 82);
+  --accent-foreground: oklch(0.29 0.025 70);
+  --border: oklch(0.83 0.028 82);
+  --input: oklch(0.83 0.028 82);
+  --ring: oklch(0.60 0.065 72);
+  --sidebar: oklch(0.935 0.022 86);
+  --sidebar-foreground: oklch(0.24 0.018 70);
+  --sidebar-primary: oklch(0.32 0.035 66);
+  --sidebar-primary-foreground: oklch(0.98 0.012 88);
+  --sidebar-accent: oklch(0.89 0.035 82);
+  --sidebar-accent-foreground: oklch(0.29 0.025 70);
+  --sidebar-border: oklch(0.83 0.028 82);
+  --sidebar-ring: oklch(0.60 0.065 72);
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+}

@@ -98,9 +98,15 @@ MATERIAL_SYMBOLS_FILES: dict[str, tuple[Path, str, str]] = {
     ),
 }
 MATERIAL_SYMBOLS_LICENSE_FILENAME = "material-symbols.LICENSE"
+LANDING_VERSION = "1.0.0"
+LANDING_FILES: dict[str, tuple[Path, str, str]] = {
+    "landing-css": (ASSETS_DST / "landing.css", "landing.css", "style"),
+    "landing-js": (ASSETS_DST / "landing.js", "landing.js", "script"),
+}
 BUNDLED_FILES: dict[str, tuple[Path, str, str]] = {
     **CORE_FILES,
     **MATERIAL_SYMBOLS_FILES,
+    **LANDING_FILES,
 }
 
 LICENSE_SOURCES = {
@@ -254,7 +260,9 @@ def build_and_stage() -> Path:
         name: {
             "filename": filename,
             "version": (
-                MATERIAL_SYMBOLS_VERSION
+                LANDING_VERSION
+                if name in LANDING_FILES
+                else MATERIAL_SYMBOLS_VERSION
                 if name in MATERIAL_SYMBOLS_FILES
                 else read_version(
                     "basecoat-css"

@@ -22,6 +22,8 @@ _CORE_NAMES = {
     "basecoat-css",
     "basecoat-js-all",
     "htmx",
+    "landing-css",
+    "landing-js",
     "material-symbols-css",
     "material-symbols-font",
 }

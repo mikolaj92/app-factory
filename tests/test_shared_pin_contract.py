@@ -19,6 +19,8 @@ def test_core_names_are_stable():
         "basecoat-css",
         "basecoat-js-all",
         "htmx",
+        "landing-css",
+        "landing-js",
         "material-symbols-css",
         "material-symbols-font",
     ]

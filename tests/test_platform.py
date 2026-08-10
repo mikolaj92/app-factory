@@ -130,6 +130,84 @@ def test_product_shell_renders_guest_and_user_sidebar_foot() -> None:
     assert "Logout" not in user_html
     assert "Login" not in user_html
 
+def test_landing_shell_renders_shared_frame_and_host_blocks() -> None:
+    environment = Environment(
+        loader=ChoiceLoader(
+            [
+                DictLoader(
+                    {
+                        "landing_host.html": (
+                            "{% extends 'app_factory/landing.html' %}"
+                            "{% block landing_brand %}Temida{% endblock %}"
+                            "{% block landing_content %}"
+                            "<article id='intro' data-landing-chapter>Story</article>"
+                            "{% endblock %}"
+                            "{% block landing_visual %}"
+                            "<div class='host-visual'></div>"
+                            "{% endblock %}"
+                        )
+                    }
+                ),
+                PackageLoader("app_factory", "templates"),
+            ]
+        ),
+        autoescape=True,
+    )
+    html = environment.get_template("landing_host.html").render(
+        app_href="/app",
+        app_label="Open app",
+        landing_chapters=({"id": "intro", "label": "Intro"},),
+        platform_asset_url=lambda name: f"/static/platform/{name}",
+    )
+
+    assert 'class="app-shell app-landing"' in html
+    assert 'data-landing-shortcut' in html
+    assert 'href="/app"' in html
+    assert "Open app" in html
+    assert "Temida" in html
+    assert 'href="#intro"' in html
+    assert "data-landing-chapter-link" in html
+    assert "data-landing-reveal" in html
+    assert "host-visual" in html
+    assert "/static/platform/landing-css" in html
+    assert "/static/platform/landing-js" in html
+
+
+def test_landing_assets_preserve_no_js_and_theme_contract() -> None:
+    root = Path(__file__).resolve().parents[1] / "app_factory" / "assets"
+    css = (root / "landing.css").read_text(encoding="utf-8")
+    script = (root / "landing.js").read_text(encoding="utf-8")
+
+    assert 'html[data-theme="light"]' in css
+    assert 'html[data-theme="dark"]' in css
+    assert "html.is-enhanced:not(.is-reduced-motion)" in css
+    assert "@media (prefers-reduced-motion: reduce)" in css
+    assert "root.classList.add('is-enhanced')" in script
+    assert "is-reduced-motion" in script
+    assert "IntersectionObserver" in script
+
+def test_factory_light_theme_uses_warm_paper_tokens() -> None:
+    source = (
+        Path(__file__).resolve().parents[1]
+        / "scripts"
+        / "platform_assets_src"
+        / "src"
+        / "input.css"
+    ).read_text(encoding="utf-8")
+    bundled = (
+        Path(__file__).resolve().parents[1]
+        / "app_factory"
+        / "assets"
+        / "basecoat-factory.min.css"
+    ).read_text(encoding="utf-8")
+
+    assert 'html[data-theme="light"]' in source
+    assert "--background: oklch(0.96 0.018 88)" in source
+    assert "--card: oklch(0.985 0.012 88)" in source
+    assert "--sidebar: oklch(0.935 0.022 86)" in source
+    assert "--background:oklch(96% .018 88)" in bundled
+
+
 def test_platform_theme_locale_partial() -> None:
     environment = _env_with_factory()
     environment.loader.loaders[0].mapping["header.html"] = (

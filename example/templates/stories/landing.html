@@ -1,0 +1,25 @@
+{% extends "app_factory/landing.html" %}
+
+{% block title %}Public landing frame{% endblock %}
+
+{% block landing_brand %}app-factory{% endblock %}
+
+{% block landing_content %}
+<section id="story" data-landing-chapter>
+  <p class="text-sm text-muted-foreground">Shared public frame</p>
+  <h1>Tell the product story without forking the shell.</h1>
+  <p>Hosts own their copy and visual identity. The factory owns the responsive frame, theme contract, direct app shortcut, and progressive reveal.</p>
+</section>
+<section id="principles" data-landing-chapter>
+  <h2>Visible without JavaScript.</h2>
+  <p>Enhancement may stage content, but never makes the narrative depend on script execution.</p>
+</section>
+<section id="begin" data-landing-chapter>
+  <h2>Start with the real application.</h2>
+  <a class="btn" data-variant="primary" href="{{ app_href }}">{{ app_label }}</a>
+</section>
+{% endblock %}
+
+{% block landing_visual %}
+<div class="landing__visual card" aria-hidden="true"></div>
+{% endblock %}

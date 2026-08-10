@@ -155,6 +155,11 @@ STORIES: tuple[dict[str, str], ...] = (
         "title": "Login stub",
         "blurb": "Placeholder for my-auth passkey surface (not wired here).",
     },
+    {
+        "href": "/stories/landing",
+        "title": "Public landing frame",
+        "blurb": "Theme-aware narrative frame with direct app shortcut and progressive reveal.",
+    },
 )
 
 
@@ -312,6 +317,23 @@ def story_components(request: Request) -> HTMLResponse:
         page_title="Components",
         nav_active="components",
     )
+@app.get("/stories/landing", response_class=HTMLResponse)
+def story_landing(request: Request) -> HTMLResponse:
+    chapters = (
+        {"id": "story", "label": "The story"},
+        {"id": "principles", "label": "Principles"},
+        {"id": "begin", "label": "Begin"},
+    )
+    return _render(
+        request,
+        "stories/landing.html",
+        page_title="Public landing frame",
+        nav_active="landing",
+        app_href="/stories/components",
+        app_label="Open storybook",
+        landing_chapters=chapters,
+    )
+
 
 
 @app.get("/stories/login", response_class=HTMLResponse)

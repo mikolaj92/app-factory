@@ -28,6 +28,8 @@ def test_core_assets_are_local_and_manifest_verified():
         "basecoat-css",
         "basecoat-js-all",
         "htmx",
+        "landing-css",
+        "landing-js",
         "material-symbols-css",
         "material-symbols-font",
     ]

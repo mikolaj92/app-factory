@@ -1,0 +1,61 @@
+{% extends "app_factory/shell.html" %}
+
+{# Generic public frame. Hosts provide narrative and optional visual; this template
+   owns shared landing layout, shortcut, chapters, and progressive hooks. #}
+{% block head_extra %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ platform_asset_url('landing-css') }}">
+  {% block landing_head_extra %}{% endblock %}
+{% endblock %}
+
+{% block body_class %} app-landing{% endblock %}
+
+{% block header %}
+<header class="landing__header" data-landing-header>
+  <a class="landing__brand" href="{{ platform_brand_href | default('/') }}">
+    {% block landing_brand %}{{ app_name | default('App') }}{% endblock %}
+  </a>
+  <div class="landing__header-actions">
+    {% include "app_factory/platform_theme_locale.html" %}
+    {% if app_href is defined and app_href %}
+    <a class="landing__shortcut" href="{{ app_href }}" data-landing-shortcut>
+      {{ app_label | default('Open app') }}
+    </a>
+    {% endif %}
+  </div>
+</header>
+{% endblock %}
+
+{% block content_class %}app-landing-content{% endblock %}
+
+{% block content %}
+<section class="landing" data-landing>
+  <div class="landing__inner">
+    {% block landing_chapters %}
+    {% if landing_chapters is defined and landing_chapters %}
+    <nav class="landing__chapters" aria-label="{{ landing_chapters_label | default('On this page') }}">
+      {% for chapter in landing_chapters %}
+      <a
+        href="{{ chapter.href | default('#' ~ chapter.id) }}"
+        data-landing-chapter-link
+        {% if chapter.current | default(false) %}aria-current="true"{% endif %}
+      >{{ chapter.label | default(chapter.title) }}</a>
+      {% endfor %}
+    </nav>
+    {% endif %}
+    {% endblock %}
+    <div class="landing__content">
+      <div class="landing__narrative" data-landing-reveal>
+        {% block landing_content %}{% endblock %}
+      </div>
+      {% block landing_visual %}{% endblock %}
+    </div>
+    {% block landing_body_end %}{% endblock %}
+  </div>
+</section>
+{% endblock %}
+
+{% block body_end %}
+  {{ super() }}
+  <script src="{{ platform_asset_url('landing-js') }}" defer></script>
+{% endblock %}

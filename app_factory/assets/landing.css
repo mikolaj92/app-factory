@@ -1,0 +1,185 @@
+/* app-factory landing frame: visible by default, staged only after JS enhancement. */
+html[data-theme="light"] {
+  --landing-background: #fafafa;
+  --landing-surface: #ffffff;
+  --landing-surface-muted: #f4f4f5;
+  --landing-foreground: #18181b;
+  --landing-muted: #71717a;
+  --landing-border: #e4e4e7;
+  --landing-accent: #18181b;
+  --landing-accent-contrast: #fafafa;
+  --landing-glow: rgba(24, 24, 27, 0.08);
+}
+
+html[data-theme="dark"] {
+  --landing-background: #09090b;
+  --landing-surface: #18181b;
+  --landing-surface-muted: #27272a;
+  --landing-foreground: #fafafa;
+  --landing-muted: #a1a1aa;
+  --landing-border: #3f3f46;
+  --landing-accent: #fafafa;
+  --landing-accent-contrast: #18181b;
+  --landing-glow: rgba(250, 250, 250, 0.1);
+}
+
+.app-landing {
+  min-height: 100vh;
+  background: var(--landing-background, Canvas);
+  color: var(--landing-foreground, CanvasText);
+}
+
+.app-landing-content {
+  width: 100%;
+  padding: 0;
+}
+
+.landing {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  overflow: clip;
+  background:
+    radial-gradient(circle at 82% 12%, var(--landing-glow, transparent), transparent 28rem),
+    var(--landing-background, Canvas);
+}
+
+.landing__inner {
+  position: relative;
+  z-index: 1;
+  width: min(72rem, calc(100% - 3rem));
+  margin-inline: auto;
+  padding-block: clamp(3rem, 10vw, 8rem);
+}
+
+.landing__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(72rem, calc(100% - 3rem));
+  margin-inline: auto;
+  padding-block: 1.25rem;
+}
+
+.landing__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.landing__shortcut {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  padding-inline: 1rem;
+  border: 1px solid var(--landing-border, currentColor);
+  border-radius: 999px;
+  color: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.landing__shortcut:hover,
+.landing__shortcut:focus-visible {
+  background: var(--landing-surface-muted, color-mix(in srgb, CanvasText 8%, Canvas));
+  border-color: var(--landing-foreground, currentColor);
+}
+
+.landing__content {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(16rem, 0.9fr);
+  align-items: center;
+  gap: clamp(2rem, 7vw, 7rem);
+}
+
+.landing__narrative {
+  display: grid;
+  gap: 1.5rem;
+  max-width: 42rem;
+}
+
+.landing__visual {
+  min-height: 18rem;
+}
+
+.landing__chapters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block-end: 3rem;
+}
+
+.landing__chapters a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.25rem;
+  padding-inline: 0.75rem;
+  border: 1px solid var(--landing-border, currentColor);
+  border-radius: 999px;
+  color: var(--landing-muted, inherit);
+  font-size: 0.8125rem;
+  text-decoration: none;
+}
+
+.landing__chapters a:hover,
+.landing__chapters a:focus-visible,
+.landing__chapters a[aria-current="true"] {
+  color: var(--landing-foreground, inherit);
+  border-color: var(--landing-foreground, currentColor);
+  background: var(--landing-surface-muted, transparent);
+}
+
+.landing [data-landing-chapter] {
+  scroll-margin-top: 2rem;
+}
+
+/* Without JS no selector hides content. Enhancement opts into staging. */
+html.is-enhanced:not(.is-reduced-motion) .landing [data-landing-reveal] {
+  opacity: 0;
+  transform: translateY(0.75rem);
+  transition: opacity 500ms ease, transform 500ms ease;
+}
+
+html.is-enhanced:not(.is-reduced-motion) .landing [data-landing-reveal].is-revealed {
+  opacity: 1;
+  transform: none;
+}
+
+html.is-reduced-motion .landing [data-landing-reveal] {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing [data-landing-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+@media (max-width: 48rem) {
+  .landing__header,
+  .landing__inner {
+    width: min(100% - 2rem, 42rem);
+  }
+
+  .landing__content {
+    grid-template-columns: 1fr;
+  }
+
+  .landing__visual {
+    min-height: 12rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing__shortcut,
+  .landing__chapters a {
+    transition: none;
+  }
+}
