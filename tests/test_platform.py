@@ -68,7 +68,7 @@ def test_build_platform_context_guest_vs_user() -> None:
     assert user["platform_user"].avatar_foreground == "#ffffff"
 
 
-def test_product_shell_renders_platform_foot_for_guest_and_user() -> None:
+def test_product_shell_renders_guest_foot_and_user_header_identity() -> None:
     app = FastAPI()
     environment = _env_with_factory()
     config = PlatformConfig(
