@@ -1,0 +1,27 @@
+name: Tests
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  targeted:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: uv sync --extra dev
+      - run: >-
+          uv run pytest -q
+          tests/test_platform.py
+          tests/test_example_storybook.py
+          tests/test_cdn.py
+          tests/test_fastapi.py
+          tests/test_shared_pin_contract.py
