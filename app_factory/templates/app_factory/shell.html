@@ -22,6 +22,9 @@
     {% block header %}
     <header class="app-main-header bg-background">
       <div class="app-main-header__inner">
+        <a class="app-main-header__brand" href="{{ platform_brand_href | default('/') }}">
+          {{ app_name | default('App') }}
+        </a>
         <div class="app-main-header__controls">
           {% include "app_factory/platform_theme_locale.html" %}
         </div>
