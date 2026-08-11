@@ -47,13 +47,21 @@ def test_build_platform_context_guest_vs_user() -> None:
         app_name="Demo",
         menu=(MenuItem("Home", "/"), MenuItem("Queue", "/queue")),
         paths=PlatformPaths(
-            login="/login", logout="/logout", account="/account"
+            login="/login",
+            logout="/logout",
+            register="/join",
+            recovery="/recover-account",
+            account="/account",
         ),
         enable_admin_users=True,
     )
     guest = build_platform_context(config, current_path="/queue")
     assert guest["platform_user"] is None
     assert guest["login_url"] == "/login"
+    paths = guest["platform_paths"]
+    assert paths.register == "/join"
+    assert paths.recovery == "/recover-account"
+    assert paths.register != paths.recovery
     assert guest["platform_menu"][1].active is True
 
     user = build_platform_context(
@@ -83,6 +91,9 @@ def test_product_shell_renders_guest_and_user_sidebar_foot() -> None:
     assert "data-platform-auth" in guest_html
     assert "Login" in guest_html
     assert 'href="/login"' in guest_html
+    assert 'href="/register"' in guest_html
+    assert "Create account" in guest_html
+    assert 'href="/recover"' not in guest_html
     # Theme lives in header partial, not the sidebar foot (script still mentions the attr).
     foot_start = guest_html.find("data-platform-foot")
     assert foot_start != -1
