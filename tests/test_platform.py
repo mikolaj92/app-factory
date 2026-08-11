@@ -494,6 +494,17 @@ def test_shell_includes_shell_boot_after_head_extra() -> None:
     assert html.index("htmx:configRequest") < html.index("window.__appShellBooted")
 
 
+def test_bare_shell_header_links_brand_home() -> None:
+    env = Environment(loader=PackageLoader("app_factory", "templates"), autoescape=True)
+    html = env.get_template("app_factory/shell.html").render(
+        app_name="Demo",
+        platform_brand_href="/home",
+        platform_asset_url=lambda name: f"/static/platform/{name}",
+    )
+    assert '<a class="app-main-header__brand" href="/home">' in html
+    assert "Demo" in html
+
+
 def test_product_shell_is_full_operator_frame() -> None:
     app = FastAPI()
     env = _env_with_factory()
