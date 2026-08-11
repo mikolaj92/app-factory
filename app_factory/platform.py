@@ -83,6 +83,7 @@ class PlatformPaths:
     login: str = "/login"
     logout: str = "/logout"
     register: str = "/register"
+    recovery: str = "/recover"
     account: str = "/account"
     admin_users: str = "/admin/users"
 

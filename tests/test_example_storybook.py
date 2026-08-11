@@ -72,7 +72,7 @@ def test_guest_chrome_foot_vs_header() -> None:
     assert 'href="/stories/login"' in foot
     assert 'href="/stories/register"' in foot
     assert "Login" in foot
-    assert "Register" in foot
+    assert "Create account" in foot
     assert "data-theme-toggle" not in foot
     assert "data-platform-account-link" not in foot
     assert "platform-avatar" not in foot
