@@ -3,9 +3,9 @@
 {% block content %}
 <section class="app-page"><header class="app-header"><div class="app-stack app-stack--tight"><p class="text-sm text-muted-foreground mono">composition · my-auth + my-usermanager</p><h1 class="text-2xl font-semibold">Account management</h1><p class="text-sm text-muted-foreground max-w-prose">Minimal host composition only. Authentication ceremonies and account policy remain in their source libraries.</p></div></header>
 <div class="app-card-grid">
-<a class="card" href="/activate?capability=example"><header><h2 class="font-semibold">Activation</h2></header><section><p class="text-sm text-muted-foreground">my-auth activation page receives the opaque invitation capability.</p></section></a>
-<a class="card" href="/recover?capability=example"><header><h2 class="font-semibold">Recovery</h2></header><section><p class="text-sm text-muted-foreground">my-auth recovery ceremony.</p></section></a>
-<a class="card" href="/stories/admin-users"><header><h2 class="font-semibold">Users & invites</h2></header><section><p class="text-sm text-muted-foreground">my-usermanager policy and admin UI.</p></section></a>
+<a class="card" href="{{ platform_paths.activation }}?capability=example"><header><h2 class="font-semibold">Activation</h2></header><section><p class="text-sm text-muted-foreground">my-auth activation page receives the opaque invitation capability via <code class="mono">platform_paths.activation</code>.</p></section></a>
+<a class="card" href="{{ platform_paths.recovery }}?capability=example"><header><h2 class="font-semibold">Recovery</h2></header><section><p class="text-sm text-muted-foreground">my-auth recovery ceremony at <code class="mono">platform_paths.recovery</code>.</p></section></a>
+<a class="card" href="{{ platform_paths.admin_users }}"><header><h2 class="font-semibold">Users & invites</h2></header><section><p class="text-sm text-muted-foreground">my-usermanager policy and admin UI (<code class="mono">admin_users</code> / <code class="mono">invite</code>).</p></section></a>
 <article class="card"><header><h2 class="font-semibold">Sessions</h2></header><section><p class="text-sm text-muted-foreground">Host mounts the my-usermanager session inventory and revocation route at <code>/account/sessions</code>.</p></section></article>
 <article class="card"><header><h2 class="font-semibold">Audit log</h2></header><section><p class="text-sm text-muted-foreground">Host mounts the my-usermanager append-only reader at <code>/admin/audit</code>.</p></section></article>
 </div></section>

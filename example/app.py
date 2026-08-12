@@ -104,8 +104,12 @@ CONFIG = PlatformConfig(
         login="/stories/login",
         logout="/stories/logout",
         register="/stories/register",
+        activation="/activate",
+        recovery="/recover",
         account="/stories/account",
+        credentials="/stories/account",
         admin_users="/stories/admin-users",
+        invite="/stories/admin-users",
     ),
     locales=(
         PlatformLocale("pl", "🇵🇱", href="/stories/locales?lang=pl"),
@@ -114,7 +118,10 @@ CONFIG = PlatformConfig(
     ),
     default_locale="en",
     htmx_nav=True,
+    enable_account=True,
+    enable_credentials=True,
     enable_admin_users=True,
+    enable_invite=True,
     show_register=True,
 )
 
