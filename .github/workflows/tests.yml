@@ -16,12 +16,14 @@ jobs:
           enable-cache: true
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - run: uv sync --extra dev
       - run: >-
           uv run pytest -q
           tests/test_platform.py
           tests/test_example_storybook.py
+          tests/test_identity_shells.py
           tests/test_cdn.py
           tests/test_fastapi.py
           tests/test_shared_pin_contract.py
+          tests/test_multi_user_bom.py

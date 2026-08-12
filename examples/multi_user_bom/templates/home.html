@@ -1,0 +1,53 @@
+{% extends "app_factory/identity_authenticated_shell.html" %}
+
+{% block title %}Multi-user BOM demo{% endblock %}
+
+{% block content %}
+<section class="app-page" data-bom-home>
+  <header class="app-header">
+    <div class="app-stack app-stack--tight">
+      <p class="text-sm text-muted-foreground mono">examples/multi_user_bom</p>
+      <h1 class="text-2xl font-semibold">Multi-user platform BOM</h1>
+      <p class="text-sm text-muted-foreground max-w-prose">
+        Reference host pinned to the immutable BOM. Adapters own ceremonies;
+        app-factory owns shells and navigation.
+      </p>
+    </div>
+  </header>
+
+  <div class="app-stack">
+    <p data-session-user>
+      Session:
+      {% if session_user %}<strong>{{ session_user }}</strong>{% else %}guest{% endif %}
+    </p>
+    <div class="app-cluster">
+      <form method="post" action="/demo/as/{{ admin_id }}">
+        <button class="btn" type="submit" data-variant="primary">Sign in as admin</button>
+      </form>
+      <form method="post" action="/demo/as/{{ member_id }}">
+        <button class="btn" type="submit">Sign in as member</button>
+      </form>
+    </div>
+    <p class="text-sm text-muted-foreground" data-credential-counts>
+      Seeded credentials — admin: {{ admin_credentials }}, member: {{ member_credentials }}
+    </p>
+    <ul class="app-stack app-stack--tight">
+      <li><a href="{{ paths.login }}">Login</a></li>
+      <li><a href="{{ paths.register }}">Bootstrap register</a></li>
+      <li><a href="{{ paths.account }}">Account</a></li>
+      <li><a href="{{ paths.credentials }}">Credentials</a></li>
+      <li><a href="{{ paths.admin_users }}">Admin users</a></li>
+      <li><a href="{{ paths.invite }}">Invite user</a></li>
+    </ul>
+    {% if issued_invites %}
+    <p data-issued-invites>Issued invitations: {{ issued_invites|length }}</p>
+    {% endif %}
+    {% if issued_recoveries %}
+    <p data-issued-recoveries>Issued recoveries: {{ issued_recoveries|length }}</p>
+    {% endif %}
+    <form method="post" action="/demo/recovery/{{ member_id }}">
+      <button class="btn" type="submit">Issue member recovery link</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

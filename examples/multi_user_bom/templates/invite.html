@@ -1,0 +1,39 @@
+{% extends "app_factory/identity_authenticated_shell.html" %}
+
+{% block title %}Invite user · BOM demo{% endblock %}
+
+{% block content %}
+<section class="app-page" data-platform-identity-ceremony="invite">
+  <header class="app-header">
+    <div class="app-stack app-stack--tight">
+      <p class="badge" data-variant="secondary">Admin</p>
+      <h1 class="text-2xl font-semibold">Invite user</h1>
+      <p class="text-sm text-muted-foreground max-w-prose">
+        Host-owned invite surface on the shared authenticated identity shell.
+        Activation material is issued by my-usermanager + my-auth enrollment.
+      </p>
+    </div>
+  </header>
+
+  <form class="app-stack" method="post" action="{{ paths.invite }}" data-bom-invite-form>
+    <input type="hidden" name="demo_csrf" value="demo-bom-csrf">
+    <label class="app-stack app-stack--tight">
+      <span>Username</span>
+      <input class="input" name="username" required autocomplete="username">
+    </label>
+    <button class="btn" data-variant="primary" type="submit">Send invitation</button>
+  </form>
+
+  {% if issued %}
+  <ul data-issued-invite-list>
+    {% for invitation_id, token in issued %}
+    <li>
+      <code>{{ invitation_id }}</code>
+      →
+      <a href="{{ paths.activation }}?capability={{ token }}">activation link</a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+{% endblock %}

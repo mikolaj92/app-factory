@@ -1,0 +1,42 @@
+# Immutable multi-user platform compatibility BOM.
+# Single source for consumer pins; COMPAT.md is the human-readable matrix.
+
+[bom]
+id = "multi-user-platform"
+version = "2026.08"
+generation = "identity-lifecycle"
+
+[pins]
+app-factory = "v0.6.2"
+my-auth = "v0.4.0"
+my-usermanager = "v0.5.0"
+
+[sources]
+app-factory = "https://github.com/mikolaj92/app-factory"
+my-auth = "https://github.com/mikolaj92/my-auth"
+my-usermanager = "https://github.com/mikolaj92/my-usermanager"
+
+[resolution]
+# Nested adapter uv.sources pin older app-factory tags. Hosts MUST override so
+# dependency resolution selects exactly one app-factory source/version.
+require_single_app_factory = true
+override_dependencies = ["app-factory[platform]"]
+
+[capabilities]
+bootstrap = { owner = "my-auth", surfaces = ["register"], visibility = "public" }
+invitation_activation = { owner = "my-auth+my-usermanager", surfaces = ["activation"], visibility = "public" }
+account_recovery = { owner = "my-auth", surfaces = ["recovery"], visibility = "public" }
+account_credentials = { owner = "my-auth", surfaces = ["credentials"], visibility = "authenticated" }
+account_profile = { owner = "my-usermanager", surfaces = ["account"], visibility = "authenticated" }
+admin_users = { owner = "my-usermanager", surfaces = ["users"], visibility = "admin" }
+admin_invite = { owner = "my-usermanager+host", surfaces = ["invite"], visibility = "admin" }
+shared_shells = { owner = "app-factory", surfaces = ["identity_public_shell", "identity_authenticated_shell"], visibility = "composition" }
+
+[upgrade_order]
+# Apply in this order; do not mix generations across the three packages.
+steps = [
+  "app-factory",
+  "my-auth",
+  "my-usermanager",
+  "host-pins-and-template-migration",
+]

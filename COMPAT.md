@@ -2,8 +2,12 @@
 
 Single source of truth for host pins when using `app-factory[platform]`.
 
+Machine-readable multi-user BOM: [`bom/multi_user.toml`](bom/multi_user.toml).
+Reference host: [`examples/multi_user_bom/`](examples/multi_user_bom/).
+
 | app-factory | my-auth | my-usermanager | Contract |
 |-------------|---------|----------------|----------|
+| **v0.6.2** | **v0.4.0** | **v0.5.0** | **Multi-user identity-lifecycle BOM**: subject-bound enrollment/recovery + invitations + shared identity shells/paths; hosts pin one immutable generation (see capability matrix) |
 | **v0.6.1** | **v0.3.25** | **v0.4.5** | Shared identity shells: public activation/recovery frame + authenticated account/credentials/users composition (`identity_*_shell`, public-state + denied partials) |
 | **v0.6.0** | **v0.3.25** | **v0.4.5** | Identity lifecycle path/navigation contract (`PlatformPaths` + opt-in account/credentials/users/invite slots; reverse-proxy `root`) |
 | **v0.5.24** | **v0.3.25** | **v0.4.5** | Accessible brand/home link in the bare login/passkey shell header |
@@ -35,15 +39,63 @@ Single source of truth for host pins when using `app-factory[platform]`.
 
 ## Host rule
 
-Prefer:
+Prefer the multi-user BOM generation (do not mix rows):
 
 ```toml
-dependencies = ["app-factory[platform]"]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.6.1" }
+dependencies = [
+  "app-factory[platform]",
+  "my-auth[fastapi-htmx]",
+  "my-usermanager[fastapi-htmx,myauth]",
+]
+
+[tool.uv]
+# Nested adapter uv.sources pin older app-factory tags — override so resolution
+# selects exactly one app-factory source/version.
+override-dependencies = ["app-factory[platform]"]
+
+[tool.uv.sources]
+app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.6.2" }
+my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.4.0" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.5.0" }
 ```
 
 Do **not** float `my-usermanager` on `branch = "main"` for production hosts.
 Do **not** re-copy theme boot, shell boot, or platform foot templates into hosts.
+Do **not** mix BOM generations (for example app-factory v0.6.2 with my-auth v0.3.x).
+
+### Identity lifecycle capability matrix (BOM v0.6.2)
+
+| Capability | Owner | Default surface | Visibility |
+|------------|-------|-----------------|------------|
+| Bootstrap registration | my-auth | `/register` | public (host policy) |
+| Invitation activation | my-auth + my-usermanager | `/activate` | public capability URL |
+| Account recovery | my-auth | `/recover` | public capability URL |
+| Account credentials | my-auth | `/account/passkeys` | authenticated |
+| Account profile / session | my-usermanager | `/account` | authenticated |
+| Admin user management | my-usermanager | `/admin/users` | admin |
+| Invite issuance UI | host (+ InvitationService) | `/admin/users/invite` | admin |
+| Shared public / authenticated shells | app-factory | `identity_*_shell` | composition |
+| Path + identity nav contract | app-factory | `PlatformPaths` | composition |
+
+### Supported upgrade order
+
+Apply one generation at a time, in this order:
+
+1. **app-factory** — paths (`PlatformPaths`) and identity shells (`v0.6.0` → `v0.6.2`).
+2. **my-auth** — subject-bound enrollment / recovery (`v0.4.0`); keep `PasskeyPaths` aligned with `PlatformPaths`.
+3. **my-usermanager** — account lifecycle + invitations (`v0.5.0`); set `base_template` to `app_factory/identity_authenticated_shell.html`.
+4. **Host** — pin all three tags from the same BOM row, add `override-dependencies`, migrate templates (below), delete host-owned recovery/enrollment chrome.
+
+Rollback is the reverse order. Never run production with packages from different matrix rows.
+
+### Migration from host-owned recovery / enrollment templates
+
+1. Delete host copies of activation, recovery, enroll, and “set up passkey” full-page templates.
+2. Point my-auth capability/credential pages at the shared shells (packaged adapters still extend `app_factory/shell.html` until they switch; hosts may prepend a Jinja loader override as in `examples/multi_user_bom/templates/my_auth_overrides/`).
+3. Set `UserManagerUiConfig.base_template = "app_factory/identity_authenticated_shell.html"`.
+4. Route invite delivery through my-usermanager `InvitationService` + my-auth enrollment capabilities; links target `platform_paths.activation` / `recovery` with the opaque token only.
+5. Enable identity nav with `enable_account`, `enable_credentials`, `enable_admin_users`, `enable_invite` instead of hand-built sidebar entries.
+6. Keep product authorization/role policy in the host; do not fork adapter ceremony markup.
 
 ### Chrome placement (hosts must not fork)
 
