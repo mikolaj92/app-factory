@@ -1,0 +1,12 @@
+{% extends "app_factory/identity_authenticated_shell.html" %}
+
+{# Full-page unauthorized/forbidden state inside authenticated chrome.
+   Prefer identity_denied_fragment.html for HTMX mutation responses. #}
+
+{% block title %}{{ identity_denied_document_title | default(identity_denied_title | default("Access denied")) }}{% endblock %}
+
+{% block content %}
+<section class="app-page app-page--narrow" data-platform-identity-denied-page>
+  {% include "app_factory/identity_denied_fragment.html" %}
+</section>
+{% endblock %}

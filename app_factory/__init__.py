@@ -31,7 +31,12 @@ except ImportError:  # Optional fastapi extra is not installed.
 try:
     from app_factory.platform import (
         IDENTITY_ADMIN_SURFACES,
+        IDENTITY_AUTHENTICATED_SHELL,
         IDENTITY_AUTHENTICATED_SURFACES,
+        IDENTITY_DENIED,
+        IDENTITY_DENIED_FRAGMENT,
+        IDENTITY_PUBLIC_SHELL,
+        IDENTITY_PUBLIC_STATE,
         IDENTITY_PUBLIC_SURFACES,
         IDENTITY_SURFACES,
         MenuGroup,
@@ -48,6 +53,8 @@ try:
     )
 except ImportError:  # Optional fastapi extra is not installed.
     IDENTITY_ADMIN_SURFACES = IDENTITY_AUTHENTICATED_SURFACES = None
+    IDENTITY_AUTHENTICATED_SHELL = IDENTITY_DENIED = IDENTITY_DENIED_FRAGMENT = None
+    IDENTITY_PUBLIC_SHELL = IDENTITY_PUBLIC_STATE = None
     IDENTITY_PUBLIC_SURFACES = IDENTITY_SURFACES = None
     MenuGroup = MenuItem = PlatformConfig = PlatformInstall = None
     PlatformLocale = PlatformPaths = PlatformUser = None
@@ -57,7 +64,12 @@ except ImportError:  # Optional fastapi extra is not installed.
 __all__ = [
     "CDN_ASSET_MANIFEST",
     "IDENTITY_ADMIN_SURFACES",
+    "IDENTITY_AUTHENTICATED_SHELL",
     "IDENTITY_AUTHENTICATED_SURFACES",
+    "IDENTITY_DENIED",
+    "IDENTITY_DENIED_FRAGMENT",
+    "IDENTITY_PUBLIC_SHELL",
+    "IDENTITY_PUBLIC_STATE",
     "IDENTITY_PUBLIC_SURFACES",
     "IDENTITY_SURFACES",
     "AppFactoryUi",
@@ -90,4 +102,4 @@ __all__ = [
     "verify_cdn_manifest",
 ]
 
-__version__ = "0.6.0"
+__version__ = "0.6.1"

@@ -57,6 +57,11 @@ Apps should not ship:
 | `app_factory.jinja` | `configure_jinja_env()` — registers bundled/local and optional CDN helpers plus the template loader |
 | `app_factory.fastapi` | `install_app_factory_ui()` — the sole supported FastAPI mount/Jinja integration |
 | `app_factory/templates/app_factory/shell.html` | Shared five-block full-page shell |
+| `app_factory/templates/app_factory/identity_public_shell.html` | Public activation/recovery frame (brand + theme/locale, no sidebar) |
+| `app_factory/templates/app_factory/identity_authenticated_shell.html` | Authenticated account/credentials/users frame (`product_shell` + markers) |
+| `app_factory/templates/app_factory/identity_public_state.html` | Non-enumerating invalid/expired capability alert |
+| `app_factory/templates/app_factory/identity_denied.html` | Full-page unauthorized state in authenticated chrome |
+| `app_factory/templates/app_factory/identity_denied_fragment.html` | HTMX unauthorized/forbidden fragment |
 | `app_factory/templates/app_factory/head_assets.html` | Same-origin core CSS/JS tags + HTMX credentials + 401 → login redirect |
 | `app_factory/templates/app_factory/theme_boot.html` | Early dark/light/auto FOUC guard (`window.appTheme`) |
 | `app_factory/templates/app_factory/shell_boot.html` | Shared shell JS (sidebar, active nav, basecoat, theme clicks) via `window.appShellConfig` |
@@ -224,6 +229,44 @@ derives a stable background and initial for its high-contrast fallback avatar.
 Do not fork sidebar or main-header markup — inject extras only through blocks
 (`header_controls_start` for notifications, `body_end` for toasts).
 
+### Identity lifecycle shells
+
+Public capability pages and authenticated account/admin pages share chrome
+without host template forks:
+
+```html
+{# Activation / recovery — my-auth panels fill identity_panel #}
+{% extends "app_factory/identity_public_shell.html" %}
+{% block identity_panel %}
+  {% if capability_valid %}
+    {# adapter ceremony panel #}
+  {% else %}
+    {% include "app_factory/identity_public_state.html" %}
+  {% endif %}
+{% endblock %}
+```
+
+```python
+# my-usermanager account / users / invite
+UserManagerUiConfig(
+    base_template="app_factory/identity_authenticated_shell.html",
+    # labels=...  # host copy overrides
+)
+```
+
+Extension points (no forks):
+
+| Need | Mechanism |
+|------|-----------|
+| Host policy blurb on public pages | `identity_notice` / `identity_footer` blocks |
+| Invalid/expired capability copy | `identity_public_state_*` context vars |
+| Unauthorized full page | render `identity_denied.html` |
+| Unauthorized HTMX fragment | include `identity_denied_fragment.html` |
+| Adapter page body | `identity_panel` or `content` block |
+
+Constants: `IDENTITY_PUBLIC_SHELL`, `IDENTITY_AUTHENTICATED_SHELL`,
+`IDENTITY_PUBLIC_STATE`, `IDENTITY_DENIED`, `IDENTITY_DENIED_FRAGMENT`.
+
 ### `head_assets.html` behavior
 
 - Emits URLs for the four bundled core files under the installer-bound prefix.
@@ -316,8 +359,9 @@ passkeys = install_passkey_ui(
 - Point host links at `platform_paths` (or `PlatformPaths.href`) rather than
   hardcoding `/activate`, `/recover`, `/account/passkeys`, or admin invite URLs.
   Activation and recovery remain public capability pages owned by my-auth; account
-  credentials and users/invite remain adapter-owned. Shared public shells for
-  those ceremonies are composed in a follow-on issue (#29).
+  credentials and users/invite remain adapter-owned. Compose them into
+  `identity_public_shell` / `identity_authenticated_shell` so hosts do not ship
+  custom lifecycle chrome.
 
 ---
 
