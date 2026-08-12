@@ -78,7 +78,7 @@ class PlatformLocale:
 
 @dataclass(frozen=True, slots=True)
 class PlatformPaths:
-    """Canonical auth/account URLs used by the shared platform foot."""
+    """Canonical identity-lifecycle URLs shared by adapter UIs and hosts."""
 
     login: str = "/login"
     logout: str = "/logout"
@@ -86,6 +86,10 @@ class PlatformPaths:
     recovery: str = "/recover"
     account: str = "/account"
     admin_users: str = "/admin/users"
+    # Appended to preserve the positional order of the original path contract.
+    activation: str = "/activate"
+    credentials: str = "/account/credentials"
+    invitations: str = "/admin/invitations"
 
 
 @dataclass(frozen=True, slots=True)
@@ -135,7 +139,13 @@ class PlatformConfig:
     navigation_label: str | None = None
     menu: tuple[MenuItem | MenuGroup, ...] = ()
     paths: PlatformPaths = field(default_factory=PlatformPaths)
+    # Identity navigation is opt-in so upgrades do not add unauthorized links.
+    # Hosts remain responsible for deciding which surfaces a principal may see.
+    enable_account: bool = False
+    enable_credentials: bool = False
     enable_admin_users: bool = False
+    enable_invitations: bool = False
+    identity_navigation_label: str = "Account"
     show_register: bool = True
     locales: tuple[PlatformLocale, ...] = ()
     default_locale: str | None = None
@@ -172,6 +182,7 @@ def build_platform_context(
     per-request language links (e.g. preserve query on the current path).
     """
     menu = tuple(_resolve_menu_entry(entry, current_path, config) for entry in config.menu)
+    identity_menu = _identity_navigation(config, user, current_path)
     resolved_locales = tuple(locales) if locales is not None else config.locales
     resolved_locale = locale if locale is not None else config.default_locale
     return {
@@ -183,6 +194,8 @@ def build_platform_context(
         "platform_brand_hx_swap": config.brand_hx_swap,
         "platform_navigation_label": config.navigation_label or config.app_name,
         "platform_menu": menu,
+        "platform_identity_menu": identity_menu,
+        "platform_identity_navigation_label": config.identity_navigation_label,
         "platform_user": user,
         "platform_paths": config.paths,
         "platform_enable_admin_users": config.enable_admin_users,
@@ -192,6 +205,37 @@ def build_platform_context(
         "platform_htmx_nav": config.htmx_nav,
         "login_url": config.paths.login,
     }
+
+
+def _identity_navigation(
+    config: PlatformConfig,
+    user: PlatformUser | None,
+    current_path: str,
+) -> tuple[MenuItem, ...]:
+    """Build the enabled identity slot without taking over host authorization."""
+    if user is None:
+        return ()
+
+    candidates = (
+        (config.enable_account, MenuItem("Account", config.paths.account, key="account")),
+        (
+            config.enable_credentials,
+            MenuItem("Credentials", config.paths.credentials, key="credentials"),
+        ),
+        (
+            config.enable_admin_users and user.is_admin,
+            MenuItem("Users", config.paths.admin_users, key="users"),
+        ),
+        (
+            config.enable_invitations and user.is_admin,
+            MenuItem("Invitations", config.paths.invitations, key="invitations"),
+        ),
+    )
+    return tuple(
+        _resolve_menu_item(item, current_path, config)
+        for enabled, item in candidates
+        if enabled
+    )
 
 
 def _resolve_menu_entry(

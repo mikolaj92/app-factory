@@ -50,8 +50,11 @@ def test_build_platform_context_guest_vs_user() -> None:
             login="/login",
             logout="/logout",
             register="/join",
+            activation="/activate-account",
             recovery="/recover-account",
             account="/account",
+            credentials="/account/passkeys",
+            invitations="/admin/invites",
         ),
         enable_admin_users=True,
     )
@@ -60,7 +63,10 @@ def test_build_platform_context_guest_vs_user() -> None:
     assert guest["login_url"] == "/login"
     paths = guest["platform_paths"]
     assert paths.register == "/join"
+    assert paths.activation == "/activate-account"
     assert paths.recovery == "/recover-account"
+    assert paths.credentials == "/account/passkeys"
+    assert paths.invitations == "/admin/invites"
     assert paths.register != paths.recovery
     assert guest["platform_menu"][1].active is True
 
@@ -74,6 +80,37 @@ def test_build_platform_context_guest_vs_user() -> None:
     assert user["platform_user"].avatar_initial == "O"
     assert user["platform_user"].avatar_background.startswith("#")
     assert user["platform_user"].avatar_foreground == "#ffffff"
+
+
+def test_identity_navigation_is_enabled_and_authorized_by_host_config() -> None:
+    config = PlatformConfig(
+        htmx_nav=True,
+        paths=PlatformPaths(),
+        enable_account=True,
+        enable_credentials=True,
+        enable_admin_users=True,
+        enable_invitations=True,
+    )
+
+    guest = build_platform_context(config)
+    assert guest["platform_identity_menu"] == ()
+
+    member = build_platform_context(
+        config, user=PlatformUser("Member"), current_path="/account/credentials"
+    )
+    assert [item.label for item in member["platform_identity_menu"]] == [
+        "Account",
+        "Credentials",
+    ]
+    assert member["platform_identity_menu"][1].active is True
+
+    admin = build_platform_context(config, user=PlatformUser("Admin", is_admin=True))
+    assert [item.href for item in admin["platform_identity_menu"]] == [
+        "/account",
+        "/account/credentials",
+        "/admin/users",
+        "/admin/invitations",
+    ]
 
 
 def test_product_shell_renders_guest_and_user_sidebar_foot() -> None:
@@ -94,6 +131,7 @@ def test_product_shell_renders_guest_and_user_sidebar_foot() -> None:
     assert 'href="/register"' in guest_html
     assert "Create account" in guest_html
     assert 'href="/recover"' not in guest_html
+    assert "data-platform-identity-navigation" not in guest_html
     # Theme lives in header partial, not the sidebar foot (script still mentions the attr).
     foot_start = guest_html.find("data-platform-foot")
     assert foot_start != -1
@@ -140,6 +178,25 @@ def test_product_shell_renders_guest_and_user_sidebar_foot() -> None:
     assert "Log out" not in user_html
     assert "Logout" not in user_html
     assert "Login" not in user_html
+
+
+def test_product_shell_renders_enabled_identity_navigation_slot() -> None:
+    app = FastAPI()
+    environment = _env_with_factory()
+    config = PlatformConfig(
+        enable_account=True,
+        enable_credentials=True,
+        paths=PlatformPaths(),
+    )
+    install_platform(app, environments=[environment], config=config)
+    apply_platform_context(environment, config, user=PlatformUser("Alice"))
+
+    html = environment.get_template("page.html").render()
+    assert "data-platform-identity-navigation" in html
+    assert 'href="/account"' in html
+    assert 'href="/account/credentials"' in html
+    assert "Credentials" in html
+
 
 def test_landing_shell_renders_shared_frame_and_host_blocks() -> None:
     environment = Environment(
@@ -503,6 +560,36 @@ def test_shell_includes_shell_boot_after_head_extra() -> None:
     )
     assert "window.__appShellBooted" in html
     assert html.index("htmx:configRequest") < html.index("window.__appShellBooted")
+
+
+def test_public_identity_shell_uses_shared_public_chrome() -> None:
+    env = Environment(
+        loader=ChoiceLoader(
+            [
+                DictLoader(
+                    {
+                        "activation.html": (
+                            "{% extends 'app_factory/public_identity_shell.html' %}"
+                            "{% block content %}<h1>Activate account</h1>{% endblock %}"
+                        )
+                    }
+                ),
+                PackageLoader("app_factory", "templates"),
+            ]
+        ),
+        autoescape=True,
+    )
+    html = env.get_template("activation.html").render(
+        app_name="Demo",
+        platform_brand_href="/home",
+        platform_asset_url=lambda name: f"/static/platform/{name}",
+    )
+    assert "app-public-identity" in html
+    assert "app-public-identity__content" in html
+    assert "Activate account" in html
+    assert '<a class="app-main-header__brand" href="/home">' in html
+    assert "data-platform-theme-locale" in html
+    assert 'id="sidebar"' not in html
 
 
 def test_bare_shell_header_links_brand_home() -> None:

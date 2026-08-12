@@ -60,6 +60,7 @@ Apps should not ship:
 | `app_factory/templates/app_factory/head_assets.html` | Same-origin core CSS/JS tags + HTMX credentials + 401 → login redirect |
 | `app_factory/templates/app_factory/theme_boot.html` | Early dark/light/auto FOUC guard (`window.appTheme`) |
 | `app_factory/templates/app_factory/shell_boot.html` | Shared shell JS (sidebar, active nav, basecoat, theme clicks) via `window.appShellConfig` |
+| `app_factory/templates/app_factory/public_identity_shell.html` | Branded no-sidebar activation/recovery frame for identity adapters |
 
 **Not included:** domain models, product routes, auth ceremony logic, product CSS.
 
@@ -212,7 +213,12 @@ host-owned.
 ```
 
 Host supplies **data** via `build_platform_context` / per-request context:
-`platform_menu`, `platform_user`, `platform_paths`, locales. `PlatformUser`
+`platform_menu`, `platform_user`, `platform_paths`, locales. `PlatformPaths`
+defines login, logout, registration, activation, recovery, account, credentials,
+users, and invitations routes. `enable_account`, `enable_credentials`,
+`enable_admin_users`, and `enable_invitations` opt into standard sidebar links;
+admin links also require an admin `PlatformUser`. Hosts remain responsible for
+mapping their authorization policy to that view. `PlatformUser`
 derives a stable background and initial for its high-contrast fallback avatar.
 Do not fork sidebar or main-header markup — inject extras only through blocks
 (`header_controls_start` for notifications, `body_end` for toasts).
@@ -306,8 +312,10 @@ passkeys = install_passkey_ui(
 - The installer owns the package-specific static mount; hosts do not mount it manually.
 - my-auth’s `fastapi-htmx` extra depends on **app-factory** so package login pages
   use the same Basecoat chrome (`btn`, `card`, dark mode) as host shells.
-- Domain recovery or one-off ceremony routes may stay app-owned; they must not
-  replace the live login/register surface.
+- Activation and recovery adapters can extend
+  `app_factory/public_identity_shell.html` so public ceremonies use the same
+  branding, locale, theme, accessibility, Basecoat, and HTMX stack. The adapter
+  still owns ceremony forms, capabilities, and verification behavior.
 
 ---
 

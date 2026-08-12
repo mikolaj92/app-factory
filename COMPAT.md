@@ -4,6 +4,7 @@ Single source of truth for host pins when using `app-factory[platform]`.
 
 | app-factory | my-auth | my-usermanager | Contract |
 |-------------|---------|----------------|----------|
+| **v0.6.0** | **v0.3.25** | **v0.4.5** | Identity lifecycle path contract, public activation/recovery shell, and opt-in account/credentials/users/invitations navigation slots |
 | **v0.5.24** | **v0.3.25** | **v0.4.5** | Accessible brand/home link in the bare login/passkey shell header |
 | **v0.5.23** | **v0.3.25** | **v0.4.5** | Warm paper light palette across landing and product shells; dark theme precedence preserved; shared progressive landing frame |
 | **v0.5.22** | **v0.3.24** | **v0.4.5** | Theme-aware public landing frame with bundled progressive-reveal assets; signed-in identity/avatar remains in the product sidebar foot |
@@ -37,7 +38,7 @@ Prefer:
 
 ```toml
 dependencies = ["app-factory[platform]"]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.5.24" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.6.0" }
 ```
 
 Do **not** float `my-usermanager` on `branch = "main"` for production hosts.
@@ -51,5 +52,13 @@ Do **not** re-copy theme boot, shell boot, or platform foot templates into hosts
 | **Sidebar foot** | `platform_auth` | signed-in identity/avatar, or guest Login (+ Register) |
 | **Account page** | `platform_session` | **Log out** form (only place) |
 | **No-sidebar shells** | `platform_controls` | theme/locale + auth (still no logout — include `platform_session` on the account/home surface) |
+| **Activation / recovery** | `public_identity_shell` | branded no-sidebar shell with shared assets, theme, locale, and accessibility frame |
+
+`PlatformPaths` is the route contract: `/login`, `/logout`, `/register`, `/activate`,
+`/recover`, `/account`, `/account/credentials`, `/admin/users`, and
+`/admin/invitations`. Hosts may override every path. Account and credential links
+are opt-in; users and invitations additionally require `PlatformUser.is_admin`.
+Hosts still own the authorization decision and must only set that view flag after
+applying product policy.
 
 Forbidden host forks: identity/avatar in the header, theme in sidebar, logout in nav menu, or logout next to the account name.
