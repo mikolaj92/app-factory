@@ -11,6 +11,9 @@ from starlette.testclient import TestClient
 
 from app_factory.platform import (
     FORBIDDEN_BASECOAT_CLASS_MARKERS,
+    IDENTITY_ADMIN_SURFACES,
+    IDENTITY_AUTHENTICATED_SURFACES,
+    IDENTITY_PUBLIC_SURFACES,
     MenuGroup,
     MenuItem,
     PlatformConfig,
@@ -20,6 +23,7 @@ from app_factory.platform import (
     apply_platform_context,
     build_platform_context,
     install_platform,
+    join_platform_root,
 )
 
 
@@ -52,6 +56,9 @@ def test_build_platform_context_guest_vs_user() -> None:
             register="/join",
             recovery="/recover-account",
             account="/account",
+            activation="/activate-account",
+            credentials="/account/passkeys",
+            invite="/admin/users/invite",
         ),
         enable_admin_users=True,
     )
@@ -60,9 +67,14 @@ def test_build_platform_context_guest_vs_user() -> None:
     assert guest["login_url"] == "/login"
     paths = guest["platform_paths"]
     assert paths.register == "/join"
+    assert paths.activation == "/activate-account"
     assert paths.recovery == "/recover-account"
+    assert paths.credentials == "/account/passkeys"
+    assert paths.invite == "/admin/users/invite"
     assert paths.register != paths.recovery
+    assert paths.activation != paths.recovery
     assert guest["platform_menu"][1].active is True
+    assert guest["platform_identity_menu"] == ()
 
     user = build_platform_context(
         config,
@@ -74,6 +86,97 @@ def test_build_platform_context_guest_vs_user() -> None:
     assert user["platform_user"].avatar_initial == "O"
     assert user["platform_user"].avatar_background.startswith("#")
     assert user["platform_user"].avatar_foreground == "#ffffff"
+
+
+def test_platform_paths_defaults_match_adapter_contract() -> None:
+    paths = PlatformPaths()
+    assert paths.login == "/login"
+    assert paths.logout == "/logout"
+    assert paths.register == "/register"
+    assert paths.activation == "/activate"
+    assert paths.recovery == "/recover"
+    assert paths.account == "/account"
+    assert paths.credentials == "/account/passkeys"
+    assert paths.admin_users == "/admin/users"
+    assert paths.invite == "/admin/users/invite"
+    assert set(paths.public_hrefs()) == set(IDENTITY_PUBLIC_SURFACES)
+    assert set(paths.authenticated_hrefs()) == set(IDENTITY_AUTHENTICATED_SURFACES)
+    assert set(paths.admin_hrefs()) == set(IDENTITY_ADMIN_SURFACES)
+    assert "account" not in paths.public_hrefs()
+    assert "invite" not in paths.authenticated_hrefs()
+
+
+def test_platform_paths_root_prefixes_without_double_join() -> None:
+    assert join_platform_root("/argus", "/login") == "/argus/login"
+    assert join_platform_root("/argus/", "/login") == "/argus/login"
+    assert join_platform_root("", "/login") == "/login"
+    assert join_platform_root("/argus", "/argus/login") == "/argus/login"
+
+    rooted = PlatformPaths(root="/argus").resolved()
+    assert rooted.root == ""
+    assert rooted.login == "/argus/login"
+    assert rooted.activation == "/argus/activate"
+    assert rooted.credentials == "/argus/account/passkeys"
+    assert rooted.invite == "/argus/admin/users/invite"
+
+    ctx = build_platform_context(
+        PlatformConfig(paths=PlatformPaths(root="/argus")),
+        current_path="/argus/account/passkeys",
+        user=PlatformUser("Ada", is_admin=True),
+    )
+    assert ctx["login_url"] == "/argus/login"
+    assert ctx["platform_paths"].recovery == "/argus/recover"
+    assert ctx["platform_path_root"] == "/argus"
+
+
+def test_identity_navigation_is_enabled_and_authorized_by_host_config() -> None:
+    config = PlatformConfig(
+        htmx_nav=True,
+        paths=PlatformPaths(root="/app"),
+        enable_account=True,
+        enable_credentials=True,
+        enable_admin_users=True,
+        enable_invite=True,
+    )
+
+    guest = build_platform_context(config)
+    assert guest["platform_identity_menu"] == ()
+    # Public chrome must not leak authenticated/admin targets.
+    assert guest["platform_enable_account"] is True
+    assert all(
+        item.href.startswith("/app/") is False
+        for item in guest["platform_identity_menu"]
+    )
+
+    member = build_platform_context(
+        config,
+        user=PlatformUser("Member"),
+        current_path="/app/account/passkeys",
+    )
+    assert [item.label for item in member["platform_identity_menu"]] == [
+        "Account",
+        "Credentials",
+    ]
+    assert [item.href for item in member["platform_identity_menu"]] == [
+        "/app/account",
+        "/app/account/passkeys",
+    ]
+    assert member["platform_identity_menu"][1].active is True
+    assert all(item.key != "users" for item in member["platform_identity_menu"])
+    assert all(item.key != "invite" for item in member["platform_identity_menu"])
+
+    admin = build_platform_context(
+        config,
+        user=PlatformUser("Admin", is_admin=True),
+        current_path="/app/admin/users",
+    )
+    assert [item.href for item in admin["platform_identity_menu"]] == [
+        "/app/account",
+        "/app/account/passkeys",
+        "/app/admin/users",
+        "/app/admin/users/invite",
+    ]
+    assert admin["platform_identity_menu"][2].active is True
 
 
 def test_product_shell_renders_guest_and_user_sidebar_foot() -> None:
@@ -94,6 +197,10 @@ def test_product_shell_renders_guest_and_user_sidebar_foot() -> None:
     assert 'href="/register"' in guest_html
     assert "Create account" in guest_html
     assert 'href="/recover"' not in guest_html
+    assert 'href="/activate"' not in guest_html
+    assert 'href="/admin/users"' not in guest_html
+    assert 'href="/admin/users/invite"' not in guest_html
+    assert "data-platform-identity-navigation" not in guest_html
     # Theme lives in header partial, not the sidebar foot (script still mentions the attr).
     foot_start = guest_html.find("data-platform-foot")
     assert foot_start != -1
@@ -140,6 +247,38 @@ def test_product_shell_renders_guest_and_user_sidebar_foot() -> None:
     assert "Log out" not in user_html
     assert "Logout" not in user_html
     assert "Login" not in user_html
+
+
+def test_product_shell_renders_enabled_identity_navigation_slot() -> None:
+    app = FastAPI()
+    environment = _env_with_factory()
+    config = PlatformConfig(
+        enable_account=True,
+        enable_credentials=True,
+        enable_admin_users=True,
+        enable_invite=True,
+        paths=PlatformPaths(),
+    )
+    install_platform(app, environments=[environment], config=config)
+    apply_platform_context(
+        environment,
+        config,
+        user=PlatformUser("Alice", is_admin=True),
+        current_path="/account",
+    )
+
+    html = environment.get_template("page.html").render()
+    assert "data-platform-identity-navigation" in html
+    assert 'href="/account"' in html
+    assert 'href="/account/passkeys"' in html
+    assert 'href="/admin/users"' in html
+    assert 'href="/admin/users/invite"' in html
+    assert "Credentials" in html
+    assert "Invite" in html
+    nav_start = html.find("data-platform-identity-navigation")
+    nav_chunk = html[nav_start : nav_start + 1200]
+    assert 'aria-current="page"' in nav_chunk
+
 
 def test_landing_shell_renders_shared_frame_and_host_blocks() -> None:
     environment = Environment(

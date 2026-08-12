@@ -212,7 +212,14 @@ host-owned.
 ```
 
 Host supplies **data** via `build_platform_context` / per-request context:
-`platform_menu`, `platform_user`, `platform_paths`, locales. `PlatformUser`
+`platform_menu`, `platform_user`, `platform_paths`, locales. `PlatformPaths`
+names the identity lifecycle routes (login, logout, register, activation,
+recovery, account, credentials, users, invite). Set `PlatformPaths.root` when
+the app sits behind a reverse-proxy prefix. Opt into standard sidebar links with
+`enable_account`, `enable_credentials`, `enable_admin_users`, and
+`enable_invite`; admin links also require `PlatformUser.is_admin`. Hosts remain
+responsible for mapping product authorization to that view. Public guest chrome
+never receives authenticated/admin identity navigation. `PlatformUser`
 derives a stable background and initial for its high-contrast fallback avatar.
 Do not fork sidebar or main-header markup — inject extras only through blocks
 (`header_controls_start` for notifications, `body_end` for toasts).
@@ -306,8 +313,11 @@ passkeys = install_passkey_ui(
 - The installer owns the package-specific static mount; hosts do not mount it manually.
 - my-auth’s `fastapi-htmx` extra depends on **app-factory** so package login pages
   use the same Basecoat chrome (`btn`, `card`, dark mode) as host shells.
-- Domain recovery or one-off ceremony routes may stay app-owned; they must not
-  replace the live login/register surface.
+- Point host links at `platform_paths` (or `PlatformPaths.href`) rather than
+  hardcoding `/activate`, `/recover`, `/account/passkeys`, or admin invite URLs.
+  Activation and recovery remain public capability pages owned by my-auth; account
+  credentials and users/invite remain adapter-owned. Shared public shells for
+  those ceremonies are composed in a follow-on issue (#29).
 
 ---
 

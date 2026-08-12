@@ -4,6 +4,7 @@ Single source of truth for host pins when using `app-factory[platform]`.
 
 | app-factory | my-auth | my-usermanager | Contract |
 |-------------|---------|----------------|----------|
+| **v0.6.0** | **v0.3.25** | **v0.4.5** | Identity lifecycle path/navigation contract (`PlatformPaths` + opt-in account/credentials/users/invite slots; reverse-proxy `root`) |
 | **v0.5.24** | **v0.3.25** | **v0.4.5** | Accessible brand/home link in the bare login/passkey shell header |
 | **v0.5.23** | **v0.3.25** | **v0.4.5** | Warm paper light palette across landing and product shells; dark theme precedence preserved; shared progressive landing frame |
 | **v0.5.22** | **v0.3.24** | **v0.4.5** | Theme-aware public landing frame with bundled progressive-reveal assets; signed-in identity/avatar remains in the product sidebar foot |
@@ -37,7 +38,7 @@ Prefer:
 
 ```toml
 dependencies = ["app-factory[platform]"]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.5.24" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.6.0" }
 ```
 
 Do **not** float `my-usermanager` on `branch = "main"` for production hosts.
@@ -49,7 +50,21 @@ Do **not** re-copy theme boot, shell boot, or platform foot templates into hosts
 |---------|---------|----------|
 | **Main header** | `product_shell` + `platform_theme_locale` | language (optional) + icon theme toggle |
 | **Sidebar foot** | `platform_auth` | signed-in identity/avatar, or guest Login (+ Register) |
+| **Identity nav slot** | `platform_sidebar` (`data-platform-identity-navigation`) | opt-in Account / Credentials / Users / Invite (admin gated) |
 | **Account page** | `platform_session` | **Log out** form (only place) |
 | **No-sidebar shells** | `platform_controls` | theme/locale + auth (still no logout — include `platform_session` on the account/home surface) |
+
+### Identity lifecycle paths
+
+`PlatformPaths` is the shared route contract. Defaults match my-auth / my-usermanager:
+
+| Surface | Default | Visibility |
+|---------|---------|------------|
+| login / logout / register | `/login`, `/logout`, `/register` | public |
+| activation / recovery | `/activate`, `/recover` | public (capability URLs; not chrome links) |
+| account / credentials | `/account`, `/account/passkeys` | authenticated |
+| users / invite | `/admin/users`, `/admin/users/invite` | admin (`PlatformUser.is_admin`) |
+
+Hosts may override every path and set `PlatformPaths.root` (e.g. `/argus`) for a reverse-proxy mount. `build_platform_context` resolves rooted URLs once. Enable sidebar links with `enable_account`, `enable_credentials`, `enable_admin_users`, and `enable_invite`. Adapters still own handlers; app-factory only composes links and navigation.
 
 Forbidden host forks: identity/avatar in the header, theme in sidebar, logout in nav menu, or logout next to the account name.
