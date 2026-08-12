@@ -1,0 +1,41 @@
+{% extends "app_factory/identity_public_shell.html" %}
+
+{% block title %}Activation · app-factory{% endblock %}
+
+{% block identity_notice %}
+{% if identity_host_notice %}
+<p class="text-sm text-muted-foreground" data-platform-identity-host-notice>
+  {{ identity_host_notice }}
+</p>
+{% endif %}
+{% endblock %}
+
+{% block identity_panel %}
+{% if capability_valid %}
+<section class="card" aria-labelledby="activation-title" data-platform-identity-ceremony="activation">
+  <header>
+    <p class="badge" data-variant="secondary">Activation</p>
+    <h1 id="activation-title" class="text-xl font-semibold">Activate your account</h1>
+    <p class="text-sm text-muted-foreground">
+      Stub panel for the my-auth activation ceremony. Hosts mount
+      <code class="mono">install_passkey_ui</code> against this shell — no custom
+      lifecycle chrome.
+    </p>
+  </header>
+  <section class="app-stack">
+    <button type="button" class="btn" data-variant="primary" disabled>
+      Continue with passkey (not wired)
+    </button>
+  </section>
+</section>
+{% else %}
+  {% include "app_factory/identity_public_state.html" %}
+{% endif %}
+{% endblock %}
+
+{% block identity_footer %}
+<p class="text-sm text-muted-foreground">
+  Capability URL:
+  <code class="mono">{{ platform_paths.activation }}</code>
+</p>
+{% endblock %}

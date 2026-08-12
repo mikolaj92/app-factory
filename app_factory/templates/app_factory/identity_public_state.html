@@ -1,0 +1,30 @@
+{# Non-enumerating invalid/expired/consumed public capability state.
+   Hosts override copy via context vars; never fork this markup. #}
+<div
+  id="{{ identity_public_state_id | default('platform-identity-public-state') }}"
+  class="alert"
+  data-variant="destructive"
+  data-platform-identity-public-state
+  role="alert"
+>
+  <div class="app-stack app-stack--tight">
+    <h2 class="font-semibold">
+      {{ identity_public_state_title | default("Link unavailable") }}
+    </h2>
+    <p class="text-sm">
+      {{ identity_public_state_message | default("This activation or recovery link is invalid, expired, or already used.") }}
+    </p>
+    {% if identity_public_state_action_href is defined and identity_public_state_action_href %}
+    <p>
+      <a
+        class="btn"
+        data-variant="outline"
+        data-size="sm"
+        href="{{ identity_public_state_action_href }}"
+      >
+        {{ identity_public_state_action_label | default("Continue") }}
+      </a>
+    </p>
+    {% endif %}
+  </div>
+</div>

@@ -1,0 +1,44 @@
+{% extends "app_factory/identity_authenticated_shell.html" %}
+
+{% block title %}Users · app-factory{% endblock %}
+
+{% block head_extra %}
+<script>
+  window.appShellConfig = { titleSuffix: 'app-factory', useDataNavActive: true };
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="app-page" data-platform-identity-ceremony="users">
+  <header class="app-header">
+    <div class="app-stack app-stack--tight">
+      <p class="text-sm text-muted-foreground mono">story · users</p>
+      <h1 class="text-2xl font-semibold">Users & invitations</h1>
+      <p class="text-sm text-muted-foreground max-w-prose">
+        Authenticated shell composition for
+        <code class="mono">platform_paths.admin_users</code> /
+        <code class="mono">platform_paths.invite</code>. Real admin UI ships from
+        my-usermanager via <code class="mono">base_template</code>.
+      </p>
+    </div>
+  </header>
+
+  <div class="app-cluster">
+    <a class="btn" data-variant="primary" href="{{ platform_paths.invite }}">Invite user</a>
+    <button
+      type="button"
+      class="btn"
+      data-variant="outline"
+      hx-get="/stories/users/fragment"
+      hx-target="#users-fragment"
+      hx-swap="innerHTML"
+    >
+      Refresh fragment
+    </button>
+  </div>
+
+  <div id="users-fragment" class="card" data-htmx-target="#users-fragment">
+    {% include "stories/_users_fragment.html" %}
+  </div>
+</section>
+{% endblock %}

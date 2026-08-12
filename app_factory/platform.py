@@ -9,8 +9,10 @@ not reimplement these or put logout in chrome.
 :class:`PlatformPaths` is the identity-lifecycle route contract (login, logout,
 register, activation, recovery, account, credentials, users, invite). Opt-in
 sidebar slots and ``PlatformUser.is_admin`` control link visibility; adapters
-in my-auth / my-usermanager own the handlers. Set ``PlatformPaths.root`` for a
-reverse-proxy mount prefix.
+in my-auth / my-usermanager own the handlers. Shared Jinja shells
+(``IDENTITY_PUBLIC_SHELL``, ``IDENTITY_AUTHENTICATED_SHELL``) compose those
+surfaces into product chrome. Set ``PlatformPaths.root`` for a reverse-proxy
+mount prefix.
 """
 
 from __future__ import annotations
@@ -103,6 +105,13 @@ IDENTITY_SURFACES: tuple[str, ...] = (
     *IDENTITY_AUTHENTICATED_SURFACES,
     *IDENTITY_ADMIN_SURFACES,
 )
+
+# Stable Jinja names for shared identity-lifecycle chrome composition.
+IDENTITY_PUBLIC_SHELL = "app_factory/identity_public_shell.html"
+IDENTITY_AUTHENTICATED_SHELL = "app_factory/identity_authenticated_shell.html"
+IDENTITY_PUBLIC_STATE = "app_factory/identity_public_state.html"
+IDENTITY_DENIED = "app_factory/identity_denied.html"
+IDENTITY_DENIED_FRAGMENT = "app_factory/identity_denied_fragment.html"
 
 
 def join_platform_root(root: str, path: str) -> str:

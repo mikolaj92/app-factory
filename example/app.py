@@ -104,10 +104,10 @@ CONFIG = PlatformConfig(
         login="/stories/login",
         logout="/stories/logout",
         register="/stories/register",
-        activation="/activate",
-        recovery="/recover",
+        activation="/stories/activation",
+        recovery="/stories/recovery",
         account="/stories/account",
-        credentials="/stories/account",
+        credentials="/stories/credentials",
         admin_users="/stories/admin-users",
         invite="/stories/admin-users",
     ),
@@ -167,7 +167,27 @@ STORIES: tuple[dict[str, str], ...] = (
     {
         "href": "/stories/account-management",
         "title": "Account management composition",
-        "blurb": "Minimal my-auth + my-usermanager route composition; no host-owned fork.",
+        "blurb": "Shared identity shells for activation/recovery/account/users; no host-owned fork.",
+    },
+    {
+        "href": "/stories/activation?capability=example",
+        "title": "Activation shell",
+        "blurb": "Public identity shell composing the activation panel stub.",
+    },
+    {
+        "href": "/stories/recovery?capability=example",
+        "title": "Recovery shell",
+        "blurb": "Public identity shell composing the recovery panel stub.",
+    },
+    {
+        "href": "/stories/credentials",
+        "title": "Credentials shell",
+        "blurb": "Authenticated identity shell for credential management.",
+    },
+    {
+        "href": "/stories/denied",
+        "title": "Unauthorized shell",
+        "blurb": "Shared denied page inside authenticated chrome.",
     },
     {
         "href": "/stories/login",
@@ -367,6 +387,72 @@ def story_account_management(request: Request) -> HTMLResponse:
     )
 
 
+def _capability_valid(request: Request) -> bool:
+    """Storybook stand-in for adapter capability resolution."""
+    state = (request.query_params.get("state") or "").strip().lower()
+    if state in {"invalid", "expired", "consumed", "revoked"}:
+        return False
+    return bool((request.query_params.get("capability") or "").strip())
+
+
+@app.get("/stories/activation", response_class=HTMLResponse)
+def story_activation(request: Request) -> HTMLResponse:
+    valid = _capability_valid(request)
+    return _render(
+        request,
+        "stories/activation.html",
+        page_title="Activation",
+        nav_active="account-management",
+        capability_valid=valid,
+        identity_host_notice="Host policy notice slot (optional).",
+        identity_public_state_action_href="/stories/login",
+        identity_public_state_action_label="Back to login",
+    )
+
+
+@app.get("/stories/recovery", response_class=HTMLResponse)
+def story_recovery(request: Request) -> HTMLResponse:
+    valid = _capability_valid(request)
+    return _render(
+        request,
+        "stories/recovery.html",
+        page_title="Recovery",
+        nav_active="account-management",
+        capability_valid=valid,
+        identity_public_state_action_href="/stories/login",
+        identity_public_state_action_label="Back to login",
+    )
+
+
+@app.get("/stories/credentials", response_class=HTMLResponse)
+def story_credentials(request: Request) -> HTMLResponse:
+    return _render(
+        request,
+        "stories/credentials.html",
+        user=SIGNED_IN,
+        page_title="Credentials",
+        nav_active="credentials",
+    )
+
+
+@app.get("/stories/denied", response_class=HTMLResponse)
+def story_denied(request: Request) -> HTMLResponse:
+    return _render(
+        request,
+        "app_factory/identity_denied.html",
+        user=PlatformUser(display_name="Member", is_admin=False, user_id="member"),
+        page_title="Access denied",
+        nav_active="admin-users",
+        identity_denied_action_href="/",
+        identity_denied_action_label="Back to catalog",
+    )
+
+
+@app.get("/stories/users/fragment", response_class=HTMLResponse)
+def story_users_fragment(request: Request) -> HTMLResponse:
+    return _render(request, "stories/_users_fragment.html", user=SIGNED_IN)
+
+
 @app.get("/stories/login", response_class=HTMLResponse)
 def story_login(request: Request) -> HTMLResponse:
     return _render(request, "stories/login.html", page_title="Login stub")
@@ -396,6 +482,6 @@ def story_admin_users(request: Request) -> HTMLResponse:
         request,
         "stories/admin_users.html",
         user=SIGNED_IN,
-        page_title="Admin users stub",
+        page_title="Users & invitations",
         nav_active="admin-users",
     )
