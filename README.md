@@ -7,7 +7,7 @@ The goal is one place to ship the resilient same-origin chrome, Jinja head
 partials, and optional CDN pins so product apps do **not** re-implement
 Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.5.19`
+**Tag:** `v0.6.2` (see `COMPAT.md` / `bom/multi_user.toml`)
 
 ---
 
@@ -17,10 +17,10 @@ This package is the thin shared layer in a small platform. Together:
 
 | Piece | Role | How consumers get it |
 |-------|------|----------------------|
-| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.5.19` via uv |
+| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.6.2` via uv |
 | **basecoat-factory** | Maintainer-only build source for the generated Basecoat/UI asset bundle | Not a runtime dependency |
-| **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | Its compatible immutable tag |
-| **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | Its compatible immutable tag |
+| **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.4.0` |
+| **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.5.0` |
 | **FastAPI + Jinja2 + HTMX + Alpine** | Server-rendered app shell | App code; core scripts/CSS served by the app |
 
 ### Dependency rule
@@ -143,22 +143,28 @@ deploy checks. Product templates load extras after the factory head include.
 Prefer a **tag**, not a local path:
 
 ```toml
-# pyproject.toml
+# pyproject.toml — pin one BOM generation from COMPAT.md / bom/multi_user.toml
 dependencies = [
-  "app-factory",
+  "app-factory[platform]",
   "my-auth[fastapi-htmx]",
-  "my-usermanager[fastapi,myauth]",  # extras as needed
+  "my-usermanager[fastapi-htmx,myauth]",
 ]
 
+[tool.uv]
+override-dependencies = ["app-factory[platform]"]
+
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.5.19" }
-my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.3.23" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.4.5" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.6.2" }
+my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.4.0" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.5.0" }
 ```
 
 ```bash
 uv lock && uv sync
 ```
+
+Reference integration (bootstrap, invite activation, credentials, recovery, admin users):
+[`examples/multi_user_bom/`](examples/multi_user_bom/).
 
 ---
 
@@ -367,12 +373,12 @@ passkeys = install_passkey_ui(
 
 ## Recommended app checklist
 
-1. Depend on `app-factory[platform]@v0.5.19` and auth tags from `COMPAT.md`.
-2. Call `install_app_factory_ui()` once with every Jinja environment.
-3. Extend `app_factory/shell.html`; keep navigation and domain UI in the host.
+1. Depend on the multi-user BOM pins from `COMPAT.md` / `bom/multi_user.toml` (with `override-dependencies`).
+2. Call `install_app_factory_ui()` / `install_platform()` once with every Jinja environment.
+3. Extend identity shells for lifecycle pages; keep navigation data-driven via `PlatformPaths`.
 4. Pass the returned `AppFactoryUi` to auth/usermanager adapter installers.
 5. Keep only product CSS and product CDN extras in the app.
-6. Contract-test that canonical local assets and enabled UI routes return 200.
+6. Contract-test that canonical local assets and enabled UI routes return 200 (see `examples/multi_user_bom`).
 
 ---
 
@@ -395,7 +401,8 @@ factory_template_dirs()
 
 | app-factory | basecoat-css | Notes |
 |-------------|---------------|-------|
-| **v0.5.19** | **1.0.2** | Full Basecoat + HTMX + Alpine + app shell + Material Symbols Outlined v364; hard pytest no-npm contract |
+| **v0.6.2** | **1.0.2** | Multi-user platform BOM + identity lifecycle shells/paths |
+| v0.5.19 | 1.0.2 | Full Basecoat + HTMX + Alpine + app shell + Material Symbols Outlined v364; hard pytest no-npm contract |
 | v0.5.17 | 1.0.2 | Basecoat-first contract docs + CSS keep-list |
 
 Bump platform assets only through `uv run python scripts/refresh_platform_assets.py`.
@@ -423,6 +430,10 @@ The `example/` package is a small FastAPI host that mounts the real product
 shell and walks guest/signed-in/bare/account/HTMX/locale/component states.
 Use it as the default place to visual-check chrome changes before tagging.
 `pythonpath = ["."]` keeps `example.app` importable for pytest and uvicorn.
+
+The `examples/multi_user_bom/` package is the pinned multi-user BOM consumer
+(app-factory + my-auth + my-usermanager). Prefer it when checking identity
+lifecycle composition and package resolution (`uv lock` + pytest there).
 
 Optional browser isolation (issue #9) skips unless Playwright is installed:
 
