@@ -1,0 +1,9 @@
+{% extends "app_factory/product_shell.html" %}
+
+{# Canonical authenticated frame for account, credentials, users, and invite.
+   Point UserManagerUiConfig.base_template (or my-auth credential pages) here so
+   hosts reuse product chrome + PlatformPaths identity nav without template forks. #}
+
+{% block body_class %}{{ super() }} app-identity-authenticated{% endblock %}
+
+{% block body_attrs %}{{ super() }} data-platform-identity-authenticated{% endblock %}

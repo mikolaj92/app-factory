@@ -66,8 +66,14 @@
       {% endfor %}
 
       {% if platform_identity_menu | default([]) %}
-      <div role="group" aria-labelledby="platform-identity-group" data-platform-identity-navigation>
-        <h3 id="platform-identity-group">{{ platform_identity_navigation_label | default('Account') }}</h3>
+      <div
+        role="group"
+        aria-labelledby="platform-identity-group"
+        data-platform-identity-navigation
+      >
+        <h3 id="platform-identity-group">
+          {{ platform_identity_navigation_label | default('Account') }}
+        </h3>
         <ul role="list">
           {% for item in platform_identity_menu %}
           {% include "app_factory/_platform_nav_item.html" %}

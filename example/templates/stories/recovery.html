@@ -1,0 +1,32 @@
+{% extends "app_factory/identity_public_shell.html" %}
+
+{% block title %}Recovery · app-factory{% endblock %}
+
+{% block identity_panel %}
+{% if capability_valid %}
+<section class="card" aria-labelledby="recovery-title" data-platform-identity-ceremony="recovery">
+  <header>
+    <p class="badge" data-variant="secondary">Recovery</p>
+    <h1 id="recovery-title" class="text-xl font-semibold">Recover access</h1>
+    <p class="text-sm text-muted-foreground">
+      Stub panel for the my-auth recovery ceremony composed into the shared
+      public identity shell.
+    </p>
+  </header>
+  <section class="app-stack">
+    <button type="button" class="btn" data-variant="primary" disabled>
+      Continue with passkey (not wired)
+    </button>
+  </section>
+</section>
+{% else %}
+  {% include "app_factory/identity_public_state.html" %}
+{% endif %}
+{% endblock %}
+
+{% block identity_footer %}
+<p class="text-sm text-muted-foreground">
+  Capability URL:
+  <code class="mono">{{ platform_paths.recovery }}</code>
+</p>
+{% endblock %}

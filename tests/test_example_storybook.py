@@ -32,6 +32,10 @@ def test_catalog_and_core_stories_render() -> None:
         "/stories/register",
         "/stories/admin-users",
         "/stories/account-management",
+        "/stories/activation?capability=example",
+        "/stories/recovery?capability=example",
+        "/stories/credentials",
+        "/stories/denied",
     ):
         response = client.get(path)
         assert response.status_code == 200, path
@@ -43,7 +47,9 @@ def test_catalog_and_core_stories_render() -> None:
     ("path", "uses_product_shell"),
     (
         ("/stories/login", False),
+        ("/stories/activation?capability=example", False),
         ("/stories/account", True),
+        ("/stories/credentials", True),
         ("/stories/admin-users", True),
     ),
 )
@@ -158,18 +164,25 @@ def test_catalog_exposes_native_host_controls() -> None:
 def test_account_management_story_composes_library_owned_surfaces() -> None:
     response = client.get("/stories/account-management")
     assert response.status_code == 200
-    for path in ("/activate?capability=example", "/recover?capability=example"):
+    for path in (
+        "/stories/activation?capability=example",
+        "/stories/recovery?capability=example",
+        "/stories/credentials",
+        "/stories/admin-users",
+    ):
         assert f'href="{path}"' in response.text
     assert "<code>/account/sessions</code>" in response.text
     assert "<code>/admin/audit</code>" in response.text
     assert "my-auth + my-usermanager" in response.text
+    assert "data-platform-identity-authenticated" in response.text
 
 
 def test_admin_users_story_when_enabled() -> None:
     response = client.get("/stories/admin-users")
     assert response.status_code == 200
-    assert "Admin users stub" in response.text
+    assert "Users & invitations" in response.text
     assert "Ada Lovelace" in response.text
+    assert "data-platform-identity-authenticated" in response.text
     assert "data-platform-session" not in response.text
 
 

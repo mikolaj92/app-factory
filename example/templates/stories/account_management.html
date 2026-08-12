@@ -1,11 +1,13 @@
-{% extends "app_factory/product_shell.html" %}
+{% extends "app_factory/identity_authenticated_shell.html" %}
 {% block title %}Account management · app-factory{% endblock %}
 {% block content %}
-<section class="app-page"><header class="app-header"><div class="app-stack app-stack--tight"><p class="text-sm text-muted-foreground mono">composition · my-auth + my-usermanager</p><h1 class="text-2xl font-semibold">Account management</h1><p class="text-sm text-muted-foreground max-w-prose">Minimal host composition only. Authentication ceremonies and account policy remain in their source libraries.</p></div></header>
+<section class="app-page"><header class="app-header"><div class="app-stack app-stack--tight"><p class="text-sm text-muted-foreground mono">composition · my-auth + my-usermanager</p><h1 class="text-2xl font-semibold">Account management</h1><p class="text-sm text-muted-foreground max-w-prose">Reference host mounts shared identity shells only. Authentication ceremonies and account policy remain in their source libraries — no host-owned lifecycle chrome.</p></div></header>
 <div class="app-card-grid">
-<a class="card" href="/activate?capability=example"><header><h2 class="font-semibold">Activation</h2></header><section><p class="text-sm text-muted-foreground">my-auth activation page receives the opaque invitation capability.</p></section></a>
-<a class="card" href="/recover?capability=example"><header><h2 class="font-semibold">Recovery</h2></header><section><p class="text-sm text-muted-foreground">my-auth recovery ceremony.</p></section></a>
-<a class="card" href="/stories/admin-users"><header><h2 class="font-semibold">Users & invites</h2></header><section><p class="text-sm text-muted-foreground">my-usermanager policy and admin UI.</p></section></a>
+<a class="card" href="{{ platform_paths.activation }}?capability=example"><header><h2 class="font-semibold">Activation</h2></header><section><p class="text-sm text-muted-foreground">Public identity shell + my-auth activation panel at <code class="mono">platform_paths.activation</code>.</p></section></a>
+<a class="card" href="{{ platform_paths.recovery }}?capability=example"><header><h2 class="font-semibold">Recovery</h2></header><section><p class="text-sm text-muted-foreground">Public identity shell + my-auth recovery ceremony at <code class="mono">platform_paths.recovery</code>.</p></section></a>
+<a class="card" href="{{ platform_paths.credentials }}"><header><h2 class="font-semibold">Credentials</h2></header><section><p class="text-sm text-muted-foreground">Authenticated shell for <code class="mono">platform_paths.credentials</code>.</p></section></a>
+<a class="card" href="{{ platform_paths.admin_users }}"><header><h2 class="font-semibold">Users & invites</h2></header><section><p class="text-sm text-muted-foreground">Authenticated shell for my-usermanager (<code class="mono">admin_users</code> / <code class="mono">invite</code>).</p></section></a>
+<a class="card" href="/stories/denied"><header><h2 class="font-semibold">Unauthorized</h2></header><section><p class="text-sm text-muted-foreground">Shared denied page/fragment for authenticated policy failures.</p></section></a>
 <article class="card"><header><h2 class="font-semibold">Sessions</h2></header><section><p class="text-sm text-muted-foreground">Host mounts the my-usermanager session inventory and revocation route at <code>/account/sessions</code>.</p></section></article>
 <article class="card"><header><h2 class="font-semibold">Audit log</h2></header><section><p class="text-sm text-muted-foreground">Host mounts the my-usermanager append-only reader at <code>/admin/audit</code>.</p></section></article>
 </div></section>

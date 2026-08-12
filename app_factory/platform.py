@@ -5,6 +5,14 @@ and auth foot across apps. Domain menu items are host-supplied. Fixed chrome:
 main header = locale + theme; sidebar foot = signed-in account link or guest
 Login (`platform_auth`); account page = Log out (`platform_session`). Hosts must
 not reimplement these or put logout in chrome.
+
+:class:`PlatformPaths` is the identity-lifecycle route contract (login, logout,
+register, activation, recovery, account, credentials, users, invite). Opt-in
+sidebar slots and ``PlatformUser.is_admin`` control link visibility; adapters
+in my-auth / my-usermanager own the handlers. Shared Jinja shells
+(``IDENTITY_PUBLIC_SHELL``, ``IDENTITY_AUTHENTICATED_SHELL``) compose those
+surfaces into product chrome. Set ``PlatformPaths.root`` for a reverse-proxy
+mount prefix.
 """
 
 from __future__ import annotations
@@ -76,9 +84,66 @@ class PlatformLocale:
     href: str | None = None
 
 
+# Stable surface keys for the identity-lifecycle path contract.
+IDENTITY_PUBLIC_SURFACES: tuple[str, ...] = (
+    "login",
+    "logout",
+    "register",
+    "activation",
+    "recovery",
+)
+IDENTITY_AUTHENTICATED_SURFACES: tuple[str, ...] = (
+    "account",
+    "credentials",
+)
+IDENTITY_ADMIN_SURFACES: tuple[str, ...] = (
+    "admin_users",
+    "invite",
+)
+IDENTITY_SURFACES: tuple[str, ...] = (
+    *IDENTITY_PUBLIC_SURFACES,
+    *IDENTITY_AUTHENTICATED_SURFACES,
+    *IDENTITY_ADMIN_SURFACES,
+)
+
+# Stable Jinja names for shared identity-lifecycle chrome composition.
+IDENTITY_PUBLIC_SHELL = "app_factory/identity_public_shell.html"
+IDENTITY_AUTHENTICATED_SHELL = "app_factory/identity_authenticated_shell.html"
+IDENTITY_PUBLIC_STATE = "app_factory/identity_public_state.html"
+IDENTITY_DENIED = "app_factory/identity_denied.html"
+IDENTITY_DENIED_FRAGMENT = "app_factory/identity_denied_fragment.html"
+
+
+def join_platform_root(root: str, path: str) -> str:
+    """Join a reverse-proxy / app mount root with an absolute path.
+
+    ``root`` is empty or an absolute prefix such as ``/argus``. ``path`` must
+    already be absolute (leading ``/``). Double-prefixing is refused when
+    ``path`` already starts with ``root``.
+    """
+    normalized_root = (root or "").rstrip("/")
+    if not path.startswith("/"):
+        raise ValueError(f"platform path must be absolute, got {path!r}")
+    if not normalized_root:
+        return path
+    if not normalized_root.startswith("/"):
+        raise ValueError(f"platform root must be absolute, got {root!r}")
+    if path == normalized_root or path.startswith(normalized_root + "/"):
+        return path
+    if path == "/":
+        return normalized_root + "/"
+    return f"{normalized_root}{path}"
+
+
 @dataclass(frozen=True, slots=True)
 class PlatformPaths:
-    """Canonical identity-lifecycle URLs shared by adapter UIs and hosts."""
+    """Canonical identity-lifecycle URLs shared by adapter UIs and hosts.
+
+    Defaults align with my-auth ``PasskeyPaths`` and my-usermanager HTMX paths.
+    Adapters own the handlers; this type is the host-facing contract for links
+    and navigation. Set ``root`` when the app is mounted behind a reverse-proxy
+    prefix (e.g. ``/argus``); :meth:`resolved` prefixes every surface once.
+    """
 
     login: str = "/login"
     logout: str = "/logout"
@@ -86,10 +151,46 @@ class PlatformPaths:
     recovery: str = "/recover"
     account: str = "/account"
     admin_users: str = "/admin/users"
-    # Appended to preserve the positional order of the original path contract.
+    # Appended after the original positional fields for compatibility.
     activation: str = "/activate"
-    credentials: str = "/account/credentials"
-    invitations: str = "/admin/invitations"
+    credentials: str = "/account/passkeys"
+    invite: str = "/admin/users/invite"
+    root: str = ""
+
+    def href(self, surface: str) -> str:
+        """Return the rooted URL for a named identity surface."""
+        if surface not in IDENTITY_SURFACES:
+            raise KeyError(f"unknown identity surface: {surface!r}")
+        return join_platform_root(self.root, getattr(self, surface))
+
+    def resolved(self) -> PlatformPaths:
+        """Return paths with ``root`` baked into each surface (``root`` cleared)."""
+        if not self.root:
+            return self
+        return PlatformPaths(
+            login=self.href("login"),
+            logout=self.href("logout"),
+            register=self.href("register"),
+            recovery=self.href("recovery"),
+            account=self.href("account"),
+            admin_users=self.href("admin_users"),
+            activation=self.href("activation"),
+            credentials=self.href("credentials"),
+            invite=self.href("invite"),
+            root="",
+        )
+
+    def public_hrefs(self) -> dict[str, str]:
+        """Public lifecycle surfaces safe to expose without a session."""
+        return {name: self.href(name) for name in IDENTITY_PUBLIC_SURFACES}
+
+    def authenticated_hrefs(self) -> dict[str, str]:
+        """Account surfaces that require an authenticated principal."""
+        return {name: self.href(name) for name in IDENTITY_AUTHENTICATED_SURFACES}
+
+    def admin_hrefs(self) -> dict[str, str]:
+        """Admin surfaces; hosts still apply authorization before linking."""
+        return {name: self.href(name) for name in IDENTITY_ADMIN_SURFACES}
 
 
 @dataclass(frozen=True, slots=True)
@@ -140,11 +241,11 @@ class PlatformConfig:
     menu: tuple[MenuItem | MenuGroup, ...] = ()
     paths: PlatformPaths = field(default_factory=PlatformPaths)
     # Identity navigation is opt-in so upgrades do not add unauthorized links.
-    # Hosts remain responsible for deciding which surfaces a principal may see.
+    # Hosts map product authorization onto PlatformUser.is_admin (and these flags).
     enable_account: bool = False
     enable_credentials: bool = False
     enable_admin_users: bool = False
-    enable_invitations: bool = False
+    enable_invite: bool = False
     identity_navigation_label: str = "Account"
     show_register: bool = True
     locales: tuple[PlatformLocale, ...] = ()
@@ -181,8 +282,9 @@ def build_platform_context(
     ``locales`` / ``locale`` override config defaults so hosts can inject
     per-request language links (e.g. preserve query on the current path).
     """
+    paths = config.paths.resolved()
     menu = tuple(_resolve_menu_entry(entry, current_path, config) for entry in config.menu)
-    identity_menu = _identity_navigation(config, user, current_path)
+    identity_menu = _identity_navigation(config, user, current_path, paths)
     resolved_locales = tuple(locales) if locales is not None else config.locales
     resolved_locale = locale if locale is not None else config.default_locale
     return {
@@ -197,13 +299,17 @@ def build_platform_context(
         "platform_identity_menu": identity_menu,
         "platform_identity_navigation_label": config.identity_navigation_label,
         "platform_user": user,
-        "platform_paths": config.paths,
+        "platform_paths": paths,
+        "platform_path_root": config.paths.root,
+        "platform_enable_account": config.enable_account,
+        "platform_enable_credentials": config.enable_credentials,
         "platform_enable_admin_users": config.enable_admin_users,
+        "platform_enable_invite": config.enable_invite,
         "platform_show_register": config.show_register,
         "platform_locales": resolved_locales,
         "platform_locale": resolved_locale,
         "platform_htmx_nav": config.htmx_nav,
-        "login_url": config.paths.login,
+        "login_url": paths.login,
     }
 
 
@@ -211,24 +317,38 @@ def _identity_navigation(
     config: PlatformConfig,
     user: PlatformUser | None,
     current_path: str,
+    paths: PlatformPaths,
 ) -> tuple[MenuItem, ...]:
-    """Build the enabled identity slot without taking over host authorization."""
+    """Build the enabled identity slot without taking over host authorization.
+
+    Guests never receive authenticated/admin identity links. Admin surfaces
+    additionally require ``PlatformUser.is_admin`` after the host has applied
+    product policy when constructing that view.
+    """
     if user is None:
         return ()
 
     candidates = (
-        (config.enable_account, MenuItem("Account", config.paths.account, key="account")),
+        (
+            config.enable_account,
+            MenuItem("Account", paths.account, key="account", no_htmx=True),
+        ),
         (
             config.enable_credentials,
-            MenuItem("Credentials", config.paths.credentials, key="credentials"),
+            MenuItem(
+                "Credentials",
+                paths.credentials,
+                key="credentials",
+                no_htmx=True,
+            ),
         ),
         (
             config.enable_admin_users and user.is_admin,
-            MenuItem("Users", config.paths.admin_users, key="users"),
+            MenuItem("Users", paths.admin_users, key="users", no_htmx=True),
         ),
         (
-            config.enable_invitations and user.is_admin,
-            MenuItem("Invitations", config.paths.invitations, key="invitations"),
+            config.enable_invite and user.is_admin,
+            MenuItem("Invite", paths.invite, key="invite", no_htmx=True),
         ),
     )
     return tuple(

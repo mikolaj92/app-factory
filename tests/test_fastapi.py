@@ -120,6 +120,9 @@ def test_runtime_version_matches_project_metadata():
     )
 
     assert __version__ == project["project"]["version"]
+    # v0.6.0 was already published before the identity lifecycle contract landed.
+    assert __version__ != "0.6.0"
+
 
 @pytest.mark.parametrize("static_path", ["", "/", "relative"])
 def test_static_path_must_be_an_absolute_non_root_path(static_path: str) -> None:

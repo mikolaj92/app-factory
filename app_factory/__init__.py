@@ -30,6 +30,15 @@ except ImportError:  # Optional fastapi extra is not installed.
 
 try:
     from app_factory.platform import (
+        IDENTITY_ADMIN_SURFACES,
+        IDENTITY_AUTHENTICATED_SHELL,
+        IDENTITY_AUTHENTICATED_SURFACES,
+        IDENTITY_DENIED,
+        IDENTITY_DENIED_FRAGMENT,
+        IDENTITY_PUBLIC_SHELL,
+        IDENTITY_PUBLIC_STATE,
+        IDENTITY_PUBLIC_SURFACES,
+        IDENTITY_SURFACES,
         MenuGroup,
         MenuItem,
         PlatformConfig,
@@ -40,14 +49,29 @@ try:
         apply_platform_context,
         build_platform_context,
         install_platform,
+        join_platform_root,
     )
 except ImportError:  # Optional fastapi extra is not installed.
+    IDENTITY_ADMIN_SURFACES = IDENTITY_AUTHENTICATED_SURFACES = None
+    IDENTITY_AUTHENTICATED_SHELL = IDENTITY_DENIED = IDENTITY_DENIED_FRAGMENT = None
+    IDENTITY_PUBLIC_SHELL = IDENTITY_PUBLIC_STATE = None
+    IDENTITY_PUBLIC_SURFACES = IDENTITY_SURFACES = None
     MenuGroup = MenuItem = PlatformConfig = PlatformInstall = None
     PlatformLocale = PlatformPaths = PlatformUser = None
     apply_platform_context = build_platform_context = install_platform = None
+    join_platform_root = None
 
 __all__ = [
     "CDN_ASSET_MANIFEST",
+    "IDENTITY_ADMIN_SURFACES",
+    "IDENTITY_AUTHENTICATED_SHELL",
+    "IDENTITY_AUTHENTICATED_SURFACES",
+    "IDENTITY_DENIED",
+    "IDENTITY_DENIED_FRAGMENT",
+    "IDENTITY_PUBLIC_SHELL",
+    "IDENTITY_PUBLIC_STATE",
+    "IDENTITY_PUBLIC_SURFACES",
+    "IDENTITY_SURFACES",
     "AppFactoryUi",
     "AppFactoryUiConflict",
     "BundledAsset",
@@ -71,10 +95,11 @@ __all__ = [
     "get_platform_static_app",
     "install_app_factory_ui",
     "install_platform",
+    "join_platform_root",
     "list_bundled_assets",
     "platform_asset_url",
     "verify_cdn_asset",
     "verify_cdn_manifest",
 ]
 
-__version__ = "0.6.0"
+__version__ = "0.6.1"

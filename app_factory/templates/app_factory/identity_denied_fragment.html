@@ -1,0 +1,31 @@
+{# Unauthorized / forbidden fragment for HTMX swaps and full-page embeds.
+   Hosts override copy via context vars; keep status semantics in the adapter. #}
+<section
+  id="{{ identity_denied_id | default('platform-identity-denied') }}"
+  class="alert"
+  data-variant="destructive"
+  data-platform-identity-denied
+  role="alert"
+  aria-live="assertive"
+>
+  <div class="app-stack app-stack--tight">
+    <h2 class="font-semibold">
+      {{ identity_denied_title | default("Access denied") }}
+    </h2>
+    <p class="text-sm">
+      {{ identity_denied_message | default("You do not have permission to view this page.") }}
+    </p>
+    {% if identity_denied_action_href is defined and identity_denied_action_href %}
+    <p>
+      <a
+        class="btn"
+        data-variant="outline"
+        data-size="sm"
+        href="{{ identity_denied_action_href }}"
+      >
+        {{ identity_denied_action_label | default("Go back") }}
+      </a>
+    </p>
+    {% endif %}
+  </div>
+</section>

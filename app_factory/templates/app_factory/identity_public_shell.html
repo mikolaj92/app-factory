@@ -1,0 +1,22 @@
+{% extends "app_factory/shell.html" %}
+
+{# Canonical public frame for activation and recovery adapters.
+   Ceremony forms and capability handling remain owned by my-auth.
+   Hosts override copy/policy through blocks and context vars — do not fork. #}
+
+{% block body_class %} app-identity-public{% endblock %}
+
+{% block body_attrs %}{{ super() }} data-platform-identity-public{% endblock %}
+
+{# Narrow content column; adapters may still override to passkey-content. #}
+{% block content_class %}app-content-inner app-identity-public__content{% endblock %}
+
+{% block content %}
+<section class="app-page app-page--narrow" data-platform-identity-public-frame>
+  {% block identity_notice %}{% endblock %}
+  <div data-platform-identity-panel>
+    {% block identity_panel %}{% endblock %}
+  </div>
+  {% block identity_footer %}{% endblock %}
+</section>
+{% endblock %}
