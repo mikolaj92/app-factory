@@ -9,9 +9,9 @@ not reimplement these or put logout in chrome.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
-from typing import Any, Callable
+from typing import Any
 
 from jinja2 import Environment
 
@@ -240,9 +240,7 @@ def _path_active(current_path: str, href: str) -> bool:
     path_only = href.split("?", 1)[0]
     if current_path == path_only or current_path == href:
         return True
-    if path_only != "/" and current_path.startswith(path_only.rstrip("/") + "/"):
-        return True
-    return False
+    return path_only != "/" and current_path.startswith(path_only.rstrip("/") + "/")
 
 
 def apply_platform_context(

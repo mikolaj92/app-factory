@@ -16,9 +16,9 @@ import pytest
 import uvicorn
 
 pytest.importorskip("playwright.sync_api")
-from playwright.sync_api import sync_playwright  # noqa: E402
+from playwright.sync_api import sync_playwright
 
-from example.app import app  # noqa: E402
+from example.app import app
 
 
 def _free_port() -> int:
@@ -50,7 +50,7 @@ def live_server() -> Iterator[str]:
             with httpx.Client(base_url=base, timeout=0.5) as client:
                 if client.get("/").status_code == 200:
                     break
-        except Exception:
+        except httpx.HTTPError:
             time.sleep(0.05)
     else:
         server.should_exit = True
@@ -69,7 +69,7 @@ def browser_page(live_server: str):
     with sync_playwright() as p:
         try:
             browser = p.chromium.launch(headless=True)
-        except Exception as exc:  # pragma: no cover - env dependent
+        except Exception as exc:  # noqa: BLE001  # pragma: no cover - env dependent
             pytest.skip(f"chromium unavailable: {exc}")
         context = browser.new_context()
         page = context.new_page()

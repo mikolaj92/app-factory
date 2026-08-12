@@ -62,7 +62,9 @@ CONFIG = PlatformConfig(
         MenuGroup(
             "Shell states",
             (
-                MenuItem("Guest product", "/stories/guest", key="guest", icon=ICON_USER),
+                MenuItem(
+                    "Guest product", "/stories/guest", key="guest", icon=ICON_USER
+                ),
                 MenuItem(
                     "Signed-in product",
                     "/stories/signed-in",
@@ -90,6 +92,11 @@ CONFIG = PlatformConfig(
                 ),
                 MenuItem("Locales", "/stories/locales", key="locales"),
                 MenuItem("Components", "/stories/components", key="components"),
+                MenuItem(
+                    "Account management",
+                    "/stories/account-management",
+                    key="account-management",
+                ),
             ),
         ),
     ),
@@ -149,6 +156,11 @@ STORIES: tuple[dict[str, str], ...] = (
         "href": "/stories/components",
         "title": "Presentation primitives",
         "blurb": "Basecoat + .app-* helpers shipped with the factory CSS.",
+    },
+    {
+        "href": "/stories/account-management",
+        "title": "Account management composition",
+        "blurb": "Minimal my-auth + my-usermanager route composition; no host-owned fork.",
     },
     {
         "href": "/stories/login",
@@ -317,6 +329,8 @@ def story_components(request: Request) -> HTMLResponse:
         page_title="Components",
         nav_active="components",
     )
+
+
 @app.get("/stories/landing", response_class=HTMLResponse)
 def story_landing(request: Request) -> HTMLResponse:
     chapters = (
@@ -334,6 +348,16 @@ def story_landing(request: Request) -> HTMLResponse:
         landing_chapters=chapters,
     )
 
+
+@app.get("/stories/account-management", response_class=HTMLResponse)
+def story_account_management(request: Request) -> HTMLResponse:
+    return _render(
+        request,
+        "stories/account_management.html",
+        user=SIGNED_IN,
+        page_title="Account management",
+        nav_active="account-management",
+    )
 
 
 @app.get("/stories/login", response_class=HTMLResponse)

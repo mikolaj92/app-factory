@@ -3,11 +3,9 @@
 from __future__ import annotations
 
 import pytest
-
 from starlette.testclient import TestClient
 
 from example.app import app
-
 
 client = TestClient(app)
 
@@ -33,6 +31,7 @@ def test_catalog_and_core_stories_render() -> None:
         "/stories/login",
         "/stories/register",
         "/stories/admin-users",
+        "/stories/account-management",
     ):
         response = client.get(path)
         assert response.status_code == 200, path
@@ -61,7 +60,8 @@ def test_auth_surfaces_load_same_origin_platform_stack(
         assert asset_path in html
     assert "unpkg.com" not in html
     assert "cdn.jsdelivr.net" not in html
-    assert ("id=\"sidebar\"" in html) is uses_product_shell
+    assert ('id="sidebar"' in html) is uses_product_shell
+
 
 def test_guest_chrome_foot_vs_header() -> None:
     html = client.get("/stories/guest").text
@@ -153,6 +153,16 @@ def test_catalog_exposes_native_host_controls() -> None:
     assert "data-demo-host-form" in html
     assert 'hx-post="/stories/demo-form"' in html
     assert 'id="demo-form-result"' in html
+
+
+def test_account_management_story_composes_library_owned_surfaces() -> None:
+    response = client.get("/stories/account-management")
+    assert response.status_code == 200
+    for path in ("/activate?capability=example", "/recover?capability=example"):
+        assert f'href="{path}"' in response.text
+    assert "<code>/account/sessions</code>" in response.text
+    assert "<code>/admin/audit</code>" in response.text
+    assert "my-auth + my-usermanager" in response.text
 
 
 def test_admin_users_story_when_enabled() -> None:

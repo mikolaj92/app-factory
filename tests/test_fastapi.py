@@ -4,18 +4,19 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import tomllib
 from importlib.resources import files
 from pathlib import Path
 
 import pytest
-import tomllib
-from app_factory import __version__
-from app_factory.assets import bundled_asset
-from app_factory.fastapi import AppFactoryUiConflict, install_app_factory_ui
 from fastapi import FastAPI
 from jinja2 import DictLoader, Environment
 from starlette.routing import Mount
 from starlette.testclient import TestClient
+
+from app_factory import __version__
+from app_factory.assets import bundled_asset
+from app_factory.fastapi import AppFactoryUiConflict, install_app_factory_ui
 
 
 def _environment(content: str = "Ready") -> Environment:

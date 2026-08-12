@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 from fastapi import FastAPI
-from jinja2 import DictLoader, Environment, PackageLoader, ChoiceLoader
+from jinja2 import ChoiceLoader, DictLoader, Environment, PackageLoader
 from starlette.testclient import TestClient
 
 from app_factory.platform import (
@@ -444,7 +444,7 @@ def test_install_platform_mounts_chrome_and_registers_state() -> None:
     )
     assert result.ui.static_path == "/static/platform"
     assert result.passkey_ui is None
-    assert getattr(app.state, "app_factory_platform") is result
+    assert app.state.app_factory_platform is result
 
     client = TestClient(app)
     # Bundled CSS is mounted under platform static
