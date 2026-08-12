@@ -331,10 +331,21 @@ app-factory asset bundle; applications do not install the build-source project.
 Default interactive login/register should come from **my-auth**, not app templates.
 
 ```python
+from app_factory.platform import PlatformConfig, PlatformPaths, install_platform
 from my_auth.fastapi import PasskeyCookies, PasskeyRouteHooks
 from my_auth.fastapi_htmx import PasskeyUiConfig, install_passkey_ui
 
-# Install the platform first, then give both auth adapters the same typed value.
+# Derive the shared links from the adapter configs instead of duplicating routes.
+platform_paths = PlatformPaths.from_adapters(
+    passkey_paths=passkey_settings.paths,
+    usermanager_config=user_ui_config,
+)
+platform = install_platform(
+    app,
+    environments=[templates.env],
+    config=PlatformConfig(paths=platform_paths),
+)
+
 passkeys = install_passkey_ui(
     app,
     platform=platform,
@@ -356,8 +367,9 @@ passkeys = install_passkey_ui(
 - The installer owns the package-specific static mount; hosts do not mount it manually.
 - my-auth’s `fastapi-htmx` extra depends on **app-factory** so package login pages
   use the same Basecoat chrome (`btn`, `card`, dark mode) as host shells.
-- Point host links at `platform_paths` (or `PlatformPaths.href`) rather than
-  hardcoding `/activate`, `/recover`, `/account/passkeys`, or admin invite URLs.
+- Build `PlatformPaths` with `from_adapters()` and point host links at
+  `platform_paths` (or `PlatformPaths.href`) rather than hardcoding adapter
+  page routes, `/activate`, `/recover`, `/account/passkeys`, or admin invite URLs.
   Activation and recovery remain public capability pages owned by my-auth; account
   credentials and users/invite remain adapter-owned. Compose them into
   `identity_public_shell` / `identity_authenticated_shell` so hosts do not ship

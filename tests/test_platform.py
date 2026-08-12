@@ -106,6 +106,38 @@ def test_platform_paths_defaults_match_adapter_contract() -> None:
     assert "invite" not in paths.authenticated_hrefs()
 
 
+def test_platform_paths_map_canonical_my_auth_and_usermanager_fields() -> None:
+    class PasskeyPathsStub:
+        login_page = "/auth/login"
+        register_page = "/auth/register"
+        logout = "/auth/logout"
+
+    class UserManagerUiConfigStub:
+        account_path = "/settings/account"
+        users_path = "/staff/users"
+
+    paths = PlatformPaths.from_adapters(
+        passkey_paths=PasskeyPathsStub(),
+        usermanager_config=UserManagerUiConfigStub(),
+        activation="/auth/activate",
+        recovery="/auth/recover",
+        credentials="/settings/passkeys",
+        invite="/staff/users/invite",
+        root="/app",
+    )
+
+    assert paths.login == "/auth/login"
+    assert paths.register == "/auth/register"
+    assert paths.logout == "/auth/logout"
+    assert paths.account == "/settings/account"
+    assert paths.admin_users == "/staff/users"
+    assert paths.activation == "/auth/activate"
+    assert paths.recovery == "/auth/recover"
+    assert paths.credentials == "/settings/passkeys"
+    assert paths.invite == "/staff/users/invite"
+    assert paths.resolved().invite == "/app/staff/users/invite"
+
+
 def test_platform_paths_root_prefixes_without_double_join() -> None:
     assert join_platform_root("/argus", "/login") == "/argus/login"
     assert join_platform_root("/argus/", "/login") == "/argus/login"

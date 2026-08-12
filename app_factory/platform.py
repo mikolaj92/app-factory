@@ -157,6 +157,37 @@ class PlatformPaths:
     invite: str = "/admin/users/invite"
     root: str = ""
 
+    @classmethod
+    def from_adapters(
+        cls,
+        *,
+        passkey_paths: Any,
+        usermanager_config: Any,
+        activation: str = "/activate",
+        recovery: str = "/recover",
+        credentials: str = "/account/passkeys",
+        invite: str = "/admin/users/invite",
+        root: str = "",
+    ) -> PlatformPaths:
+        """Build the shared contract from the adapters' canonical route fields.
+
+        ``my-auth`` calls its page fields ``login_page`` / ``register_page``;
+        ``my-usermanager`` calls its page fields ``account_path`` / ``users_path``.
+        Lifecycle routes not exposed by those base configs remain explicit here.
+        """
+        return cls(
+            login=passkey_paths.login_page,
+            logout=passkey_paths.logout,
+            register=passkey_paths.register_page,
+            activation=activation,
+            recovery=recovery,
+            account=usermanager_config.account_path,
+            credentials=credentials,
+            admin_users=usermanager_config.users_path,
+            invite=invite,
+            root=root,
+        )
+
     def href(self, surface: str) -> str:
         """Return the rooted URL for a named identity surface."""
         if surface not in IDENTITY_SURFACES:

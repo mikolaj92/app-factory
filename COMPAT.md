@@ -70,7 +70,7 @@ Do **not** re-copy theme boot, shell boot, or platform foot templates into hosts
 | account / credentials | `/account`, `/account/passkeys` | authenticated |
 | users / invite | `/admin/users`, `/admin/users/invite` | admin (`PlatformUser.is_admin`) |
 
-Hosts may override every path and set `PlatformPaths.root` (e.g. `/argus`) for a reverse-proxy mount. `build_platform_context` resolves rooted URLs once. Enable sidebar links with `enable_account`, `enable_credentials`, `enable_admin_users`, and `enable_invite`. Adapters still own handlers; app-factory composes links, navigation, and shared shells.
+Hosts may override every path and set `PlatformPaths.root` (e.g. `/argus`) for a reverse-proxy mount. Prefer `PlatformPaths.from_adapters(passkey_paths=..., usermanager_config=...)` so my-auth's `login_page` / `register_page` / `logout` and my-usermanager's `account_path` / `users_path` cannot drift from shared links; pass adapter-specific lifecycle route overrides to that constructor. `build_platform_context` resolves rooted URLs once. Enable sidebar links with `enable_account`, `enable_credentials`, `enable_admin_users`, and `enable_invite`. Adapters still own handlers; app-factory composes links, navigation, and shared shells.
 
 Mount recipe:
 
