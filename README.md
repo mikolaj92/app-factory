@@ -7,7 +7,7 @@ The goal is one place to ship the resilient same-origin chrome, Jinja head
 partials, and optional CDN pins so product apps do **not** re-implement
 Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.6.2` (see `COMPAT.md` / `bom/multi_user.toml`)
+**Tag:** `v0.6.3` (see `COMPAT.md` / `bom/multi_user.toml`)
 
 ---
 
@@ -17,10 +17,10 @@ This package is the thin shared layer in a small platform. Together:
 
 | Piece | Role | How consumers get it |
 |-------|------|----------------------|
-| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.6.2` via uv |
+| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.6.3` via uv |
 | **basecoat-factory** | Maintainer-only build source for the generated Basecoat/UI asset bundle | Not a runtime dependency |
 | **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.4.0` |
-| **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.5.0` |
+| **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.5.1` |
 | **FastAPI + Jinja2 + HTMX + Alpine** | Server-rendered app shell | App code; core scripts/CSS served by the app |
 
 ### Dependency rule
@@ -154,9 +154,9 @@ dependencies = [
 override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.6.2" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.6.3" }
 my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.4.0" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.5.0" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.5.1" }
 ```
 
 ```bash
@@ -401,6 +401,7 @@ factory_template_dirs()
 
 | app-factory | basecoat-css | Notes |
 |-------------|---------------|-------|
+| **v0.6.3** | **1.0.2** | Multi-user platform BOM + packaged invite admin (my-usermanager v0.5.1, my-auth v0.4.0) |
 | **v0.6.2** | **1.0.2** | Multi-user platform BOM + identity lifecycle shells/paths |
 | v0.5.19 | 1.0.2 | Full Basecoat + HTMX + Alpine + app shell + Material Symbols Outlined v364; hard pytest no-npm contract |
 | v0.5.17 | 1.0.2 | Basecoat-first contract docs + CSS keep-list |

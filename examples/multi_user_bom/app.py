@@ -1,8 +1,8 @@
 """BOM reference host: app-factory + my-auth + my-usermanager.
 
 Pins and override-dependencies come from this package's pyproject.toml
-(aligned with ``bom/multi_user.toml``). The host owns session switching and
-invite delivery; adapters own ceremonies and account/admin UI.
+(aligned with ``bom/multi_user.toml``). The host owns session switching;
+adapters own ceremonies, account/admin UI, and packaged invite admin.
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Final, Literal
 
-from fastapi import FastAPI, Form, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from jinja2 import ChoiceLoader, FileSystemLoader
@@ -22,12 +22,14 @@ from my_usermanager import Scope
 from my_usermanager.adapters.fastapi_htmx import (
     CapabilityOption,
     CsrfContext,
+    InvitationResult,
     PasskeyPanel,
     PermissionGrantRow,
     UserManagerUiConfig,
     UserRow,
     install_usermanager_ui,
 )
+from my_usermanager.invitations import InvitationError
 from starlette.status import HTTP_303_SEE_OTHER, HTTP_403_FORBIDDEN
 
 from app_factory.platform import (
@@ -61,7 +63,8 @@ PLATFORM_PATHS: Final = PlatformPaths(
     account="/account",
     credentials=PASSKEY_PATHS.credentials_page,
     admin_users="/admin/users",
-    invite="/admin/users/invite",
+    # Packaged invite form lives on the users page; POST remains /admin/users/invite.
+    invite="/admin/users",
 )
 
 
@@ -192,6 +195,63 @@ class _UmHooks:
 
     def render_passkey_panel(self, _request: Request, _current_user) -> PasskeyPanel:
         return PasskeyPanel(template_name="auth/_integration_panel.html", context={})
+
+    def invite_user(
+        self,
+        _request: Request,
+        current_user,
+        username: str,
+        email: str,
+        role: str,
+    ) -> InvitationResult:
+        try:
+            _invitation_id, token = self._demo.issue_invite(
+                actor_id=current_user.user_id,
+                username=username,
+                email=email,
+                role=role,
+            )
+        except InvitationError as exc:
+            raise HTTPException(
+                status_code=409, detail="invitation is unavailable"
+            ) from exc
+        return InvitationResult(
+            activation_url=f"{PLATFORM_PATHS.activation}?capability={token}"
+        )
+
+    def reissue_invitation(
+        self, _request: Request, current_user, invitation_id: str
+    ) -> InvitationResult:
+        try:
+            _invitation_id, token = self._demo.reissue_invite(
+                actor_id=current_user.user_id,
+                invitation_id=invitation_id,
+            )
+        except InvitationError as exc:
+            raise HTTPException(
+                status_code=409, detail="invitation is unavailable"
+            ) from exc
+        return InvitationResult(
+            activation_url=f"{PLATFORM_PATHS.activation}?capability={token}"
+        )
+
+    def revoke_invitation(
+        self, _request: Request, current_user, invitation_id: str
+    ) -> UserRow:
+        try:
+            revoked = self._demo.revoke_invite(
+                actor_id=current_user.user_id,
+                invitation_id=invitation_id,
+            )
+        except InvitationError as exc:
+            raise HTTPException(
+                status_code=409, detail="invitation is unavailable"
+            ) from exc
+        return next(
+            row
+            for row in self._demo.user_rows()
+            if row.user_id == revoked.user_id
+        )
 
 
 def create_app(store: DemoStore | None = None) -> FastAPI:
@@ -327,6 +387,7 @@ def create_app(store: DemoStore | None = None) -> FastAPI:
         config=UserManagerUiConfig(
             account_path=PLATFORM_PATHS.account,
             users_path=PLATFORM_PATHS.admin_users,
+            invite_path="/admin/users/invite",
             login_url=PLATFORM_PATHS.login,
             logout_path=PLATFORM_PATHS.logout,
             csrf_protection=_DemoCsrf(),
@@ -376,44 +437,6 @@ def create_app(store: DemoStore | None = None) -> FastAPI:
         response = RedirectResponse("/", status_code=HTTP_303_SEE_OTHER)
         if user_id in demo.users:
             response.set_cookie(SESSION_COOKIE, user_id, httponly=True, samesite="lax")
-        return response
-
-    @app.get(PLATFORM_PATHS.invite, response_class=HTMLResponse)
-    def invite_page(request: Request) -> HTMLResponse:
-        user = platform_user(request)
-        apply_platform_context(
-            TEMPLATES.env,
-            config,
-            user=user,
-            current_path=PLATFORM_PATHS.invite,
-        )
-        if user is None or not user.is_admin:
-            return TEMPLATES.TemplateResponse(
-                request,
-                "app_factory/identity_denied.html",
-                status_code=HTTP_403_FORBIDDEN,
-            )
-        return TEMPLATES.TemplateResponse(
-            request,
-            "invite.html",
-            {"paths": PLATFORM_PATHS, "issued": list(demo.issued_invites)},
-        )
-
-    @app.post(PLATFORM_PATHS.invite)
-    def invite_submit(
-        request: Request,
-        username: str = Form(...),
-        demo_csrf: str = Form(...),
-    ) -> RedirectResponse:
-        _DemoCsrf().validate(request, demo_csrf)
-        actor = _session_user_id(request) or ADMIN_ID
-        invitation_id, token = demo.issue_invite(actor_id=actor, username=username)
-        url = f"{PLATFORM_PATHS.activation}?capability={token}"
-        response = RedirectResponse(
-            f"{PLATFORM_PATHS.invite}?issued={invitation_id}",
-            status_code=HTTP_303_SEE_OTHER,
-        )
-        response.headers["X-Demo-Activation-URL"] = url
         return response
 
     @app.post("/demo/recovery/{user_id}")

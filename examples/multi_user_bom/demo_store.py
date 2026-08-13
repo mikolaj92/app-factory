@@ -34,12 +34,14 @@ from my_usermanager import (
 )
 from my_usermanager.adapters.fastapi_htmx import (
     ExternalIdentityRow,
+    InvitationRow,
     PermissionGrantRow,
     UserRow,
     row_key_from_user_id,
 )
 from my_usermanager.adapters.my_auth_enrollment import build_enrollment_capability_issuer
 from my_usermanager.invitations import (
+    Invitation,
     InvitationGrant,
     InvitationService,
     MemoryInvitationStore,
@@ -210,6 +212,8 @@ class DemoStore:
                     external_identities=(
                         ExternalIdentityRow(provider=PROVIDER, subject=user.user_id),
                     ),
+                    account_status=um.status if um is not None else None,
+                    invitation=self._invitation_row(user.user_id),
                 )
             )
         return tuple(rows)
@@ -217,25 +221,38 @@ class DemoStore:
     def credentials_for(self, user_id: str) -> list[PasskeyCredential]:
         return list(self.credentials.list_credentials_for_user(user_id))
 
-    def issue_invite(self, *, actor_id: str, username: str) -> tuple[str, str]:
+    def issue_invite(
+        self,
+        *,
+        actor_id: str,
+        username: str,
+        email: str,
+        role: str,
+    ) -> tuple[str, str]:
         pending = User(
             user_id=username,
             username=username,
             display_name=username.title(),
-            email=f"{username}@example.invalid",
+            email=email,
             status="pending",
+        )
+        grant = (
+            InvitationGrant(role_name="admin")
+            if role == "admin"
+            else InvitationGrant(permission=Permission("users.read"))
         )
         issued = self.invitation_service.invite(
             actor_id=actor_id,
             user=pending,
-            grants=(InvitationGrant(permission=Permission("users.read")),),
+            grants=(grant,),
             ttl_seconds=3600,
         )
         self.users[username] = DemoUser(
             username,
             username,
             username.title(),
-            f"{username}@example.invalid",
+            email,
+            is_admin=role == "admin",
         )
         self.passkey_users[username] = PasskeyUser(
             user_id=username,
@@ -246,6 +263,44 @@ class DemoStore:
         pair = (issued.invitation.invitation_id, issued.token)
         self.issued_invites.append(pair)
         return pair
+
+    def reissue_invite(self, *, actor_id: str, invitation_id: str) -> tuple[str, str]:
+        issued = self.invitation_service.reissue(
+            actor_id=actor_id,
+            invitation_id=invitation_id,
+            ttl_seconds=3600,
+        )
+        pair = (issued.invitation.invitation_id, issued.token)
+        self.issued_invites = [
+            pair if item[0] == invitation_id else item for item in self.issued_invites
+        ]
+        if pair not in self.issued_invites:
+            self.issued_invites.append(pair)
+        return pair
+
+    def revoke_invite(self, *, actor_id: str, invitation_id: str) -> Invitation:
+        return self.invitation_service.revoke(
+            actor_id=actor_id, invitation_id=invitation_id
+        )
+
+    def _invitation_row(self, user_id: str) -> InvitationRow | None:
+        invitation = self.invitations.get_pending_for_user(user_id)
+        if invitation is None:
+            invitation = next(
+                (
+                    item
+                    for item in self.invitations._invitations.values()  # noqa: SLF001
+                    if item.user_id == user_id
+                ),
+                None,
+            )
+        if invitation is None:
+            return None
+        return InvitationRow(
+            invitation_id=invitation.invitation_id,
+            status=invitation.status,
+            expires_at=invitation.expires_at.isoformat(),
+        )
 
     def issue_recovery(self, *, subject: str, issued_by: str) -> str:
         issued = self.enrollment.issue(

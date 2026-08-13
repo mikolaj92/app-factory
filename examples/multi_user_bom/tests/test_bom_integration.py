@@ -6,6 +6,7 @@ import re
 import subprocess
 import tomllib
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 from fastapi.testclient import TestClient
@@ -38,7 +39,7 @@ def test_bom_pins_align_with_example_pyproject() -> None:
     assert example["tool"]["uv"]["override-dependencies"] == [
         "app-factory[platform]"
     ]
-    assert bom["pins"]["app-factory"] == "v0.6.2"
+    assert bom["pins"]["app-factory"] == "v0.6.3"
 
 
 def test_uv_lock_selects_single_app_factory_source() -> None:
@@ -58,19 +59,21 @@ def test_uv_lock_selects_single_app_factory_source() -> None:
         r"source = \{([^}]+)\}",
         text,
     )
-    assert package_blocks == [("0.6.2", ' editable = "../../" ')] or package_blocks == [
-        ("0.6.2", 'editable = "../../"')
+    assert package_blocks == [("0.6.3", ' editable = "../../" ')] or package_blocks == [
+        ("0.6.3", 'editable = "../../"')
     ] or (
         len(package_blocks) == 1
-        and package_blocks[0][0] == "0.6.2"
+        and package_blocks[0][0] == "0.6.3"
         and "editable" in package_blocks[0][1]
     ), package_blocks
     # Nested adapter git tags for older app-factory must not appear as package sources.
     assert "git+https://github.com/mikolaj92/app-factory@v0.5." not in text
     assert re.search(r'name = "my-auth"\nversion = "0\.4\.0"', text)
     assert "tag=v0.4.0" in text
-    assert re.search(r'name = "my-usermanager"\nversion = "0\.5\.0"', text)
-    assert "tag=v0.5.0" in text
+    assert re.search(r'name = "my-usermanager"\nversion = "0\.5\.1"', text)
+    assert "tag=v0.5.1" in text
+    assert "tag=v0.5.0" not in text
+    assert not re.search(r'name = "my-auth"\nversion = "0\.5\.', text)
 
 
 def test_seeded_users_have_distinct_credentials(client: TestClient) -> None:
@@ -120,11 +123,18 @@ def test_invitation_activation_and_recovery_use_identity_public_shell(
     _as(client, ADMIN_ID)
     invite = client.post(
         "/admin/users/invite",
-        data={"username": "casey", "demo_csrf": "demo-bom-csrf"},
+        data={
+            "username": "casey",
+            "email": "casey@example.invalid",
+            "role": "member",
+            "csrf": "demo-bom-csrf",
+        },
         follow_redirects=False,
     )
     assert invite.status_code == 303
-    activation_url = invite.headers["X-Demo-Activation-URL"]
+    location = urlparse(invite.headers["location"])
+    assert location.path == "/admin/users"
+    activation_url = parse_qs(location.query)["invitation_url"][0]
     assert activation_url.startswith("/activate?capability=")
 
     activation = client.get(activation_url)
@@ -159,10 +169,11 @@ def test_admin_users_and_account_use_authenticated_identity_shell(
     assert "Ada Admin" in users.text or "admin" in users.text
     assert "Morgan Member" in users.text or "member" in users.text
     assert "data-platform-identity-navigation" in users.text
+    assert "Invite user" in users.text
 
 
 def test_invite_page_denied_for_member(client: TestClient) -> None:
     _as(client, MEMBER_ID)
-    denied = client.get("/admin/users/invite")
+    denied = client.get("/admin/users")
     assert denied.status_code == 403
-    assert "data-platform-identity-denied-page" in denied.text
+    assert "Admin access required" in denied.text

@@ -4,9 +4,9 @@ Reference FastAPI host pinned to the immutable multi-user compatibility BOM:
 
 | Package | Tag |
 |---------|-----|
-| app-factory | `v0.6.2` (editable path while developing this repo) |
+| app-factory | `v0.6.3` (editable path while developing this repo) |
 | my-auth | `v0.4.0` |
-| my-usermanager | `v0.5.0` |
+| my-usermanager | `v0.5.1` |
 
 Machine-readable pins: [`bom/multi_user.toml`](../../bom/multi_user.toml).
 Human matrix / upgrade order / migration: [`COMPAT.md`](../../COMPAT.md).
@@ -50,7 +50,7 @@ uv run pytest -q
 | Credentials | `/account/passkeys` | my-auth on identity authenticated shell |
 | Account | `/account` | my-usermanager on identity authenticated shell |
 | Admin users | `/admin/users` | my-usermanager |
-| Invite | `/admin/users/invite` | host page + InvitationService |
+| Invite / reissue / revoke | `/admin/users` (POST `/admin/users/invite`) | my-usermanager packaged admin UI |
 
 ## Production pin recipe
 
@@ -65,7 +65,7 @@ dependencies = [
 override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.6.2" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.6.3" }
 my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.4.0" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.5.0" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.5.1" }
 ```
