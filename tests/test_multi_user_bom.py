@@ -21,9 +21,9 @@ def test_bom_pins_are_immutable_tags() -> None:
     bom = _bom()
     pins = bom["pins"]
     assert pins == {
-        "app-factory": "v0.6.4",
-        "my-auth": "v0.4.1",
-        "my-usermanager": "v0.5.2",
+        "app-factory": "v0.6.5",
+        "my-auth": "v0.4.2",
+        "my-usermanager": "v0.5.4",
     }
     for name, tag in pins.items():
         assert tag.startswith("v"), name
@@ -31,7 +31,6 @@ def test_bom_pins_are_immutable_tags() -> None:
     assert bom["resolution"]["require_single_app_factory"] is True
     assert bom["resolution"]["override_dependencies"] == [
         "app-factory[platform]",
-        "my-auth[fastapi-htmx]",
     ]
 
 
@@ -39,10 +38,17 @@ def test_compat_documents_bom_matrix_upgrade_order_and_migration() -> None:
     text = COMPAT_PATH.read_text(encoding="utf-8")
     bom = _bom()
     assert f"| **{bom['pins']['app-factory']}** | **{bom['pins']['my-auth']}** | **{bom['pins']['my-usermanager']}** |" in text
+    assert "| **v0.6.4** | **v0.4.1** | **v0.5.2** |" in text
     assert "Identity lifecycle capability matrix" in text
     assert "Supported upgrade order" in text
     assert "Migration from host-owned recovery" in text
-    assert "override-dependencies" in text
+    assert 'override-dependencies = ["app-factory[platform]"]' in text
+    assert (
+        'override-dependencies = ["app-factory[platform]", "my-auth[fastapi-htmx]"]'
+        not in text
+    )
+    assert "ensure_sqlite_schema" in text
+    assert "SQLiteEnrollmentCapabilityStore" in text
     assert "1. **app-factory**" in text
     assert "2. **my-auth**" in text
     assert "3. **my-usermanager**" in text
@@ -77,7 +83,9 @@ def test_example_pyproject_matches_bom_and_forces_single_source() -> None:
         EXAMPLE_ROOT / "demo_store.py"
     ).read_text(encoding="utf-8")
     assert "create_invitation_tables" not in host_python
+    assert "SQLiteEnrollmentCapabilityStore" not in host_python
     assert "my_auth_overrides" not in host_python
+    assert "my-auth[fastapi-htmx]" not in example["tool"]["uv"]["override-dependencies"]
 
 
 def test_example_integration_suite_passes() -> None:

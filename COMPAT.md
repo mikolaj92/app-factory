@@ -7,6 +7,7 @@ Reference host: [`examples/multi_user_bom/`](examples/multi_user_bom/).
 
 | app-factory | my-auth | my-usermanager | Contract |
 |-------------|---------|----------------|----------|
+| **v0.6.5** | **v0.4.2** | **v0.5.4** | **Identity-lifecycle plus enrollment capability DDL** (my-auth v0.4.2 `ensure_sqlite_schema` stamps `passkey_enrollment_capabilities`; hosts drop dummy `SQLiteEnrollmentCapabilityStore(db)` after `initialize()`) **plus nested my-auth pin in my-usermanager** (v0.5.4 sources my-auth v0.4.2 + app-factory v0.6.4; hosts override `app-factory[platform]` only); keep my-auth 0.4.x (do not mix 0.5.x); hosts pin one immutable generation (see capability matrix) |
 | **v0.6.4** | **v0.4.1** | **v0.5.2** | **Identity-lifecycle plus packaged ceremony shells** (my-auth v0.4.1 activation/recovery/credentials extend identity shells; hosts drop `my_auth_overrides`) **plus invitation DDL owned by SQLiteAuthDatabase** (my-usermanager v0.5.2 `initialize()` stamps `um_invitations`; hosts drop `create_invitation_tables`); keep my-auth 0.4.x (do not mix 0.5.x); hosts pin one immutable generation (see capability matrix) |
 | **v0.6.3** | **v0.4.0** | **v0.5.1** | **Identity-lifecycle generation plus packaged invite admin** (status / reissue / revoke) from my-usermanager v0.5.1; keep my-auth v0.4.0 (do not mix 0.5.x); hosts pin one immutable generation (see capability matrix) |
 | **v0.6.2** | **v0.4.0** | **v0.5.0** | **Multi-user identity-lifecycle BOM**: subject-bound enrollment/recovery + invitations + shared identity shells/paths; hosts pin one immutable generation (see capability matrix) |
@@ -51,22 +52,23 @@ dependencies = [
 ]
 
 [tool.uv]
-# Nested adapter uv.sources pin older app-factory and my-auth tags
-# (UM v0.5.2 still sources my-auth@v0.4.0). Override so resolution
-# selects exactly one app-factory + my-auth source/version.
-override-dependencies = ["app-factory[platform]", "my-auth[fastapi-htmx]"]
+# Nested adapter uv.sources pin older app-factory tags
+# (UM v0.5.4 sources app-factory@v0.6.4; my-auth v0.4.2 sources
+# app-factory@v0.6.3). Override app-factory only. Do not override
+# my-auth — UM v0.5.4 already nests my-auth@v0.4.2.
+override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.6.4" }
-my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.4.1" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.5.2" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.6.5" }
+my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.4.2" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.5.4" }
 ```
 
 Do **not** float `my-usermanager` on `branch = "main"` for production hosts.
 Do **not** re-copy theme boot, shell boot, or platform foot templates into hosts.
-Do **not** mix BOM generations (for example app-factory v0.6.4 with my-auth v0.5.x).
+Do **not** mix BOM generations (for example app-factory v0.6.5 with my-auth v0.5.x).
 
-### Identity lifecycle capability matrix (BOM v0.6.4)
+### Identity lifecycle capability matrix (BOM v0.6.5)
 
 | Capability | Owner | Default surface | Visibility |
 |------------|-------|-----------------|------------|
@@ -80,27 +82,28 @@ Do **not** mix BOM generations (for example app-factory v0.6.4 with my-auth v0.5
 | Shared public / authenticated shells | app-factory | `identity_*_shell` | composition |
 | Packaged ceremony shells | my-auth | `/activate`, `/recover`, `/account/passkeys` | composition |
 | Invitation table DDL | my-usermanager | `SQLiteAuthDatabase.initialize()` | host bootstrap |
+| Enrollment capability DDL | my-auth | `ensure_sqlite_schema` (via `SQLiteAuthDatabase.initialize()`) | host bootstrap |
 | Path + identity nav contract | app-factory | `PlatformPaths` | composition |
 
 ### Supported upgrade order
 
 Apply one generation at a time, in this order:
 
-1. **app-factory** — paths (`PlatformPaths`) and identity shells (`v0.6.0` → `v0.6.4`).
-2. **my-auth** — subject-bound enrollment / recovery plus packaged ceremony shells (`v0.4.1`); keep `PasskeyPaths` aligned with `PlatformPaths`. Do **not** mix my-auth `v0.5.x`.
-3. **my-usermanager** — account lifecycle + packaged invite admin + invitation DDL in `SQLiteAuthDatabase.initialize()` (`v0.5.2`); set `base_template` to `app_factory/identity_authenticated_shell.html`.
-4. **Host** — pin all three tags from the same BOM row, add `override-dependencies`, migrate templates (below), delete host-owned recovery/enrollment/invite chrome, drop `my_auth_overrides` and host `create_invitation_tables` after `initialize()`.
+1. **app-factory** — paths (`PlatformPaths`) and identity shells (`v0.6.0` → `v0.6.5`).
+2. **my-auth** — subject-bound enrollment / recovery plus packaged ceremony shells (`v0.4.2`); `ensure_sqlite_schema` stamps `passkey_enrollment_capabilities`; keep `PasskeyPaths` aligned with `PlatformPaths`. Do **not** mix my-auth `v0.5.x`.
+3. **my-usermanager** — account lifecycle + packaged invite admin + invitation DDL in `SQLiteAuthDatabase.initialize()` (`v0.5.4`); nested sources my-auth v0.4.2 + app-factory v0.6.4; set `base_template` to `app_factory/identity_authenticated_shell.html`.
+4. **Host** — pin all three tags from the same BOM row, add `override-dependencies = ["app-factory[platform]"]` only (do not override my-auth), migrate templates (below), delete host-owned recovery/enrollment/invite chrome, drop `my_auth_overrides`, host `create_invitation_tables`, and dummy `SQLiteEnrollmentCapabilityStore(db)` after `initialize()`.
 
 Rollback is the reverse order. Never run production with packages from different matrix rows.
 
 ### Migration from host-owned recovery / enrollment templates
 
 1. Delete host copies of activation, recovery, enroll, and “set up passkey” full-page templates.
-2. Point my-auth capability/credential pages at the shared shells. my-auth v0.4.1 packaged adapters already extend `identity_public_shell` / `identity_authenticated_shell`; delete host `my_auth_overrides` for those two templates. Login/register stay on `shell.html`.
+2. Point my-auth capability/credential pages at the shared shells. my-auth v0.4.2 packaged adapters already extend `identity_public_shell` / `identity_authenticated_shell`; delete host `my_auth_overrides` for those two templates. Login/register stay on `shell.html`.
 3. Set `UserManagerUiConfig.base_template = "app_factory/identity_authenticated_shell.html"`.
 4. Route invite delivery through my-usermanager `InvitationService` + my-auth enrollment capabilities; links target `platform_paths.activation` / `recovery` with the opaque token only.
 5. Delete host `invite.html`. Implement `invite_user`, `reissue_invitation`, and `revoke_invitation` hooks so the packaged admin users UI owns issuance / reissue / revoke (activation URL is shown once after invite/reissue).
-6. After `SQLiteAuthDatabase.initialize()`, do not call host `create_invitation_tables` — invitation DDL (`um_invitations`) is stamped in the same owned transaction (my-usermanager v0.5.2).
+6. After `SQLiteAuthDatabase.initialize()`, do not call host `create_invitation_tables` — invitation DDL (`um_invitations`) is stamped in the same owned transaction (my-usermanager v0.5.2+). Do not construct a dummy `SQLiteEnrollmentCapabilityStore(db)` after `initialize()` — enrollment DDL (`passkey_enrollment_capabilities`) is stamped by my-auth v0.4.2 `ensure_sqlite_schema`. Drop `my-auth` from `override-dependencies` if present (UM v0.5.4 nests v0.4.2).
 7. Enable identity nav with `enable_account`, `enable_credentials`, `enable_admin_users`, `enable_invite` instead of hand-built sidebar entries.
 8. Keep product authorization/role policy in the host; do not fork adapter ceremony markup.
 
