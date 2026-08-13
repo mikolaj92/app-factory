@@ -7,9 +7,9 @@ version = "2026.08"
 generation = "identity-lifecycle"
 
 [pins]
-app-factory = "v0.6.2"
+app-factory = "v0.6.3"
 my-auth = "v0.4.0"
-my-usermanager = "v0.5.0"
+my-usermanager = "v0.5.1"
 
 [sources]
 app-factory = "https://github.com/mikolaj92/app-factory"
@@ -29,7 +29,7 @@ account_recovery = { owner = "my-auth", surfaces = ["recovery"], visibility = "p
 account_credentials = { owner = "my-auth", surfaces = ["credentials"], visibility = "authenticated" }
 account_profile = { owner = "my-usermanager", surfaces = ["account"], visibility = "authenticated" }
 admin_users = { owner = "my-usermanager", surfaces = ["users"], visibility = "admin" }
-admin_invite = { owner = "my-usermanager+host", surfaces = ["invite"], visibility = "admin" }
+admin_invite = { owner = "my-usermanager", surfaces = ["invite", "reissue", "revoke"], visibility = "admin" }
 shared_shells = { owner = "app-factory", surfaces = ["identity_public_shell", "identity_authenticated_shell"], visibility = "composition" }
 
 [upgrade_order]

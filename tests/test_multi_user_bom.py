@@ -21,9 +21,9 @@ def test_bom_pins_are_immutable_tags() -> None:
     bom = _bom()
     pins = bom["pins"]
     assert pins == {
-        "app-factory": "v0.6.2",
+        "app-factory": "v0.6.3",
         "my-auth": "v0.4.0",
-        "my-usermanager": "v0.5.0",
+        "my-usermanager": "v0.5.1",
     }
     for name, tag in pins.items():
         assert tag.startswith("v"), name
@@ -68,6 +68,7 @@ def test_example_pyproject_matches_bom_and_forces_single_source() -> None:
     readme = (EXAMPLE_ROOT / "README.md").read_text(encoding="utf-8")
     for tag in bom["pins"].values():
         assert tag in readme
+    assert not (EXAMPLE_ROOT / "templates" / "invite.html").exists()
 
 
 def test_example_integration_suite_passes() -> None:

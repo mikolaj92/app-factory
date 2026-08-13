@@ -25,7 +25,7 @@ override-dependencies = [
 # Production hosts replace this with the immutable git tag from bom/multi_user.toml.
 app-factory = { path = "../..", editable = true }
 my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.4.0" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.5.0" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.5.1" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

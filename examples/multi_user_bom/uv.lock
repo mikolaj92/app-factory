@@ -38,7 +38,7 @@ wheels = [
 
 [[package]]
 name = "app-factory"
-version = "0.6.2"
+version = "0.6.3"
 source = { editable = "../../" }
 dependencies = [
     { name = "jinja2" },
@@ -92,7 +92,7 @@ requires-dist = [
     { name = "app-factory", extras = ["platform"], editable = "../../" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "my-auth", extras = ["fastapi-htmx"], git = "https://github.com/mikolaj92/my-auth?tag=v0.4.0" },
-    { name = "my-usermanager", extras = ["fastapi-htmx", "myauth"], git = "https://github.com/mikolaj92/my-usermanager?tag=v0.5.0" },
+    { name = "my-usermanager", extras = ["fastapi-htmx", "myauth"], git = "https://github.com/mikolaj92/my-usermanager?tag=v0.5.1" },
     { name = "pytest", specifier = ">=8" },
     { name = "python-multipart", specifier = ">=0.0.12" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
@@ -493,8 +493,8 @@ fastapi-htmx = [
 
 [[package]]
 name = "my-usermanager"
-version = "0.5.0"
-source = { git = "https://github.com/mikolaj92/my-usermanager?tag=v0.5.0#206e78884a7cd9efc8bae85bd2f6d8ee45c3bcb7" }
+version = "0.5.1"
+source = { git = "https://github.com/mikolaj92/my-usermanager?tag=v0.5.1#5759fc8409f8d948a6b9564d4a8c0f84498b3316" }
 
 [package.optional-dependencies]
 fastapi-htmx = [
