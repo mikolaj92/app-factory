@@ -7,9 +7,9 @@ version = "2026.08"
 generation = "identity-lifecycle"
 
 [pins]
-app-factory = "v0.6.4"
-my-auth = "v0.4.1"
-my-usermanager = "v0.5.2"
+app-factory = "v0.6.5"
+my-auth = "v0.4.2"
+my-usermanager = "v0.5.4"
 
 [sources]
 app-factory = "https://github.com/mikolaj92/app-factory"
@@ -17,11 +17,13 @@ my-auth = "https://github.com/mikolaj92/my-auth"
 my-usermanager = "https://github.com/mikolaj92/my-usermanager"
 
 [resolution]
-# Nested adapter uv.sources pin older app-factory and my-auth tags
-# (UM v0.5.2 still sources my-auth@v0.4.0). Hosts MUST override so
-# dependency resolution selects exactly one app-factory + my-auth source.
+# Nested adapter uv.sources pin older app-factory tags
+# (UM v0.5.4 sources app-factory@v0.6.4; my-auth v0.4.2 sources
+# app-factory@v0.6.3). Hosts MUST override app-factory so resolution
+# selects exactly one app-factory source. Do not override my-auth:
+# UM v0.5.4 already nests my-auth@v0.4.2.
 require_single_app_factory = true
-override_dependencies = ["app-factory[platform]", "my-auth[fastapi-htmx]"]
+override_dependencies = ["app-factory[platform]"]
 
 [capabilities]
 bootstrap = { owner = "my-auth", surfaces = ["register"], visibility = "public" }
@@ -32,6 +34,7 @@ account_profile = { owner = "my-usermanager", surfaces = ["account"], visibility
 admin_users = { owner = "my-usermanager", surfaces = ["users"], visibility = "admin" }
 admin_invite = { owner = "my-usermanager", surfaces = ["invite", "reissue", "revoke"], visibility = "admin" }
 shared_shells = { owner = "app-factory", surfaces = ["identity_public_shell", "identity_authenticated_shell"], visibility = "composition" }
+enrollment_capability_ddl = { owner = "my-auth", surfaces = ["ensure_sqlite_schema"], visibility = "host-bootstrap" }
 
 [upgrade_order]
 # Apply in this order; do not mix generations across the three packages.

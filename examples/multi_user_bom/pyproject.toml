@@ -14,20 +14,20 @@ dependencies = [
 ]
 
 [tool.uv]
-# Nested adapter uv.sources pin older app-factory and my-auth tags
-# (UM v0.5.2 still sources my-auth@v0.4.0). Override so resolution
-# selects this BOM's app-factory + my-auth sources.
+# Nested adapter uv.sources pin older app-factory tags
+# (UM v0.5.4 sources app-factory@v0.6.4; my-auth v0.4.2 sources
+# app-factory@v0.6.3). Override app-factory only. Do not override
+# my-auth — UM v0.5.4 already nests my-auth@v0.4.2.
 override-dependencies = [
   "app-factory[platform]",
-  "my-auth[fastapi-htmx]",
 ]
 
 [tool.uv.sources]
 # Local editable pin for developing app-factory against released auth tags.
 # Production hosts replace this with the immutable git tag from bom/multi_user.toml.
 app-factory = { path = "../..", editable = true }
-my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.4.1" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.5.2" }
+my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.4.2" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.5.4" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
