@@ -4,22 +4,27 @@ Reference FastAPI host pinned to the immutable multi-user compatibility BOM:
 
 | Package | Tag |
 |---------|-----|
-| app-factory | `v0.6.3` (editable path while developing this repo) |
-| my-auth | `v0.4.0` |
-| my-usermanager | `v0.5.1` |
+| app-factory | `v0.6.4` (editable path while developing this repo) |
+| my-auth | `v0.4.1` |
+| my-usermanager | `v0.5.2` |
 
 Machine-readable pins: [`bom/multi_user.toml`](../../bom/multi_user.toml).
 Human matrix / upgrade order / migration: [`COMPAT.md`](../../COMPAT.md).
 
+This generation uses my-auth packaged ceremony shells (no host
+`my_auth_overrides`). SQLite hosts call `SQLiteAuthDatabase.initialize()` only —
+do not follow it with `create_invitation_tables`.
+
 ## Why `override-dependencies`?
 
 `my-auth` and `my-usermanager` each declare nested `tool.uv.sources` for older
-app-factory tags. Without a host override, `uv lock` fails with conflicting
-URLs. This example (and production hosts) force one app-factory source:
+app-factory tags, and my-usermanager v0.5.2 still sources my-auth@v0.4.0.
+Without a host override, `uv lock` fails with conflicting URLs. This example
+(and production hosts) force one app-factory and one my-auth source:
 
 ```toml
 [tool.uv]
-override-dependencies = ["app-factory[platform]"]
+override-dependencies = ["app-factory[platform]", "my-auth[fastapi-htmx]"]
 ```
 
 ## Run
@@ -65,7 +70,7 @@ dependencies = [
 override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.6.3" }
-my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.4.0" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.5.1" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.6.4" }
+my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.4.1" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.5.2" }
 ```

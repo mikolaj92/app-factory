@@ -14,7 +14,6 @@ from typing import Final, Literal
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from jinja2 import ChoiceLoader, FileSystemLoader
 from my_auth import PasskeyUser, RegistrationContext
 from my_auth.fastapi import PasskeyCookies, PasskeyPaths, PasskeyRouteHooks
 from my_auth.fastapi_htmx import PasskeyUiConfig, install_passkey_ui
@@ -372,12 +371,6 @@ def create_app(store: DemoStore | None = None) -> FastAPI:
             show_registration_link=lambda _request: True,
         ),
     )
-    # Host migration pattern: prefer identity shells over packaged shell.html.
-    loader = passkey_ui.environment.loader
-    if isinstance(loader, ChoiceLoader):
-        loader.loaders.insert(
-            0, FileSystemLoader(str(ROOT / "templates" / "my_auth_overrides"))
-        )
     apply_platform_context(passkey_ui.environment, config)
 
     install_usermanager_ui(

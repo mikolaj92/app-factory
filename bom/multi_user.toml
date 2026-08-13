@@ -7,9 +7,9 @@ version = "2026.08"
 generation = "identity-lifecycle"
 
 [pins]
-app-factory = "v0.6.3"
-my-auth = "v0.4.0"
-my-usermanager = "v0.5.1"
+app-factory = "v0.6.4"
+my-auth = "v0.4.1"
+my-usermanager = "v0.5.2"
 
 [sources]
 app-factory = "https://github.com/mikolaj92/app-factory"
@@ -17,10 +17,11 @@ my-auth = "https://github.com/mikolaj92/my-auth"
 my-usermanager = "https://github.com/mikolaj92/my-usermanager"
 
 [resolution]
-# Nested adapter uv.sources pin older app-factory tags. Hosts MUST override so
-# dependency resolution selects exactly one app-factory source/version.
+# Nested adapter uv.sources pin older app-factory and my-auth tags
+# (UM v0.5.2 still sources my-auth@v0.4.0). Hosts MUST override so
+# dependency resolution selects exactly one app-factory + my-auth source.
 require_single_app_factory = true
-override_dependencies = ["app-factory[platform]"]
+override_dependencies = ["app-factory[platform]", "my-auth[fastapi-htmx]"]
 
 [capabilities]
 bootstrap = { owner = "my-auth", surfaces = ["register"], visibility = "public" }

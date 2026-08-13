@@ -21,15 +21,18 @@ def test_bom_pins_are_immutable_tags() -> None:
     bom = _bom()
     pins = bom["pins"]
     assert pins == {
-        "app-factory": "v0.6.3",
-        "my-auth": "v0.4.0",
-        "my-usermanager": "v0.5.1",
+        "app-factory": "v0.6.4",
+        "my-auth": "v0.4.1",
+        "my-usermanager": "v0.5.2",
     }
     for name, tag in pins.items():
         assert tag.startswith("v"), name
         assert "main" not in tag
     assert bom["resolution"]["require_single_app_factory"] is True
-    assert bom["resolution"]["override_dependencies"] == ["app-factory[platform]"]
+    assert bom["resolution"]["override_dependencies"] == [
+        "app-factory[platform]",
+        "my-auth[fastapi-htmx]",
+    ]
 
 
 def test_compat_documents_bom_matrix_upgrade_order_and_migration() -> None:
@@ -69,6 +72,12 @@ def test_example_pyproject_matches_bom_and_forces_single_source() -> None:
     for tag in bom["pins"].values():
         assert tag in readme
     assert not (EXAMPLE_ROOT / "templates" / "invite.html").exists()
+    assert not (EXAMPLE_ROOT / "templates" / "my_auth_overrides").exists()
+    host_python = (EXAMPLE_ROOT / "app.py").read_text(encoding="utf-8") + (
+        EXAMPLE_ROOT / "demo_store.py"
+    ).read_text(encoding="utf-8")
+    assert "create_invitation_tables" not in host_python
+    assert "my_auth_overrides" not in host_python
 
 
 def test_example_integration_suite_passes() -> None:
