@@ -57,6 +57,8 @@ Apps should not ship:
 | `app_factory.jinja` | `configure_jinja_env()` — registers bundled/local and optional CDN helpers plus the template loader |
 | `app_factory.fastapi` | `install_app_factory_ui()` — the sole supported FastAPI mount/Jinja integration |
 | `app_factory/templates/app_factory/shell.html` | Shared five-block full-page shell |
+| `app_factory/templates/app_factory/client_shell.html` | Slim TAP client document (Basecoat + theme/auth; no HTMX/Alpine) |
+| `app_factory/templates/app_factory/head_assets_slim.html` | Same-origin Basecoat/icons only (no HTMX/Alpine) |
 | `app_factory/templates/app_factory/identity_public_shell.html` | Public activation/recovery frame (brand + theme/locale, no sidebar) |
 | `app_factory/templates/app_factory/identity_authenticated_shell.html` | Authenticated account/credentials/users frame (`product_shell` + markers) |
 | `app_factory/templates/app_factory/identity_public_state.html` | Non-enumerating invalid/expired capability alert |
@@ -201,10 +203,11 @@ Full-page templates extend the sole platform shell:
 {% block main %}<h1>Ready</h1>{% endblock %}
 ```
 
-The supported blocks include `title`, `head_extra`, `body` / `navigation` /
-`header` / `content` / `page_scripts` / `loading_label` / `content_class` /
-`body_end`, plus product-shell header slots `header_controls_start` /
-`header_controls_end` / `sidebar_toggle_icon`. Signed-in identity and its
+The supported blocks include `title`, `head_assets`, `head_extra`, `body` /
+`navigation` / `header` / `content` / `page_scripts` / `loading_label` /
+`content_class` / `body_end`, plus product-shell header slots
+`header_controls_start` / `header_controls_end` / `sidebar_toggle_icon`.
+Signed-in identity and its
 deterministic initial avatar render in the sidebar footer; guest users see
 login/register there instead. The shell loads theme boot,
 platform assets, and `shell_boot`. Product CSS and domain behavior remain
@@ -234,6 +237,25 @@ never receives authenticated/admin identity navigation. `PlatformUser`
 derives a stable background and initial for its high-contrast fallback avatar.
 Do not fork sidebar or main-header markup — inject extras only through blocks
 (`header_controls_start` for notifications, `body_end` for toasts).
+
+### Slim TAP client shell (no HTMX/Alpine)
+
+Operator `product_shell` / `shell.html` always load HTMX and Alpine via
+`head_assets`. TAP client hosts must not fork a private `client_base.html`
+to avoid that. Extend the packaged slim document instead:
+
+```html
+{% extends "app_factory/client_shell.html" %}
+{% block content %}
+  <h1>Portal</h1>
+  {% include "app_factory/platform_session.html" %}
+{% endblock %}
+```
+
+This frame keeps theme boot, Basecoat, and `platform_controls` (theme/locale +
+auth). It does **not** emit HTMX/Alpine tags or the HTMX loading overlay.
+Include `platform_session` on the account/home surface — never in the header.
+Constant: `CLIENT_SHELL`.
 
 ### Identity lifecycle shells
 
@@ -270,7 +292,7 @@ Extension points (no forks):
 | Unauthorized HTMX fragment | include `identity_denied_fragment.html` |
 | Adapter page body | `identity_panel` or `content` block |
 
-Constants: `IDENTITY_PUBLIC_SHELL`, `IDENTITY_AUTHENTICATED_SHELL`,
+Constants: `CLIENT_SHELL`, `IDENTITY_PUBLIC_SHELL`, `IDENTITY_AUTHENTICATED_SHELL`,
 `IDENTITY_PUBLIC_STATE`, `IDENTITY_DENIED`, `IDENTITY_DENIED_FRAGMENT`.
 
 ### `head_assets.html` behavior

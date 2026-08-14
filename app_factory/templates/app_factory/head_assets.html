@@ -1,10 +1,5 @@
 {# Shared head: locally bundled core assets, configured by install_app_factory_ui(). #}
-<link rel="stylesheet" href="{{ platform_asset_url('basecoat-css') }}">
-<link rel="stylesheet" href="{{ platform_asset_url('material-symbols-css') }}">
-{% if product_css_url is defined and product_css_url %}
-<link rel="stylesheet" href="{{ product_css_url }}">
-{% endif %}
-<script src="{{ platform_asset_url('basecoat-js-all') }}" defer></script>
+{% include "app_factory/head_assets_slim.html" %}
 <script src="{{ platform_asset_url('htmx') }}"></script>
 <script src="{{ platform_asset_url('alpine') }}" defer></script>
 <script>

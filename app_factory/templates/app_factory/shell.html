@@ -5,7 +5,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ page_title | default(app_name | default('App')) }}{% endblock %}</title>
+  {% block head_assets %}
   {% include "app_factory/head_assets.html" %}
+  {% endblock %}
   {% block head_extra %}{% endblock %}
   {# Hosts may set window.appShellConfig in head_extra before this runs. #}
   {% include "app_factory/shell_boot.html" %}

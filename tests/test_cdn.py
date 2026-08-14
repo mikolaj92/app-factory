@@ -78,6 +78,17 @@ def test_head_partial_uses_only_same_origin_core_assets():
     assert "/static/platform/material-symbols.css" in rendered
 
 
+def test_slim_head_partial_omits_htmx_and_alpine():
+    env = configure_jinja_env(Environment(autoescape=True))
+    rendered = env.get_template("app_factory/head_assets_slim.html").render()
+    assert "https://" not in rendered
+    assert "/static/platform/basecoat-factory.min.css" in rendered
+    assert "/static/platform/basecoat-js.min.js" in rendered
+    assert "/static/platform/material-symbols.css" in rendered
+    assert "/static/platform/htmx.min.js" not in rendered
+    assert "/static/platform/alpine.min.js" not in rendered
+
+
 # --- Local bundled assets contract (package data) ---
 # These tests run against the final assets inside the installed package
 # (app_factory/assets/...), not the build sources.

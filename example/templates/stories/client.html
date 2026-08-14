@@ -1,0 +1,39 @@
+{% extends "app_factory/client_shell.html" %}
+
+{% block title %}Slim TAP client · app-factory{% endblock %}
+
+{% block content %}
+<section class="app-page">
+  <header class="app-header">
+    <div class="app-stack app-stack--tight">
+      <p class="text-sm text-muted-foreground mono">story · slim TAP client</p>
+      <h1 class="text-2xl font-semibold">Slim TAP client</h1>
+      <p class="text-sm text-muted-foreground max-w-prose">
+        Extends <code class="mono">app_factory/client_shell.html</code> — Basecoat,
+        theme boot, and <code class="mono">platform_controls</code> without HTMX or
+        Alpine. Hosts fill content and include
+        <code class="mono">platform_session</code> on the account/home surface.
+      </p>
+    </div>
+  </header>
+
+  <div class="app-stack">
+    <div class="card">
+      <header>
+        <h2 class="text-base font-semibold">Same-origin Basecoat only</h2>
+        <p class="text-sm text-muted-foreground">
+          Do not fork <code class="mono">theme_boot</code> +
+          <code class="mono">platform_controls</code> into a host
+          <code class="mono">client_base.html</code>.
+        </p>
+      </header>
+      <section class="text-sm text-muted-foreground">
+        Operator chrome stays on <code class="mono">product_shell</code>. This
+        frame is the TAP client document.
+      </section>
+    </div>
+
+    {% include "app_factory/platform_session.html" %}
+  </div>
+</section>
+{% endblock %}

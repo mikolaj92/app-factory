@@ -30,6 +30,7 @@ except ImportError:  # Optional fastapi extra is not installed.
 
 try:
     from app_factory.platform import (
+        CLIENT_SHELL,
         IDENTITY_ADMIN_SURFACES,
         IDENTITY_AUTHENTICATED_SHELL,
         IDENTITY_AUTHENTICATED_SURFACES,
@@ -52,6 +53,7 @@ try:
         join_platform_root,
     )
 except ImportError:  # Optional fastapi extra is not installed.
+    CLIENT_SHELL = None
     IDENTITY_ADMIN_SURFACES = IDENTITY_AUTHENTICATED_SURFACES = None
     IDENTITY_AUTHENTICATED_SHELL = IDENTITY_DENIED = IDENTITY_DENIED_FRAGMENT = None
     IDENTITY_PUBLIC_SHELL = IDENTITY_PUBLIC_STATE = None
@@ -63,6 +65,7 @@ except ImportError:  # Optional fastapi extra is not installed.
 
 __all__ = [
     "CDN_ASSET_MANIFEST",
+    "CLIENT_SHELL",
     "IDENTITY_ADMIN_SURFACES",
     "IDENTITY_AUTHENTICATED_SHELL",
     "IDENTITY_AUTHENTICATED_SURFACES",

@@ -72,6 +72,12 @@ CONFIG = PlatformConfig(
                     icon=ICON_USER,
                 ),
                 MenuItem("Bare shell", "/stories/bare", key="bare", no_htmx=True),
+                MenuItem(
+                    "Slim TAP client",
+                    "/stories/client",
+                    key="client",
+                    no_htmx=True,
+                ),
                 MenuItem("Account / logout", "/stories/account", key="account"),
             ),
         ),
@@ -143,6 +149,11 @@ STORIES: tuple[dict[str, str], ...] = (
         "href": "/stories/bare",
         "title": "Bare shell",
         "blurb": "Login-style frame: header theme only, no sidebar.",
+    },
+    {
+        "href": "/stories/client",
+        "title": "Slim TAP client",
+        "blurb": "No-sidebar Basecoat document without HTMX/Alpine; hosts extend client_shell.",
     },
     {
         "href": "/stories/account",
@@ -296,6 +307,17 @@ def story_bare(request: Request) -> HTMLResponse:
         "stories/bare.html",
         page_title="Bare shell",
         nav_active="bare",
+    )
+
+
+@app.get("/stories/client", response_class=HTMLResponse)
+def story_client(request: Request) -> HTMLResponse:
+    return _render(
+        request,
+        "stories/client.html",
+        user=SIGNED_IN,
+        page_title="Slim TAP client",
+        nav_active="client",
     )
 
 
