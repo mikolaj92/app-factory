@@ -5,7 +5,7 @@
 	<key>EnvironmentVariables</key>
 	<dict>
 		<key>PATH</key>
-		<string>/Users/mini-m4-1/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+		<string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
 	</dict>
 	<key>KeepAlive</key>
 	<true/>
@@ -17,15 +17,15 @@
 	<array>
 		<string>/bin/bash</string>
 		<string>-lc</string>
-		<string>cd '/Users/mini-m4-1/Developer/app-factory' &amp;&amp; uv sync --extra dev --no-progress &amp;&amp; uv run uvicorn example.app:app --host 0.0.0.0 --port 8765 --app-dir .</string>
+		<string>export PATH="$HOME/.local/bin:$PATH"; ROOT="${APP_FACTORY_ROOT:-$HOME/Developer/app-factory}"; cd "$ROOT" &amp;&amp; mkdir -p .runtime/launchd &amp;&amp; uv sync --extra dev --no-progress &amp;&amp; uv run uvicorn example.app:app --host 0.0.0.0 --port 8765 --app-dir .</string>
 	</array>
 	<key>RunAtLoad</key>
 	<true/>
 	<key>StandardErrorPath</key>
-	<string>/Users/mini-m4-1/Developer/app-factory/.runtime/launchd/storybook.err.log</string>
+	<string>/tmp/dev.app-factory.storybook.err.log</string>
 	<key>StandardOutPath</key>
-	<string>/Users/mini-m4-1/Developer/app-factory/.runtime/launchd/storybook.out.log</string>
+	<string>/tmp/dev.app-factory.storybook.out.log</string>
 	<key>WorkingDirectory</key>
-	<string>/Users/mini-m4-1/Developer/app-factory</string>
+	<string>/</string>
 </dict>
 </plist>
