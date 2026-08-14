@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from starlette.testclient import TestClient
 
@@ -226,3 +228,15 @@ def test_locale_flags_are_real_emoji() -> None:
     assert "\U0001f1f5\U0001f1f1" in response.text
     assert "\U0001f1ec\U0001f1e7" in response.text
     assert "\U0001f1e9\U0001f1ea" in response.text
+
+
+def test_launchd_plist_is_host_portable() -> None:
+    plist = (
+        Path(__file__).resolve().parents[1]
+        / "example"
+        / "dev.app-factory.storybook.plist"
+    ).read_text()
+    assert "mini-m4-1" not in plist
+    assert "/Users/" not in plist
+    assert "$HOME" in plist
+    assert "APP_FACTORY_ROOT" in plist

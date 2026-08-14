@@ -1,21 +1,22 @@
 # Approach plan
 
-<!-- lokay-approach source=deterministic repo=mikolaj92/app-factory issue=43 -->
+<!-- lokay-approach source=deterministic repo=mikolaj92/app-factory issue=44 -->
 
 Repository: `mikolaj92/app-factory`  
-Issue: #43 — Nagłówek README nadal Bundled core assets v0.5.19 przy tagu v0.6.5
+Issue: #44 — plist storybook zahardkodowany na mini-m4-1
 
 ## Goal
 
-README L73: „Bundled core assets (\`v0.5.19\`)”. Tag produktu: v0.6.5. Plik `app_factory/assets/basecoat-factory.min.css` jest.
+README: launchd unit `gui/$(id -u)/dev.app-factory.storybook`.
+`example/dev.app-factory.storybook.plist` ma WorkingDirectory / cd / logi = `/Users/mini-m4-1/Developer/app-factory`. Na innym hoście unit nie wstaje.
 
 ## Files likely touched
 
-- `README.md` (heading `## Bundled core assets (`v0.5.19`)` → current product tag `v0.6.5`)
+- `example/dev.app-factory.storybook.plist`
 
 ## Test plan
 
-- `uv run pytest tests/test_fastapi.py::test_runtime_version_matches_project_metadata tests/test_shared_pin_contract.py tests/test_cdn.py::test_core_assets_are_local_and_manifest_verified -q`
+- Run the smallest useful tests for files touched
 
 ## Non-goals
 

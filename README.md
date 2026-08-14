@@ -446,6 +446,7 @@ uv run pytest
 uv run uvicorn example.app:app --host 0.0.0.0 --port 8765 --app-dir .
 # open http://127.0.0.1:8765 or http://<lan-ip>:8765
 # launchd unit: gui/$(id -u)/dev.app-factory.storybook
+# plist: example/dev.app-factory.storybook.plist (repo $HOME/Developer/app-factory, or APP_FACTORY_ROOT)
 
 # Regenerate bundled platform assets
 uv run python scripts/refresh_platform_assets.py
