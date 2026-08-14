@@ -156,7 +156,9 @@ class PlatformPaths:
     # Appended after the original positional fields for compatibility.
     activation: str = "/activate"
     credentials: str = "/account/passkeys"
-    invite: str = "/admin/users/invite"
+    # GET/nav surface: UM v0.5.1+ form lives on the users list.
+    # POST issuance remains adapter-owned at /admin/users/invite.
+    invite: str = "/admin/users"
     root: str = ""
 
     def href(self, surface: str) -> str:

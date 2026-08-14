@@ -62,8 +62,6 @@ PLATFORM_PATHS: Final = PlatformPaths(
     account="/account",
     credentials=PASSKEY_PATHS.credentials_page,
     admin_users="/admin/users",
-    # Packaged invite form lives on the users page; POST remains /admin/users/invite.
-    invite="/admin/users",
 )
 
 
