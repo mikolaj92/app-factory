@@ -72,7 +72,7 @@ Apps should not ship:
 
 ---
 
-## Bundled core assets (`v0.5.19`)
+## Bundled core assets (`v0.6.5`)
 
 The wheel ships all core files. `MANIFEST.json` pins filenames, versions, and
 SHA-384 digests; the runtime verifies it on first access.
