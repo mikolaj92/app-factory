@@ -112,6 +112,8 @@ IDENTITY_AUTHENTICATED_SHELL = "app_factory/identity_authenticated_shell.html"
 IDENTITY_PUBLIC_STATE = "app_factory/identity_public_state.html"
 IDENTITY_DENIED = "app_factory/identity_denied.html"
 IDENTITY_DENIED_FRAGMENT = "app_factory/identity_denied_fragment.html"
+# Slim TAP client document: Basecoat chrome without HTMX/Alpine.
+CLIENT_SHELL = "app_factory/client_shell.html"
 
 
 def join_platform_root(root: str, path: str) -> str:

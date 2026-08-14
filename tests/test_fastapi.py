@@ -99,6 +99,7 @@ def test_shell_exposes_supported_product_frame_blocks():
     blocks = set(environment.get_template("app_factory/shell.html").blocks)
     assert {
         "title",
+        "head_assets",
         "head_extra",
         "body_class",
         "body_attrs",

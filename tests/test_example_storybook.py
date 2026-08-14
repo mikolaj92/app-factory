@@ -23,6 +23,7 @@ def test_catalog_and_core_stories_render() -> None:
         "/stories/guest",
         "/stories/signed-in",
         "/stories/bare",
+        "/stories/client",
         "/stories/account",
         "/stories/htmx",
         "/stories/htmx/b",
@@ -140,6 +141,23 @@ def test_bare_shell_has_no_product_sidebar() -> None:
     assert "data-platform-theme-locale" in html
     assert "data-theme-toggle" in html
     assert "app-main-header" in html
+
+
+def test_client_shell_is_slim_basecoat_without_htmx_alpine() -> None:
+    html = client.get("/stories/client").text
+    assert "data-platform-client" in html
+    assert "app-client" in html
+    assert 'id="sidebar"' not in html
+    assert "data-platform-controls" in html
+    assert "data-platform-theme-locale" in html
+    assert "data-platform-auth" in html
+    assert "data-platform-session" in html
+    assert "/static/platform/basecoat-factory.min.css" in html
+    assert "/static/platform/basecoat-js.min.js" in html
+    assert "/static/platform/htmx.min.js" not in html
+    assert "/static/platform/alpine.min.js" not in html
+    assert "htmx:configRequest" not in html
+    assert "Alpine.initTree" not in html
 
 
 def test_theme_and_locale_stay_in_header_not_foot() -> None:

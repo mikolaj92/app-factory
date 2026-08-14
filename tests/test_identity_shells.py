@@ -6,6 +6,7 @@ from jinja2 import ChoiceLoader, DictLoader, Environment, PackageLoader
 from starlette.testclient import TestClient
 
 from app_factory.platform import (
+    CLIENT_SHELL,
     IDENTITY_AUTHENTICATED_SHELL,
     IDENTITY_DENIED,
     IDENTITY_DENIED_FRAGMENT,
@@ -37,6 +38,7 @@ def test_identity_template_constants_match_package_names() -> None:
     assert IDENTITY_PUBLIC_STATE == "app_factory/identity_public_state.html"
     assert IDENTITY_DENIED == "app_factory/identity_denied.html"
     assert IDENTITY_DENIED_FRAGMENT == "app_factory/identity_denied_fragment.html"
+    assert CLIENT_SHELL == "app_factory/client_shell.html"
 
 
 def test_identity_public_shell_composes_branded_no_sidebar_chrome() -> None:
@@ -227,6 +229,52 @@ def test_storybook_authenticated_shells_and_fragment_swap() -> None:
     nav = denied.text.split("data-platform-identity-navigation")
     if len(nav) > 1:
         assert 'href="/stories/admin-users"' not in nav[1][:1200]
+
+
+def test_client_shell_is_slim_basecoat_document_without_htmx_alpine() -> None:
+    env = _factory_env(
+        {
+            "tap.html": (
+                "{% extends 'app_factory/client_shell.html' %}"
+                "{% block content %}"
+                "<h1>TAP</h1>"
+                "{% include 'app_factory/platform_session.html' %}"
+                "{% endblock %}"
+            )
+        }
+    )
+    config = PlatformConfig(paths=PlatformPaths())
+    apply_platform_context(
+        env,
+        config,
+        user=PlatformUser("Ada"),
+        current_path="/",
+    )
+    html = env.get_template("tap.html").render(
+        app_name="TAP",
+        platform_brand_href="/home",
+        platform_asset_url=lambda name: f"/static/platform/{name}",
+        lang="pl",
+    )
+
+    assert 'lang="pl"' in html
+    assert "app-client" in html
+    assert "data-platform-client" in html
+    assert "data-platform-controls" in html
+    assert "data-platform-theme-locale" in html
+    assert "data-platform-auth" in html
+    assert "data-platform-session" in html
+    assert '<a class="app-main-header__brand" href="/home">' in html
+    assert "TAP" in html
+    assert "/static/platform/basecoat-css" in html
+    assert "/static/platform/basecoat-js-all" in html
+    assert "/static/platform/htmx" not in html
+    assert "/static/platform/alpine" not in html
+    assert "htmx:configRequest" not in html
+    assert "Alpine.initTree" not in html
+    assert 'id="sidebar"' not in html
+    assert "data-platform-identity-navigation" not in html
+    assert "htmx-indicator" not in html
 
 
 def test_storybook_account_management_points_at_platform_paths() -> None:

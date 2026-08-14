@@ -120,6 +120,7 @@ Rollback is the reverse order. Never run production with packages from different
 | **Invalid public capability** | `identity_public_state` | non-enumerating alert; host-overridable copy |
 | **Unauthorized authenticated** | `identity_denied` / `identity_denied_fragment` | full-page shell or HTMX fragment |
 | **No-sidebar shells** | `platform_controls` | theme/locale + auth (still no logout — include `platform_session` on the account/home surface) |
+| **Slim TAP client** | `client_shell` | Basecoat + theme boot + `platform_controls`; no HTMX/Alpine. Hosts extend this instead of forking `client_base.html` |
 
 ### Identity lifecycle paths
 

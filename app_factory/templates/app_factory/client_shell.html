@@ -1,0 +1,28 @@
+{% extends "app_factory/shell.html" %}
+
+{# Slim TAP client document: Basecoat + theme/auth chrome, no HTMX/Alpine.
+   Hosts extend this instead of forking theme_boot + platform_controls.
+   Include platform_session on the account/home surface — never in the header. #}
+
+{% block body_class %} app-client{% endblock %}
+
+{% block body_attrs %}{{ super() }} data-platform-client{% endblock %}
+
+{% block head_assets %}
+{% include "app_factory/head_assets_slim.html" %}
+{% endblock %}
+
+{% block header %}
+<header class="app-main-header bg-background">
+  <div class="app-main-header__inner">
+    <a class="app-main-header__brand" href="{{ platform_brand_href | default('/') }}">
+      {{ app_name | default('App') }}
+    </a>
+    <div class="app-main-header__controls">
+      {% include "app_factory/platform_controls.html" %}
+    </div>
+  </div>
+</header>
+{% endblock %}
+
+{% block loading_overlay %}{% endblock %}
