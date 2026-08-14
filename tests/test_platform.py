@@ -98,7 +98,7 @@ def test_platform_paths_defaults_match_adapter_contract() -> None:
     assert paths.account == "/account"
     assert paths.credentials == "/account/passkeys"
     assert paths.admin_users == "/admin/users"
-    assert paths.invite == "/admin/users/invite"
+    assert paths.invite == "/admin/users"
     assert set(paths.public_hrefs()) == set(IDENTITY_PUBLIC_SURFACES)
     assert set(paths.authenticated_hrefs()) == set(IDENTITY_AUTHENTICATED_SURFACES)
     assert set(paths.admin_hrefs()) == set(IDENTITY_ADMIN_SURFACES)
@@ -117,7 +117,7 @@ def test_platform_paths_root_prefixes_without_double_join() -> None:
     assert rooted.login == "/argus/login"
     assert rooted.activation == "/argus/activate"
     assert rooted.credentials == "/argus/account/passkeys"
-    assert rooted.invite == "/argus/admin/users/invite"
+    assert rooted.invite == "/argus/admin/users"
 
     ctx = build_platform_context(
         PlatformConfig(paths=PlatformPaths(root="/argus")),
@@ -174,7 +174,7 @@ def test_identity_navigation_is_enabled_and_authorized_by_host_config() -> None:
         "/app/account",
         "/app/account/passkeys",
         "/app/admin/users",
-        "/app/admin/users/invite",
+        "/app/admin/users",
     ]
     assert admin["platform_identity_menu"][2].active is True
 
@@ -272,7 +272,7 @@ def test_product_shell_renders_enabled_identity_navigation_slot() -> None:
     assert 'href="/account"' in html
     assert 'href="/account/passkeys"' in html
     assert 'href="/admin/users"' in html
-    assert 'href="/admin/users/invite"' in html
+    assert 'href="/admin/users/invite"' not in html
     assert "Credentials" in html
     assert "Invite" in html
     nav_start = html.find("data-platform-identity-navigation")

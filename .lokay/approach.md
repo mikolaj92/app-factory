@@ -1,21 +1,21 @@
 # Approach plan
 
-<!-- lokay-approach source=deterministic repo=mikolaj92/app-factory issue=43 -->
+<!-- lokay-approach source=deterministic repo=mikolaj92/app-factory issue=42 -->
 
 Repository: `mikolaj92/app-factory`  
-Issue: #43 — Nagłówek README nadal Bundled core assets v0.5.19 przy tagu v0.6.5
+Issue: #42 — PlatformPaths.invite defaultuje na ślepy /admin/users/invite
 
 ## Goal
 
-README L73: „Bundled core assets (\`v0.5.19\`)”. Tag produktu: v0.6.5. Plik `app_factory/assets/basecoat-factory.min.css` jest.
+`PlatformPaths.invite` w kicie nadal defaultuje na `/admin/users/invite` (stara osobna strona). Po UM v0.5.1 formularz siedzi na liście users; POST zostaje na `/admin/users/invite`.
 
 ## Files likely touched
 
-- `README.md` (heading `## Bundled core assets (`v0.5.19`)` → current product tag `v0.6.5`)
+- `PlatformPaths.invite`
 
 ## Test plan
 
-- `uv run pytest tests/test_fastapi.py::test_runtime_version_matches_project_metadata tests/test_shared_pin_contract.py tests/test_cdn.py::test_core_assets_are_local_and_manifest_verified -q`
+- Run the smallest useful tests for files touched
 
 ## Non-goals
 
