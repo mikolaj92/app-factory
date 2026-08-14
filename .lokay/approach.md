@@ -1,18 +1,17 @@
 # Approach plan
 
-<!-- lokay-approach source=deterministic repo=mikolaj92/app-factory issue=44 -->
+<!-- lokay-approach source=deterministic repo=mikolaj92/app-factory issue=42 -->
 
 Repository: `mikolaj92/app-factory`  
-Issue: #44 — plist storybook zahardkodowany na mini-m4-1
+Issue: #42 — PlatformPaths.invite defaultuje na ślepy /admin/users/invite
 
 ## Goal
 
-README: launchd unit `gui/$(id -u)/dev.app-factory.storybook`.
-`example/dev.app-factory.storybook.plist` ma WorkingDirectory / cd / logi = `/Users/mini-m4-1/Developer/app-factory`. Na innym hoście unit nie wstaje.
+`PlatformPaths.invite` w kicie nadal defaultuje na `/admin/users/invite` (stara osobna strona). Po UM v0.5.1 formularz siedzi na liście users; POST zostaje na `/admin/users/invite`.
 
 ## Files likely touched
 
-- `example/dev.app-factory.storybook.plist`
+- `PlatformPaths.invite`
 
 ## Test plan
 
