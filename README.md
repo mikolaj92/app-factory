@@ -7,7 +7,7 @@ The goal is one place to ship the resilient same-origin chrome, Jinja head
 partials, and optional CDN pins so product apps do **not** re-implement
 Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.6.6` (see `COMPAT.md` / `bom/multi_user.toml`)
+**Tag:** `v0.6.7` (see `COMPAT.md` / `bom/multi_user.toml`)
 
 ---
 
@@ -17,10 +17,10 @@ This package is the thin shared layer in a small platform. Together:
 
 | Piece | Role | How consumers get it |
 |-------|------|----------------------|
-| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.6.6` via uv |
+| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.6.7` via uv |
 | **basecoat-factory** | Maintainer-only build source for the generated Basecoat/UI asset bundle | Not a runtime dependency |
-| **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.4.2` |
-| **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.5.4` |
+| **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.4.5` |
+| **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.5.6` |
 | **FastAPI + Jinja2 + HTMX + Alpine** | Server-rendered app shell | App code; core scripts/CSS served by the app |
 
 ### Dependency rule
@@ -72,7 +72,7 @@ Apps should not ship:
 
 ---
 
-## Bundled core assets (`v0.6.6`)
+## Bundled core assets (`v0.6.7`)
 
 The wheel ships all core files. `MANIFEST.json` pins filenames, versions, and
 SHA-384 digests; the runtime verifies it on first access.
@@ -156,9 +156,9 @@ dependencies = [
 override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.6.6" }
-my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.4.2" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.5.4" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.6.7" }
+my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.4.5" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.5.6" }
 ```
 
 ```bash
@@ -423,6 +423,7 @@ factory_template_dirs()
 
 | app-factory | basecoat-css | Notes |
 |-------------|---------------|-------|
+| **v0.6.7** | **1.0.2** | Additive on v0.6.6: BOM row my-auth v0.4.5 / my-usermanager v0.5.6 (nested chrome v0.6.6; initialize() stamps enrollment on current schemas). No chrome change. |
 | **v0.6.6** | **1.0.2** | Additive on v0.6.5: slim TAP `client_shell` (no HTMX/Alpine) + `PlatformPaths.invite` default `/admin/users`; same my-auth v0.4.2 / my-usermanager v0.5.4 |
 | **v0.6.5** | **1.0.2** | Multi-user platform BOM + enrollment capability DDL in ensure_sqlite_schema (my-auth v0.4.2) + nested my-auth pin (my-usermanager v0.5.4); hosts override app-factory only |
 | **v0.6.4** | **1.0.2** | Multi-user platform BOM + packaged ceremony shells (my-auth v0.4.1) + invitation DDL in SQLiteAuthDatabase (my-usermanager v0.5.2) |
