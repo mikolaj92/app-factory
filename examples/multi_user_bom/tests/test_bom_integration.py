@@ -39,7 +39,7 @@ def test_bom_pins_align_with_example_pyproject() -> None:
     assert example["tool"]["uv"]["override-dependencies"] == [
         "app-factory[platform]",
     ]
-    assert bom["pins"]["app-factory"] == "v0.6.5"
+    assert bom["pins"]["app-factory"] == "v0.6.6"
 
 
 def test_uv_lock_selects_single_app_factory_source() -> None:
@@ -59,11 +59,11 @@ def test_uv_lock_selects_single_app_factory_source() -> None:
         r"source = \{([^}]+)\}",
         text,
     )
-    assert package_blocks == [("0.6.5", ' editable = "../../" ')] or package_blocks == [
-        ("0.6.5", 'editable = "../../"')
+    assert package_blocks == [("0.6.6", ' editable = "../../" ')] or package_blocks == [
+        ("0.6.6", 'editable = "../../"')
     ] or (
         len(package_blocks) == 1
-        and package_blocks[0][0] == "0.6.5"
+        and package_blocks[0][0] == "0.6.6"
         and "editable" in package_blocks[0][1]
     ), package_blocks
     # Nested adapter git tags for older app-factory must not appear as package sources.
