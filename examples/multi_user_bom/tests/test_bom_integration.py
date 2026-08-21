@@ -39,7 +39,7 @@ def test_bom_pins_align_with_example_pyproject() -> None:
     assert example["tool"]["uv"]["override-dependencies"] == [
         "app-factory[platform]",
     ]
-    assert bom["pins"]["app-factory"] == "v0.6.6"
+    assert bom["pins"]["app-factory"] == "v0.6.7"
 
 
 def test_uv_lock_selects_single_app_factory_source() -> None:
@@ -59,23 +59,27 @@ def test_uv_lock_selects_single_app_factory_source() -> None:
         r"source = \{([^}]+)\}",
         text,
     )
-    assert package_blocks == [("0.6.6", ' editable = "../../" ')] or package_blocks == [
-        ("0.6.6", 'editable = "../../"')
+    assert package_blocks == [("0.6.7", ' editable = "../../" ')] or package_blocks == [
+        ("0.6.7", 'editable = "../../"')
     ] or (
         len(package_blocks) == 1
-        and package_blocks[0][0] == "0.6.6"
+        and package_blocks[0][0] == "0.6.7"
         and "editable" in package_blocks[0][1]
     ), package_blocks
     # Nested adapter git tags for older app-factory must not appear as package sources.
     assert "git+https://github.com/mikolaj92/app-factory@v0.5." not in text
-    assert re.search(r'name = "my-auth"\nversion = "0\.4\.2"', text)
-    assert "tag=v0.4.2" in text
-    assert re.search(r'name = "my-usermanager"\nversion = "0\.5\.4"', text)
-    assert "tag=v0.5.4" in text
+    assert re.search(r'name = "my-auth"\nversion = "0\.4\.5"', text)
+    assert "tag=v0.4.5" in text
+    assert re.search(r'name = "my-usermanager"\nversion = "0\.5\.6"', text)
+    assert "tag=v0.5.6" in text
     assert "tag=v0.4.0" not in text
     assert "tag=v0.4.1" not in text
+    assert "tag=v0.4.2" not in text
+    assert "tag=v0.4.4" not in text
     assert "tag=v0.5.1" not in text
     assert "tag=v0.5.2" not in text
+    assert "tag=v0.5.4" not in text
+    assert "tag=v0.5.5" not in text
     assert not re.search(r'name = "my-auth"\nversion = "0\.5\.', text)
     assert 'name = "my-auth", extras = ["fastapi-htmx"]' not in text.split(
         "[manifest]", 1
