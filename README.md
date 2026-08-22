@@ -7,7 +7,7 @@ The goal is one place to ship the resilient same-origin chrome, Jinja head
 partials, and optional CDN pins so product apps do **not** re-implement
 Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.6.7` (see `COMPAT.md` / `bom/multi_user.toml`)
+**Tag:** `v0.6.8` (see `COMPAT.md` / `bom/multi_user.toml`)
 
 ---
 
@@ -72,7 +72,7 @@ Apps should not ship:
 
 ---
 
-## Bundled core assets (`v0.6.7`)
+## Bundled core assets (`v0.6.8`)
 
 The wheel ships all core files. `MANIFEST.json` pins filenames, versions, and
 SHA-384 digests; the runtime verifies it on first access.
@@ -94,6 +94,35 @@ url = platform_asset_url(css.name)  # /static/platform/basecoat-factory.min.css
 ```
 
 Exact sources, licenses, and digests are stored under `app_factory/assets/`.
+
+### Reusable file upload
+
+`app_factory/components/file_upload.html` exports a domain-blind Jinja macro.
+The host configures `accept`, `multiple`, `max_bytes`, labels, action, and HTMX
+target. The component provides picker/drop, selected-file removal, batch
+confirmation, busy state, and real `htmx:xhr:progress`; the normal multipart
+form remains the no-JS fallback. Server-side format and security validation
+remain consumer-owned.
+
+Client pages opt into the same HTMX/Alpine generation without forking the shell:
+
+```jinja2
+{% set client_interactive = true %}
+{% extends "app_factory/client_shell.html" %}
+{% from "app_factory/components/file_upload.html" import file_upload %}
+
+{{ file_upload(
+    id="evidence",
+    action="/evidence",
+    accept=".example,application/x-example",
+    max_bytes=26214400,
+    submit_label="Upload",
+) }}
+```
+
+The macro does not name or inspect product formats. Browser `accept` is UX only;
+the consumer must validate bytes and policy on the server.
+
 ### Shared presentation contract (Basecoat-first, no npm in hosts)
 
 Products link the factory CSS/JS bundle only. They do **not** install Tailwind

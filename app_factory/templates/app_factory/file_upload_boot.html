@@ -1,0 +1,116 @@
+{# Shared upload controller. HTMX owns transport; hosts own validation and responses. #}
+<script>
+(() => {
+  if (window.__appFileUploadBooted) return;
+  window.__appFileUploadBooted = true;
+
+  const formatBytes = (bytes) => {
+    if (!Number.isFinite(bytes)) return '';
+    const units = ['B', 'KiB', 'MiB', 'GiB'];
+    let value = bytes;
+    let unit = 0;
+    while (value >= 1024 && unit < units.length - 1) { value /= 1024; unit += 1; }
+    return `${value >= 10 || unit === 0 ? Math.round(value) : value.toFixed(1)} ${units[unit]}`;
+  };
+
+  const accepts = (file, raw) => {
+    const tokens = String(raw || '').split(',').map((part) => part.trim().toLowerCase()).filter(Boolean);
+    if (!tokens.length) return true;
+    const name = String(file.name || '').toLowerCase();
+    const type = String(file.type || '').toLowerCase();
+    return tokens.some((token) => token.startsWith('.') ? name.endsWith(token) : token.endsWith('/*') ? type.startsWith(token.slice(0, -1)) : type === token);
+  };
+
+  const message = (template, values) => Object.entries(values).reduce(
+    (text, [key, value]) => text.replaceAll(`{${key}}`, String(value)), String(template || '')
+  );
+
+  const init = (form) => {
+    if (!form || form.dataset.appFileUploadReady === 'true') return;
+    form.dataset.appFileUploadReady = 'true';
+    const input = form.querySelector('[data-app-file-input]');
+    const dropzone = form.querySelector('[data-app-file-dropzone]');
+    const list = form.querySelector('[data-app-file-list]');
+    const status = form.querySelector('[data-app-file-status]');
+    const submit = form.querySelector('[data-app-file-submit]');
+    const confirmed = form.querySelector('[data-app-file-confirmed-count]');
+    const progress = form.querySelector('[data-app-file-progress]');
+    const bar = form.querySelector('[data-app-file-progress-bar]');
+    const progressLabel = form.querySelector('[data-app-file-progress-label]');
+    if (!input) return;
+
+    const setStatus = (text, state = '') => {
+      if (!status) return;
+      status.textContent = text || '';
+      if (state) status.dataset.state = state; else delete status.dataset.state;
+    };
+
+    const setFiles = (files) => {
+      const transfer = new DataTransfer();
+      files.forEach((file) => transfer.items.add(file));
+      input.files = transfer.files;
+    };
+
+    const render = () => {
+      const files = Array.from(input.files || []);
+      if (list) {
+        list.replaceChildren(...files.map((file, index) => {
+          const item = document.createElement('li');
+          item.className = 'app-cluster app-cluster--between text-sm';
+          const label = document.createElement('span');
+          label.className = 'min-w-0 break-words';
+          label.textContent = `${file.name} · ${formatBytes(file.size)}`;
+          const remove = document.createElement('button');
+          remove.type = 'button';
+          remove.className = 'btn';
+          remove.dataset.variant = 'ghost';
+          remove.dataset.size = 'sm';
+          remove.textContent = form.dataset.removeLabel || 'Remove';
+          remove.addEventListener('click', () => { setFiles(files.filter((_file, i) => i !== index)); render(); });
+          item.append(label, remove);
+          return item;
+        }));
+      }
+      if (submit) submit.disabled = files.length === 0;
+      if (confirmed) confirmed.value = '';
+      setStatus('');
+    };
+
+    input.addEventListener('change', render);
+    if (dropzone) {
+      dropzone.addEventListener('drop', (event) => {
+        if (!event.dataTransfer) return;
+        setFiles(Array.from(event.dataTransfer.files));
+        render();
+      });
+    }
+
+    form.addEventListener('submit', (event) => {
+      const files = Array.from(input.files || []);
+      if (!files.length) { event.preventDefault(); setStatus(form.dataset.labelEmpty, 'error'); return; }
+      const max = Number.parseInt(form.dataset.maxBytes || '', 10);
+      const oversized = Number.isFinite(max) ? files.filter((file) => file.size > max) : [];
+      if (oversized.length) { event.preventDefault(); setStatus(message(form.dataset.labelTooLarge, { file: oversized.map((f) => f.name).join(', ') }), 'error'); return; }
+      const wrong = files.filter((file) => !accepts(file, form.dataset.accept));
+      if (wrong.length) { event.preventDefault(); setStatus(message(form.dataset.labelWrongType, { file: wrong.map((f) => f.name).join(', ') }), 'error'); return; }
+      if (files.length > 1 && confirmed && confirmed.value !== String(files.length)) {
+        event.preventDefault();
+        if (window.confirm(message(form.dataset.labelConfirm, { count: files.length }))) {
+          confirmed.value = String(files.length);
+          form.requestSubmit();
+        }
+      }
+    });
+
+    form.addEventListener('htmx:beforeRequest', () => { if (submit) { submit.disabled = true; submit.setAttribute('aria-busy', 'true'); } if (progress) progress.hidden = false; });
+    form.addEventListener('htmx:xhr:progress', (event) => { const pct = event.detail.total ? Math.round(event.detail.loaded / event.detail.total * 100) : 0; if (bar) bar.value = pct; if (progressLabel) progressLabel.textContent = `${pct}%`; });
+    form.addEventListener('htmx:afterRequest', () => { if (submit) { submit.removeAttribute('aria-busy'); submit.disabled = !(input.files && input.files.length); } });
+    render();
+  };
+
+  const initAll = (root = document) => root.querySelectorAll?.('[data-app-file-upload]').forEach(init);
+  document.addEventListener('DOMContentLoaded', () => initAll());
+  document.addEventListener('htmx:afterSwap', (event) => initAll(event.detail?.elt || document));
+  if (document.readyState !== 'loading') initAll();
+})();
+</script>
