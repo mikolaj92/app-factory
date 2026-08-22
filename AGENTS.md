@@ -16,6 +16,7 @@ not product workflows.
 |--------------|----------------------|
 | Chrome frame, layout primitives, theme/locale/session glue | Domain routes, ORM, product CSS |
 | Small composable shell / identity partials | Multi-step process flows and product workflows |
+| HTMX redirects, session CSRF adapter, toast/error boot, pagination | Product RBAC, validation, routes, and copy |
 | Bundled Basecoat/HTMX/Alpine + optional CDN pins | Ordering / orchestration (compose with **Fala** where applicable) |
 
 Do **not** absorb host business logic, ceremony sequences, or Fala graphs into

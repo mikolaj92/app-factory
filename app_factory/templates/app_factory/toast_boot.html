@@ -1,0 +1,22 @@
+{# Basecoat toaster + one shared HTMX/network error bridge. #}
+<div id="toaster" class="toaster" aria-live="polite" aria-label="{{ toast_region_label | default('Notifications') }}"></div>
+<script>
+(() => {
+  if (window.__appToastBooted) return;
+  window.__appToastBooted = true;
+  const fallback = {{ (network_error_message if network_error_message is defined else 'The request could not be completed. Try again.') | tojson }};
+  const emit = (detail = {}) => {
+    const description = detail.description || fallback;
+    const toaster = document.getElementById('toaster');
+    if (toaster && typeof toaster.toast === 'function') {
+      toaster.toast({ category: detail.category || 'error', title: detail.title || '', description });
+      return;
+    }
+    window.dispatchEvent(new CustomEvent('app:toast:unavailable', { detail: { ...detail, description } }));
+  };
+  window.appToast = emit;
+  document.addEventListener('app:toast', (event) => emit(event.detail || {}));
+  document.addEventListener('htmx:sendError', () => emit());
+  document.addEventListener('htmx:timeout', () => emit());
+})();
+</script>

@@ -53,6 +53,8 @@ Apps should not ship:
 | Module / path | Purpose |
 |---------------|---------|
 | `app_factory.assets` | Verified bundled core assets, URL helper, and lazy Starlette static app |
+| `app_factory.responses.htmx_redirect` | Native 303 plus `HX-Redirect` for HTMX full-page navigation |
+| `app_factory.csrf.SessionCsrfProtection` | Signed-session CSRF adapter for host forms and my-usermanager |
 | `app_factory.cdn` | Optional CDN assets, `cdn_asset()`, SRI verification, `extend_manifest()` / `install_manifest()` |
 | `app_factory.jinja` | `configure_jinja_env()` — registers bundled/local and optional CDN helpers plus the template loader |
 | `app_factory.fastapi` | `install_app_factory_ui()` — the sole supported FastAPI mount/Jinja integration |
@@ -69,6 +71,24 @@ Apps should not ship:
 | `app_factory/templates/app_factory/shell_boot.html` | Shared shell JS (sidebar, active nav, basecoat, theme clicks) via `window.appShellConfig` |
 
 **Not included:** domain models, product routes, auth ceremony logic, product CSS.
+
+---
+
+
+## Shared browser mechanisms
+
+- Use `htmx_redirect(request, url)` instead of copying the native/HTMX redirect
+  branch into each host.
+- Use `SessionCsrfProtection(session_key=...)` when the host already has signed
+  `SessionMiddleware`; missing middleware fails explicitly.
+- Set `toast_enabled = true` in shell context to install the Basecoat toaster and
+  shared `htmx:sendError` / `htmx:timeout` bridge. Override
+  `network_error_message` and `toast_region_label` as host copy.
+- Import `app_factory/components/pagination.html` for accessible native links
+  with optional `hx_target`, `hx_swap`, and `hx_push_url`.
+
+These helpers own transport/session/chrome mechanics only. Hosts still own
+route authorization, domain validation, accepted upload formats, and copy.
 
 ---
 
