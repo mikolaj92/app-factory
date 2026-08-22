@@ -95,3 +95,8 @@ def test_upload_field_composes_inside_a_host_form() -> None:
     assert 'data-app-file-upload-field' in html
     assert 'name="evidence"' in html
     assert 'accept=".pdf"' in html
+    html = env.from_string(
+        '{% from "app_factory/components/file_upload.html" import file_upload_field %}'
+        '{{ file_upload_field(id="docs", name="files", describedby="hint other") }}'
+    ).render()
+    assert 'aria-describedby="hint other"' in html
