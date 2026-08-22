@@ -59,11 +59,12 @@ def test_uv_lock_selects_single_app_factory_source() -> None:
         r"source = \{([^}]+)\}",
         text,
     )
-    assert package_blocks == [("0.6.7", ' editable = "../../" ')] or package_blocks == [
-        ("0.6.7", 'editable = "../../"')
-    ] or (
+    local_version = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text())["project"][
+        "version"
+    ]
+    assert (
         len(package_blocks) == 1
-        and package_blocks[0][0] == "0.6.7"
+        and package_blocks[0][0] == local_version
         and "editable" in package_blocks[0][1]
     ), package_blocks
     # Nested adapter git tags for older app-factory must not appear as package sources.
