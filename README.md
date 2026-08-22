@@ -7,7 +7,7 @@ The goal is one place to ship the resilient same-origin chrome, Jinja head
 partials, and optional CDN pins so product apps do **not** re-implement
 Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.6.8` (see `COMPAT.md` / `bom/multi_user.toml`)
+**Tag:** `v0.6.9` (see `COMPAT.md` / `bom/multi_user.toml`)
 
 ---
 
@@ -72,7 +72,7 @@ Apps should not ship:
 
 ---
 
-## Bundled core assets (`v0.6.8`)
+## Bundled core assets (`v0.6.9`)
 
 The wheel ships all core files. `MANIFEST.json` pins filenames, versions, and
 SHA-384 digests; the runtime verifies it on first access.
@@ -97,7 +97,7 @@ Exact sources, licenses, and digests are stored under `app_factory/assets/`.
 
 ### Reusable file upload
 
-`app_factory/components/file_upload.html` exports a domain-blind Jinja macro.
+`app_factory/components/file_upload.html` exports domain-blind `file_upload` and `file_upload_field` Jinja macros.
 The host configures `accept`, `multiple`, `max_bytes`, labels, action, and HTMX
 target. The component provides picker/drop, selected-file removal, batch
 confirmation, busy state, and real `htmx:xhr:progress`; the normal multipart
