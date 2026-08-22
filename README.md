@@ -7,7 +7,7 @@ The goal is one place to ship the resilient same-origin chrome, Jinja head
 partials, and optional CDN pins so product apps do **not** re-implement
 Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.6.10` (see `COMPAT.md` / `bom/multi_user.toml`)
+**Tag:** `v0.6.11` (shared mechanisms; the multi-user BOM remains v0.6.10 until matching auth tags land)
 
 ---
 
@@ -17,7 +17,7 @@ This package is the thin shared layer in a small platform. Together:
 
 | Piece | Role | How consumers get it |
 |-------|------|----------------------|
-| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.6.10` via uv |
+| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.6.11` directly; multi-user hosts follow `COMPAT.md` |
 | **basecoat-factory** | Maintainer-only build source for the generated Basecoat/UI asset bundle | Not a runtime dependency |
 | **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.4.5` |
 | **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.5.6` |
@@ -53,6 +53,8 @@ Apps should not ship:
 | Module / path | Purpose |
 |---------------|---------|
 | `app_factory.assets` | Verified bundled core assets, URL helper, and lazy Starlette static app |
+| `app_factory.responses.htmx_redirect` | Native 303 plus `HX-Redirect` for HTMX full-page navigation |
+| `app_factory.csrf.SessionCsrfProtection` | Signed-session CSRF adapter for host forms and my-usermanager |
 | `app_factory.cdn` | Optional CDN assets, `cdn_asset()`, SRI verification, `extend_manifest()` / `install_manifest()` |
 | `app_factory.jinja` | `configure_jinja_env()` — registers bundled/local and optional CDN helpers plus the template loader |
 | `app_factory.fastapi` | `install_app_factory_ui()` — the sole supported FastAPI mount/Jinja integration |
@@ -72,7 +74,25 @@ Apps should not ship:
 
 ---
 
-## Bundled core assets (`v0.6.10`)
+
+## Shared browser mechanisms
+
+- Use `htmx_redirect(request, url)` instead of copying the native/HTMX redirect
+  branch into each host.
+- Use `SessionCsrfProtection(session_key=...)` when the host already has signed
+  `SessionMiddleware`; missing middleware fails explicitly.
+- Set `toast_enabled = true` in shell context to install the Basecoat toaster and
+  shared `htmx:sendError` / `htmx:timeout` bridge. Override
+  `network_error_message` and `toast_region_label` as host copy.
+- Import `app_factory/components/pagination.html` for accessible native links
+  with optional `hx_target`, `hx_swap`, and `hx_push_url`.
+
+These helpers own transport/session/chrome mechanics only. Hosts still own
+route authorization, domain validation, accepted upload formats, and copy.
+
+---
+
+## Bundled core assets (`v0.6.11`)
 
 The wheel ships all core files. `MANIFEST.json` pins filenames, versions, and
 SHA-384 digests; the runtime verifies it on first access.
@@ -185,7 +205,7 @@ dependencies = [
 override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.6.10" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.6.11" }
 my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.4.5" }
 my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.5.6" }
 ```

@@ -54,6 +54,8 @@
     </div>
   </main>
   {% endblock %}
-  {% block body_end %}{% endblock %}
+  {% block body_end %}
+  {% if toast_enabled | default(false) %}{% include "app_factory/toast_boot.html" %}{% endif %}
+  {% endblock %}
 </body>
 </html>

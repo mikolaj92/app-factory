@@ -20,13 +20,16 @@ from app_factory.cdn import (
 from app_factory.jinja import configure_jinja_env, factory_template_dirs
 
 try:
+    from app_factory.csrf import SessionCsrfProtection
     from app_factory.fastapi import (
         AppFactoryUi,
         AppFactoryUiConflict,
         install_app_factory_ui,
     )
+    from app_factory.responses import htmx_redirect
 except ImportError:  # Optional fastapi extra is not installed.
-    AppFactoryUi = AppFactoryUiConflict = install_app_factory_ui = None
+    AppFactoryUi = AppFactoryUiConflict = SessionCsrfProtection = None
+    htmx_redirect = install_app_factory_ui = None
 
 try:
     from app_factory.platform import (
@@ -87,6 +90,7 @@ __all__ = [
     "PlatformLocale",
     "PlatformPaths",
     "PlatformUser",
+    "SessionCsrfProtection",
     "apply_platform_context",
     "build_platform_context",
     "bundled_asset",
@@ -96,6 +100,7 @@ __all__ = [
     "factory_template_dirs",
     "get_assets_dir",
     "get_platform_static_app",
+    "htmx_redirect",
     "install_app_factory_ui",
     "install_platform",
     "join_platform_root",
@@ -105,4 +110,4 @@ __all__ = [
     "verify_cdn_manifest",
 ]
 
-__version__ = "0.6.10"
+__version__ = "0.6.11"

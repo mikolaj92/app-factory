@@ -1,0 +1,62 @@
+{# Domain-blind native/HTMX pagination. Hosts supply labels and query state. #}
+{% macro pagination(
+  current_page,
+  total_pages,
+  base_url,
+  query_params=none,
+  page_param="page",
+  hx_target="",
+  hx_swap="innerHTML",
+  hx_push_url=false,
+  aria_label="Pagination",
+  previous_label="Previous",
+  next_label="Next",
+  window=2
+) -%}
+{% if total_pages > 1 %}
+{% set query = namespace(parts=[]) %}
+{% if query_params %}
+  {% for key, value in query_params.items() %}
+    {% if key != page_param and value is not none and value|string != "" %}
+      {% set query.parts = query.parts + [(key|urlencode) ~ "=" ~ (value|string|urlencode)] %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+{% set prefix = (query.parts|join("&")) %}
+{% set separator = "&" if prefix else "" %}
+{% macro page_url(page) -%}{{ base_url }}?{{ prefix }}{{ separator }}{{ page_param|urlencode }}={{ page }}{%- endmacro %}
+{% macro link(page, label, rel="") -%}
+<a
+  href="{{ page_url(page) }}"
+  class="btn"
+  data-variant="ghost"
+  {% if rel %}rel="{{ rel }}"{% endif %}
+  {% if hx_target %}
+  hx-get="{{ page_url(page) }}"
+  hx-target="{{ hx_target }}"
+  hx-swap="{{ hx_swap }}"
+  {% if hx_push_url %}hx-push-url="true"{% endif %}
+  {% endif %}
+>{{ label }}</a>
+{%- endmacro %}
+{% set start_page = [1, current_page - window]|max %}
+{% set end_page = [total_pages, current_page + window]|min %}
+<nav aria-label="{{ aria_label }}">
+  <ul class="app-cluster app-cluster--center">
+    <li>{% if current_page > 1 %}{{ link(current_page - 1, previous_label, "prev") }}{% else %}<button class="btn" data-variant="ghost" type="button" disabled>{{ previous_label }}</button>{% endif %}</li>
+    {% if start_page > 1 %}
+    <li>{{ link(1, "1") }}</li>
+    {% if start_page > 2 %}<li aria-hidden="true">…</li>{% endif %}
+    {% endif %}
+    {% for page in range(start_page, end_page + 1) %}
+    <li>{% if page == current_page %}<a class="btn" data-variant="primary" href="{{ page_url(page) }}" aria-current="page">{{ page }}</a>{% else %}{{ link(page, page) }}{% endif %}</li>
+    {% endfor %}
+    {% if end_page < total_pages %}
+    {% if end_page < total_pages - 1 %}<li aria-hidden="true">…</li>{% endif %}
+    <li>{{ link(total_pages, total_pages) }}</li>
+    {% endif %}
+    <li>{% if current_page < total_pages %}{{ link(current_page + 1, next_label, "next") }}{% else %}<button class="btn" data-variant="ghost" type="button" disabled>{{ next_label }}</button>{% endif %}</li>
+  </ul>
+</nav>
+{% endif %}
+{%- endmacro %}
