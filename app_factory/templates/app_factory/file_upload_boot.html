@@ -25,12 +25,14 @@
     (text, [key, value]) => text.replaceAll(`{${key}}`, String(value)), String(template || '')
   );
 
-  const init = (form) => {
-    if (!form || form.dataset.appFileUploadReady === 'true') return;
-    form.dataset.appFileUploadReady = 'true';
-    const input = form.querySelector('[data-app-file-input]');
-    const dropzone = form.querySelector('[data-app-file-dropzone]');
-    const list = form.querySelector('[data-app-file-list]');
+  const init = (field) => {
+    if (!field || field.dataset.appFileUploadReady === 'true') return;
+    field.dataset.appFileUploadReady = 'true';
+    const form = field.closest('form');
+    if (!form) return;
+    const input = field.querySelector('[data-app-file-input]');
+    const dropzone = field.querySelector('[data-app-file-dropzone]');
+    const list = field.querySelector('[data-app-file-list]');
     const status = form.querySelector('[data-app-file-status]');
     const submit = form.querySelector('[data-app-file-submit]');
     const confirmed = form.querySelector('[data-app-file-confirmed-count]');
@@ -65,7 +67,7 @@
           remove.className = 'btn';
           remove.dataset.variant = 'ghost';
           remove.dataset.size = 'sm';
-          remove.textContent = form.dataset.removeLabel || 'Remove';
+          remove.textContent = field.dataset.removeLabel || 'Remove';
           remove.addEventListener('click', () => { setFiles(files.filter((_file, i) => i !== index)); render(); });
           item.append(label, remove);
           return item;
@@ -87,15 +89,15 @@
 
     form.addEventListener('submit', (event) => {
       const files = Array.from(input.files || []);
-      if (!files.length) { event.preventDefault(); setStatus(form.dataset.labelEmpty, 'error'); return; }
-      const max = Number.parseInt(form.dataset.maxBytes || '', 10);
+      if (!files.length) { event.preventDefault(); setStatus(field.dataset.labelEmpty, 'error'); return; }
+      const max = Number.parseInt(field.dataset.maxBytes || '', 10);
       const oversized = Number.isFinite(max) ? files.filter((file) => file.size > max) : [];
-      if (oversized.length) { event.preventDefault(); setStatus(message(form.dataset.labelTooLarge, { file: oversized.map((f) => f.name).join(', ') }), 'error'); return; }
-      const wrong = files.filter((file) => !accepts(file, form.dataset.accept));
-      if (wrong.length) { event.preventDefault(); setStatus(message(form.dataset.labelWrongType, { file: wrong.map((f) => f.name).join(', ') }), 'error'); return; }
+      if (oversized.length) { event.preventDefault(); setStatus(message(field.dataset.labelTooLarge, { file: oversized.map((f) => f.name).join(', ') }), 'error'); return; }
+      const wrong = files.filter((file) => !accepts(file, field.dataset.accept));
+      if (wrong.length) { event.preventDefault(); setStatus(message(field.dataset.labelWrongType, { file: wrong.map((f) => f.name).join(', ') }), 'error'); return; }
       if (files.length > 1 && confirmed && confirmed.value !== String(files.length)) {
         event.preventDefault();
-        if (window.confirm(message(form.dataset.labelConfirm, { count: files.length }))) {
+        if (window.confirm(message(field.dataset.labelConfirm, { count: files.length }))) {
           confirmed.value = String(files.length);
           form.requestSubmit();
         }
@@ -108,7 +110,7 @@
     render();
   };
 
-  const initAll = (root = document) => root.querySelectorAll?.('[data-app-file-upload]').forEach(init);
+  const initAll = (root = document) => root.querySelectorAll?.('[data-app-file-upload-field]').forEach(init);
   document.addEventListener('DOMContentLoaded', () => initAll());
   document.addEventListener('htmx:afterSwap', (event) => initAll(event.detail?.elt || document));
   if (document.readyState !== 'loading') initAll();

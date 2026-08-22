@@ -45,7 +45,7 @@ def test_upload_has_accessible_progress_and_no_js_fallback() -> None:
     assert 'type="file"' in html
     assert 'tabindex="0"' in html
     assert 'aria-live="polite"' in html
-    assert "htmx:xhr:progress" in html
+    assert 'hx-encoding="multipart/form-data"' in html
     assert "<progress" in html
     assert 'type="submit"' in html
 
@@ -80,3 +80,18 @@ def test_shared_controller_uses_htmx_transport_not_fetch_or_xhr() -> None:
     assert "htmx:xhr:progress" in source
     assert "DataTransfer" in source
     assert "requestSubmit" in source
+
+
+def test_upload_field_composes_inside_a_host_form() -> None:
+    env = configure_jinja_env(Environment(autoescape=True))
+    template = env.from_string(
+        '{% from "app_factory/components/file_upload.html" import file_upload_field %}'
+        '<form method="post" data-app-file-upload>'
+        '{{ file_upload_field(id="pdf", name="evidence", accept=".pdf") }}'
+        '<button data-app-file-submit>Save project</button></form>'
+    )
+    html = template.render()
+    assert html.count("<form") == 1
+    assert 'data-app-file-upload-field' in html
+    assert 'name="evidence"' in html
+    assert 'accept=".pdf"' in html

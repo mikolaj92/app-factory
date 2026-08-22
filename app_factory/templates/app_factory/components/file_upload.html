@@ -1,7 +1,6 @@
 {# Domain-blind file upload. Hosts own action, accept policy, validation, and copy. #}
-{% macro file_upload(
+{% macro file_upload_field(
   id,
-  action,
   name="files",
   accept="",
   multiple=false,
@@ -10,23 +9,15 @@
   choose_label="Choose files",
   drop_label="Drop files here or choose from your device",
   help_text="",
-  submit_label="Upload",
   remove_label="Remove",
   too_large_label="File exceeds the size limit: {file}.",
   wrong_type_label="File type is not accepted: {file}.",
   empty_label="Choose at least one file.",
-  confirm_label="Upload {count} files",
-  target=none,
-  swap="innerHTML",
-  extra_form_attrs=""
+  confirm_label="Upload {count} files"
 ) -%}
-<form
-  id="{{ id }}"
-  method="post"
-  action="{{ action }}"
-  enctype="multipart/form-data"
+<div
   class="app-stack app-stack--sm"
-  data-app-file-upload
+  data-app-file-upload-field
   data-max-bytes="{{ max_bytes if max_bytes is not none else '' }}"
   data-accept="{{ accept }}"
   data-label-too-large="{{ too_large_label }}"
@@ -34,14 +25,6 @@
   data-label-empty="{{ empty_label }}"
   data-label-confirm="{{ confirm_label }}"
   data-remove-label="{{ remove_label }}"
-  hx-post="{{ action }}"
-  hx-encoding="multipart/form-data"
-  {% if target %}hx-target="{{ target }}" hx-swap="{{ swap }}"{% endif %}
-  x-data="{ dragover: false, uploading: false, progress: 0, count: 0, confirmed: false }"
-  x-on:htmx:before-request="uploading = true; progress = 0"
-  x-on:htmx:xhr:progress="progress = $event.detail.total ? Math.round($event.detail.loaded / $event.detail.total * 100) : 0"
-  x-on:htmx:after-request="uploading = false"
-  {{ extra_form_attrs | safe }}
 >
   <label
     class="app-dropzone"
@@ -72,6 +55,59 @@
   </label>
   {% if help_text %}<p class="text-sm text-muted-foreground" id="{{ id }}-help">{{ help_text }}</p>{% endif %}
   <ul class="app-stack app-stack--tight" data-app-file-list aria-live="polite"></ul>
+</div>
+{%- endmacro %}
+
+{% macro file_upload(
+  id,
+  action,
+  name="files",
+  accept="",
+  multiple=false,
+  required=true,
+  max_bytes=none,
+  choose_label="Choose files",
+  drop_label="Drop files here or choose from your device",
+  help_text="",
+  submit_label="Upload",
+  remove_label="Remove",
+  too_large_label="File exceeds the size limit: {file}.",
+  wrong_type_label="File type is not accepted: {file}.",
+  empty_label="Choose at least one file.",
+  confirm_label="Upload {count} files",
+  target=none,
+  swap="innerHTML",
+  extra_form_attrs=""
+) -%}
+<form
+  id="{{ id }}"
+  method="post"
+  action="{{ action }}"
+  enctype="multipart/form-data"
+  class="app-stack app-stack--sm"
+  data-app-file-upload
+  hx-post="{{ action }}"
+  hx-encoding="multipart/form-data"
+  {% if target %}hx-target="{{ target }}" hx-swap="{{ swap }}"{% endif %}
+  x-data="{ dragover: false, uploading: false, progress: 0 }"
+  {{ extra_form_attrs | safe }}
+>
+  {{ file_upload_field(
+    id=id,
+    name=name,
+    accept=accept,
+    multiple=multiple,
+    required=required,
+    max_bytes=max_bytes,
+    choose_label=choose_label,
+    drop_label=drop_label,
+    help_text=help_text,
+    remove_label=remove_label,
+    too_large_label=too_large_label,
+    wrong_type_label=wrong_type_label,
+    empty_label=empty_label,
+    confirm_label=confirm_label
+  ) }}
   <div class="app-stack app-stack--tight" data-app-file-progress hidden>
     <progress class="app-progress w-full" max="100" value="0" data-app-file-progress-bar></progress>
     <span class="text-sm text-muted-foreground" data-app-file-progress-label>0%</span>
