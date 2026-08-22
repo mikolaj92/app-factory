@@ -13,7 +13,8 @@
   too_large_label="File exceeds the size limit: {file}.",
   wrong_type_label="File type is not accepted: {file}.",
   empty_label="Choose at least one file.",
-  confirm_label="Upload {count} files"
+  confirm_label="Upload {count} files",
+  describedby=""
 ) -%}
 <div
   class="app-stack app-stack--sm"
@@ -51,6 +52,7 @@
       {% if required %}required{% endif %}
       data-app-file-input
       x-ref="input"
+      {% if describedby %}aria-describedby="{{ describedby }}"{% endif %}
     >
   </label>
   {% if help_text %}<p class="text-sm text-muted-foreground" id="{{ id }}-help">{{ help_text }}</p>{% endif %}
@@ -77,7 +79,8 @@
   confirm_label="Upload {count} files",
   target=none,
   swap="innerHTML",
-  extra_form_attrs=""
+  extra_form_attrs="",
+  describedby=""
 ) -%}
 <form
   id="{{ id }}"
@@ -106,7 +109,8 @@
     too_large_label=too_large_label,
     wrong_type_label=wrong_type_label,
     empty_label=empty_label,
-    confirm_label=confirm_label
+    confirm_label=confirm_label,
+    describedby=describedby
   ) }}
   <div class="app-stack app-stack--tight" data-app-file-progress hidden>
     <progress class="app-progress w-full" max="100" value="0" data-app-file-progress-bar></progress>
