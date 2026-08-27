@@ -22,7 +22,6 @@ from app_factory.adapters import (
 from app_factory.platform import PlatformConfig, PlatformPaths
 from demo_store import ADMIN_ID, CSRF_TOKEN, MEMBER_ID, DemoStore
 from policy import DemoPasskeyHooks, DemoUserManagerHooks
-from rooted_app import PLATFORM_PATHS as ROOTED_PATHS
 from rooted_app import create_app as create_rooted_app
 
 ROOT = Path(__file__).resolve().parents[1]
