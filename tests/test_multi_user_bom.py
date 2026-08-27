@@ -21,9 +21,9 @@ def test_bom_pins_are_immutable_tags() -> None:
     bom = _bom()
     pins = bom["pins"]
     assert pins == {
-        "app-factory": "v0.6.10",
-        "my-auth": "v0.4.5",
-        "my-usermanager": "v0.5.6",
+        "app-factory": "v0.6.12",
+        "my-auth": "v0.4.6",
+        "my-usermanager": "v0.5.8",
     }
     for name, tag in pins.items():
         assert tag.startswith("v"), name
@@ -79,12 +79,15 @@ def test_example_pyproject_matches_bom_and_forces_single_source() -> None:
         assert tag in readme
     assert not (EXAMPLE_ROOT / "templates" / "invite.html").exists()
     assert not (EXAMPLE_ROOT / "templates" / "my_auth_overrides").exists()
-    host_python = (EXAMPLE_ROOT / "app.py").read_text(encoding="utf-8") + (
-        EXAMPLE_ROOT / "demo_store.py"
-    ).read_text(encoding="utf-8")
+    host_python = "".join(
+        (EXAMPLE_ROOT / name).read_text(encoding="utf-8")
+        for name in ("app.py", "rooted_app.py", "policy.py", "demo_store.py")
+    )
     assert "create_invitation_tables" not in host_python
     assert "SQLiteEnrollmentCapabilityStore" not in host_python
     assert "my_auth_overrides" not in host_python
+    assert "install_identity_adapters" in host_python
+    assert "install_passkey_ui(" not in host_python
     assert "my-auth[fastapi-htmx]" not in example["tool"]["uv"]["override-dependencies"]
 
 

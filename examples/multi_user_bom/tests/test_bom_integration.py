@@ -39,7 +39,7 @@ def test_bom_pins_align_with_example_pyproject() -> None:
     assert example["tool"]["uv"]["override-dependencies"] == [
         "app-factory[platform]",
     ]
-    assert bom["pins"]["app-factory"] == "v0.6.10"
+    assert bom["pins"]["app-factory"] == "v0.6.12"
 
 
 def test_uv_lock_selects_single_app_factory_source() -> None:
@@ -69,10 +69,10 @@ def test_uv_lock_selects_single_app_factory_source() -> None:
     ), package_blocks
     # Nested adapter git tags for older app-factory must not appear as package sources.
     assert "git+https://github.com/mikolaj92/app-factory@v0.5." not in text
-    assert re.search(r'name = "my-auth"\nversion = "0\.4\.5"', text)
-    assert "tag=v0.4.5" in text
-    assert re.search(r'name = "my-usermanager"\nversion = "0\.5\.6"', text)
-    assert "tag=v0.5.6" in text
+    assert re.search(r'name = "my-auth"\nversion = "0\.4\.6"', text)
+    assert "tag=v0.4.6" in text
+    assert re.search(r'name = "my-usermanager"\nversion = "0\.5\.8"', text)
+    assert "tag=v0.5.8" in text
     assert "tag=v0.4.0" not in text
     assert "tag=v0.4.1" not in text
     assert "tag=v0.4.2" not in text
@@ -181,6 +181,41 @@ def test_admin_users_and_account_use_authenticated_identity_shell(
     assert "Morgan Member" in users.text or "member" in users.text
     assert "data-platform-identity-navigation" in users.text
     assert "Invite user" in users.text
+
+
+def test_ruff_and_typing_surface_for_composition_hosts() -> None:
+    ruff = subprocess.run(
+        [
+            "uv",
+            "run",
+            "ruff",
+            "check",
+            "app.py",
+            "rooted_app.py",
+            "policy.py",
+            "tests/test_adapter_composition.py",
+        ],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert ruff.returncode == 0, ruff.stdout + ruff.stderr
+    # Package export + annotation contract (no host installer forks).
+    from app_factory.adapters import (  # noqa: PLC0415
+        IdentityInstall,
+        PasskeyBinding,
+        UserManagerBinding,
+        install_identity_adapters,
+    )
+
+    assert callable(install_identity_adapters)
+    assert install_identity_adapters.__annotations__["return"] in {
+        IdentityInstall,
+        "IdentityInstall",
+    }
+    assert "hooks" in PasskeyBinding.__dataclass_fields__
+    assert "csrf_protection" in UserManagerBinding.__dataclass_fields__
 
 
 def test_invite_page_denied_for_member(client: TestClient) -> None:

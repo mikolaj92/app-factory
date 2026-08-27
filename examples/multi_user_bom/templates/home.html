@@ -21,10 +21,10 @@
       {% if session_user %}<strong>{{ session_user }}</strong>{% else %}guest{% endif %}
     </p>
     <div class="app-cluster">
-      <form method="post" action="/demo/as/{{ admin_id }}">
+      <form method="post" action="{{ demo_root|default('') }}/demo/as/{{ admin_id }}">
         <button class="btn" type="submit" data-variant="primary">Sign in as admin</button>
       </form>
-      <form method="post" action="/demo/as/{{ member_id }}">
+      <form method="post" action="{{ demo_root }}/demo/as/{{ member_id }}">
         <button class="btn" type="submit">Sign in as member</button>
       </form>
     </div>
@@ -45,7 +45,7 @@
     {% if issued_recoveries %}
     <p data-issued-recoveries>Issued recoveries: {{ issued_recoveries|length }}</p>
     {% endif %}
-    <form method="post" action="/demo/recovery/{{ member_id }}">
+    <form method="post" action="{{ demo_root }}/demo/recovery/{{ member_id }}">
       <button class="btn" type="submit">Issue member recovery link</button>
     </form>
   </div>
