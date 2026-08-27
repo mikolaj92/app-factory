@@ -1,7 +1,7 @@
-"""Cookie-session BOM host: default paths, in-memory stores.
+"""Signed-session BOM host behind a reverse-proxy prefix.
 
-Uses :func:`install_identity_adapters` so this file owns session transport,
-RBAC catalog, and persistence only.
+Structurally different from ``app.py``: ``SessionMiddleware`` +
+``PlatformPaths.root`` + session CSRF. Same ``install_identity_adapters``.
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from my_auth.fastapi import PasskeyCookies
+from starlette.middleware.sessions import SessionMiddleware
 from starlette.status import HTTP_303_SEE_OTHER
 
 from app_factory.adapters import (
@@ -20,64 +21,62 @@ from app_factory.adapters import (
     UserManagerBinding,
     install_identity_adapters,
 )
+from app_factory.csrf import SessionCsrfProtection
 from app_factory.platform import (
+    MenuGroup,
     MenuItem,
     PlatformConfig,
     PlatformPaths,
     PlatformUser,
 )
-from demo_store import (
-    ADMIN_ID,
-    CSRF_HEADER,
-    CSRF_TOKEN,
-    MEMBER_ID,
-    SESSION_COOKIE,
-    DemoStore,
-)
+from demo_store import ADMIN_ID, MEMBER_ID, DemoStore
 from policy import DemoPasskeyHooks, DemoUserManagerHooks
 
 ROOT: Final = Path(__file__).resolve().parent
 TEMPLATES: Final = Jinja2Templates(directory=str(ROOT / "templates"))
-PLATFORM_PATHS: Final = PlatformPaths()
-
-
-class _DemoCsrf:
-    def token(self, _request: Request) -> str:
-        return CSRF_TOKEN
-
-    def validate(self, _request: Request, submitted_token: str) -> None:
-        if submitted_token != CSRF_TOKEN:
-            raise ValueError("invalid demo CSRF token")
+PLATFORM_PATHS: Final = PlatformPaths(root="/portal")
+SESSION_KEY: Final = "portal_user_id"
+CSRF = SessionCsrfProtection(session_key="portal_csrf")
 
 
 def _session_user_id(request: Request) -> str | None:
-    return request.cookies.get(SESSION_COOKIE)
+    if "session" not in request.scope:
+        return None
+    user_id = request.session.get(SESSION_KEY)
+    return user_id if isinstance(user_id, str) and user_id else None
 
 
-def _login_user(response: Response, _request: Request, user) -> None:
-    response.set_cookie(SESSION_COOKIE, user.user_id, httponly=True, samesite="lax")
+def _login_user(_response: Response, request: Request, user) -> None:
+    request.session[SESSION_KEY] = user.user_id
+    _ = CSRF.token(request)
 
 
-def _logout_user(response: Response, _request: Request) -> None:
-    response.delete_cookie(SESSION_COOKIE)
+def _logout_user(_response: Response, request: Request) -> None:
+    request.session.clear()
 
 
 def create_app(store: DemoStore | None = None) -> FastAPI:
     demo = store or DemoStore()
-    app = FastAPI(title="Multi-user platform BOM example", docs_url=None)
+    app = FastAPI(title="Rooted portal BOM host", docs_url=None)
     app.state.demo_store = demo
 
+    resolved = PLATFORM_PATHS.resolved()
     config = PlatformConfig(
-        app_name="BOM demo",
-        brand_href="/",
-        brand_meta="multi-user",
-        menu=(MenuItem("Home", "/", key="home"),),
+        app_name="Portal",
+        brand_href="/portal/",
+        brand_meta="rooted",
+        menu=(
+            MenuGroup(
+                "Workspace",
+                (MenuItem("Queue", "/portal/", key="queue"),),
+            ),
+        ),
         paths=PLATFORM_PATHS,
         enable_account=True,
         enable_credentials=True,
         enable_admin_users=True,
         enable_invite=True,
-        show_register=True,
+        show_register=False,
     )
 
     def platform_user(request: Request) -> PlatformUser | None:
@@ -106,27 +105,31 @@ def create_app(store: DemoStore | None = None) -> FastAPI:
                 logout_user=_logout_user,
             ),
             cookies=PasskeyCookies(secure=False),
-            csrf_header_name=CSRF_HEADER,
-            csrf_token=lambda _request: CSRF_TOKEN,
-            login_success_url="/",
-            register_success_url="/",
-            activation_success_url=PLATFORM_PATHS.account,
-            recovery_success_url=PLATFORM_PATHS.login,
-            show_registration_link=lambda _request: True,
+            csrf_token=CSRF.token,
+            login_success_url="/portal/",
+            register_success_url="/portal/",
+            activation_success_url=resolved.account,
+            recovery_success_url=resolved.login,
+            show_registration_link=lambda _request: False,
         ),
         usermanager=UserManagerBinding(
             hooks=DemoUserManagerHooks(
                 demo,
                 session_user_id=_session_user_id,
-                activation_page=PLATFORM_PATHS.activation,
+                activation_page=resolved.activation,
+                csrf_token=CSRF.token,
+                csrf_header="X-CSRF-Token",
             ),
-            csrf_protection=_DemoCsrf(),
+            csrf_protection=CSRF,
             environment=TEMPLATES.env,
         ),
         current_user=platform_user,
     )
 
-    @app.get("/", response_class=HTMLResponse)
+    # Last-added middleware runs first: session must wrap request-context.
+    app.add_middleware(SessionMiddleware, secret_key="bom-portal-demo", https_only=False)
+
+    @app.get("/portal/", response_class=HTMLResponse)
     def home(request: Request) -> HTMLResponse:
         user_id = _session_user_id(request)
         return TEMPLATES.TemplateResponse(
@@ -140,25 +143,25 @@ def create_app(store: DemoStore | None = None) -> FastAPI:
                 "member_credentials": len(demo.credentials_for(MEMBER_ID)),
                 "issued_invites": list(demo.issued_invites),
                 "issued_recoveries": list(demo.issued_recoveries),
-                "paths": PLATFORM_PATHS,
-                "demo_root": "",
+                "paths": resolved,
+                "demo_root": "/portal",
             },
         )
 
-    @app.post("/demo/as/{user_id}")
-    def switch_user(user_id: str) -> RedirectResponse:
-        response = RedirectResponse("/", status_code=HTTP_303_SEE_OTHER)
+    @app.post("/portal/demo/as/{user_id}")
+    def switch_user(request: Request, user_id: str) -> RedirectResponse:
         if user_id in demo.users:
-            response.set_cookie(SESSION_COOKIE, user_id, httponly=True, samesite="lax")
-        return response
+            request.session[SESSION_KEY] = user_id
+            _ = CSRF.token(request)
+        return RedirectResponse("/portal/", status_code=HTTP_303_SEE_OTHER)
 
-    @app.post("/demo/recovery/{user_id}")
+    @app.post("/portal/demo/recovery/{user_id}")
     def issue_recovery(user_id: str, request: Request) -> RedirectResponse:
         actor = _session_user_id(request) or ADMIN_ID
         token = demo.issue_recovery(subject=user_id, issued_by=actor)
-        response = RedirectResponse("/", status_code=HTTP_303_SEE_OTHER)
+        response = RedirectResponse("/portal/", status_code=HTTP_303_SEE_OTHER)
         response.headers["X-Demo-Recovery-URL"] = (
-            f"{PLATFORM_PATHS.recovery}?capability={token}"
+            f"{resolved.recovery}?capability={token}"
         )
         return response
 

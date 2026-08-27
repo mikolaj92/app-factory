@@ -7,7 +7,7 @@ The goal is one place to ship the resilient same-origin chrome, Jinja head
 partials, and optional CDN pins so product apps do **not** re-implement
 Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.6.11` (shared mechanisms; the multi-user BOM remains v0.6.10 until matching auth tags land)
+**Tag:** `v0.6.12` (identity-adapter composition; multi-user BOM is v0.6.12 / my-auth v0.4.6 / my-usermanager v0.5.8)
 
 ---
 
@@ -17,10 +17,10 @@ This package is the thin shared layer in a small platform. Together:
 
 | Piece | Role | How consumers get it |
 |-------|------|----------------------|
-| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.6.11` directly; multi-user hosts follow `COMPAT.md` |
+| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.6.12` directly; multi-user hosts follow `COMPAT.md` |
 | **basecoat-factory** | Maintainer-only build source for the generated Basecoat/UI asset bundle | Not a runtime dependency |
-| **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.4.5` |
-| **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.5.6` |
+| **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.4.6` |
+| **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.5.8` |
 | **FastAPI + Jinja2 + HTMX + Alpine** | Server-rendered app shell | App code; core scripts/CSS served by the app |
 
 ### Dependency rule
@@ -58,6 +58,7 @@ Apps should not ship:
 | `app_factory.cdn` | Optional CDN assets, `cdn_asset()`, SRI verification, `extend_manifest()` / `install_manifest()` |
 | `app_factory.jinja` | `configure_jinja_env()` — registers bundled/local and optional CDN helpers plus the template loader |
 | `app_factory.fastapi` | `install_app_factory_ui()` — the sole supported FastAPI mount/Jinja integration |
+| `app_factory.adapters` | `install_identity_adapters()` plus focused passkey / usermanager / session helpers |
 | `app_factory/templates/app_factory/shell.html` | Shared five-block full-page shell |
 | `app_factory/templates/app_factory/client_shell.html` | Slim TAP client document (Basecoat + theme/auth; no HTMX/Alpine) |
 | `app_factory/templates/app_factory/head_assets_slim.html` | Same-origin Basecoat/icons only (no HTMX/Alpine) |
@@ -92,7 +93,7 @@ route authorization, domain validation, accepted upload formats, and copy.
 
 ---
 
-## Bundled core assets (`v0.6.11`)
+## Bundled core assets (`v0.6.12`)
 
 The wheel ships all core files. `MANIFEST.json` pins filenames, versions, and
 SHA-384 digests; the runtime verifies it on first access.
@@ -205,9 +206,9 @@ dependencies = [
 override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.6.11" }
-my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.4.5" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.5.6" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.6.12" }
+my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.4.6" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.5.8" }
 ```
 
 ```bash
@@ -406,28 +407,40 @@ app-factory asset bundle; applications do not install the build-source project.
 ## Passkey login (my-auth + this package)
 
 Default interactive login/register should come from **my-auth**, not app templates.
+Hosts call the generic composer once; they do not copy installer glue.
 
 ```python
-from my_auth.fastapi import PasskeyCookies, PasskeyRouteHooks
-from my_auth.fastapi_htmx import PasskeyUiConfig, install_passkey_ui
+from app_factory.adapters import (
+    PasskeyBinding,
+    UserManagerBinding,
+    install_identity_adapters,
+)
+from app_factory.csrf import SessionCsrfProtection
+from app_factory.platform import PlatformConfig, PlatformPaths
+from my_auth.fastapi import PasskeyCookies
 
-# Install the platform first, then give both auth adapters the same typed value.
-passkeys = install_passkey_ui(
+installed = install_identity_adapters(
     app,
-    platform=platform,
-    service=passkey_service,
-    hooks=hooks,
-    config=PasskeyUiConfig(
-        login_success_url="/",
-        register_success_url="/",
+    environments=[templates.env],
+    config=PlatformConfig(
+        paths=PlatformPaths(),
+        enable_account=True,
+        enable_credentials=True,
+        enable_admin_users=True,
+        enable_invite=True,
+    ),
+    passkey=PasskeyBinding(
+        service=passkey_service,
+        hooks=passkey_policy_hooks,  # persistence + session; no render_* stubs
         cookies=PasskeyCookies(secure=cookie_secure),
     ),
+    usermanager=UserManagerBinding(
+        hooks=user_policy_hooks,  # RBAC catalog + stores
+        csrf_protection=SessionCsrfProtection(),
+        environment=templates.env,
+    ),
+    current_user=platform_user_from_request,
 )
-
-# Optional generic account/admin composition:
-# users = install_usermanager_ui(
-#     app, platform=platform, hooks=user_hooks, config=user_ui_config
-# )
 ```
 
 - The installer owns the package-specific static mount; hosts do not mount it manually.
@@ -445,9 +458,9 @@ passkeys = install_passkey_ui(
 ## Recommended app checklist
 
 1. Depend on the multi-user BOM pins from `COMPAT.md` / `bom/multi_user.toml` (with `override-dependencies`).
-2. Call `install_app_factory_ui()` / `install_platform()` once with every Jinja environment.
+2. Call `install_identity_adapters()` (or `install_platform()` for chrome-only) once with every Jinja environment.
 3. Extend identity shells for lifecycle pages; keep navigation data-driven via `PlatformPaths`.
-4. Pass the returned `AppFactoryUi` to auth/usermanager adapter installers.
+4. Supply passkey/usermanager **policy** hooks only — do not call `install_passkey_ui` / `install_usermanager_ui` from the host.
 5. Keep only product CSS and product CDN extras in the app.
 6. Contract-test that canonical local assets and enabled UI routes return 200 (see `examples/multi_user_bom`).
 
@@ -455,6 +468,7 @@ passkeys = install_passkey_ui(
 
 ## API sketch
 
+install_identity_adapters(app, environments, config, passkey, usermanager, current_user) -> IdentityInstall
 install_app_factory_ui(app, environments, static_path, mount_name) -> AppFactoryUi
 bundled_asset(name) -> BundledAsset
 list_bundled_assets()
@@ -472,6 +486,8 @@ factory_template_dirs()
 
 | app-factory | basecoat-css | Notes |
 |-------------|---------------|-------|
+| **v0.6.12** | **1.0.2** | Additive on v0.6.11: `install_identity_adapters` + focused passkey/usermanager/session helpers; BOM row my-auth v0.4.6 / my-usermanager v0.5.8. No chrome change. |
+| **v0.6.11** | **1.0.2** | Shared browser mechanisms (HTMX redirect, session CSRF, toast boot, pagination). Multi-user BOM stayed on v0.6.10 until matching auth tags; chrome generation with my-auth v0.4.6 / my-usermanager v0.5.7 had no composer. |
 | **v0.6.7** | **1.0.2** | Additive on v0.6.6: BOM row my-auth v0.4.5 / my-usermanager v0.5.6 (nested chrome v0.6.6; initialize() stamps enrollment on current schemas). No chrome change. |
 | **v0.6.6** | **1.0.2** | Additive on v0.6.5: slim TAP `client_shell` (no HTMX/Alpine) + `PlatformPaths.invite` default `/admin/users`; same my-auth v0.4.2 / my-usermanager v0.5.4 |
 | **v0.6.5** | **1.0.2** | Multi-user platform BOM + enrollment capability DDL in ensure_sqlite_schema (my-auth v0.4.2) + nested my-auth pin (my-usermanager v0.5.4); hosts override app-factory only |

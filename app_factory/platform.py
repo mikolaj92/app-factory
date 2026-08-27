@@ -1,7 +1,8 @@
 """Platform composition: shared chrome + optional passkey UI wiring.
 
-Hosts call :func:`install_platform` once instead of re-copying shell, theme boot,
-and auth foot across apps. Domain menu items are host-supplied. Fixed chrome:
+Hosts call :func:`install_platform` for chrome-only installs, or
+:func:`app_factory.adapters.install_identity_adapters` when wiring passkey and
+usermanager UIs. Domain menu items are host-supplied. Fixed chrome:
 main header = locale + theme; sidebar foot = signed-in account link or guest
 Login (`platform_auth`); account page = Log out (`platform_session`). Hosts must
 not reimplement these or put logout in chrome.
@@ -470,20 +471,21 @@ def install_platform(
                 "install passkey UI"
             )
         try:
-            from my_auth.fastapi_htmx import install_passkey_ui
+            from app_factory.adapters.passkey import install_passkey_adapter
         except ImportError as exc:
             raise ImportError(
                 "install_platform passkey wiring requires my-auth[fastapi-htmx] "
                 "(install app-factory[platform])"
             ) from exc
-        passkey_ui = install_passkey_ui(
+        # my-auth ≥ v0.4.5 includes the router; do not include it again.
+        passkey_ui = install_passkey_adapter(
             app,
             platform=ui,
             service=passkey_service,
             hooks=passkey_hooks,
             config=passkey_config,
+            platform_config=resolved,
         )
-        app.include_router(passkey_ui.router)
 
     if usermanager_installer is not None:
         usermanager_installer(app, ui)

@@ -4,12 +4,12 @@
 [bom]
 id = "multi-user-platform"
 version = "2026.08"
-generation = "identity-lifecycle"
+generation = "identity-adapters"
 
 [pins]
-app-factory = "v0.6.10"
-my-auth = "v0.4.5"
-my-usermanager = "v0.5.6"
+app-factory = "v0.6.12"
+my-auth = "v0.4.6"
+my-usermanager = "v0.5.8"
 
 [sources]
 app-factory = "https://github.com/mikolaj92/app-factory"
@@ -18,10 +18,10 @@ my-usermanager = "https://github.com/mikolaj92/my-usermanager"
 
 [resolution]
 # Nested adapter uv.sources still declare their own app-factory git
-# tag (UM v0.5.6 / my-auth v0.4.5 both nest app-factory@v0.6.6). Hosts
+# tag (UM v0.5.8 / my-auth v0.4.6 both nest app-factory@v0.6.11). Hosts
 # MUST override app-factory so resolution selects exactly one source
-# (this row: v0.6.10). Do not override my-auth: UM v0.5.6 already nests
-# my-auth@v0.4.5.
+# (this row: v0.6.12). Do not override my-auth: UM v0.5.8 already nests
+# my-auth@v0.4.6.
 require_single_app_factory = true
 override_dependencies = ["app-factory[platform]"]
 
@@ -34,6 +34,7 @@ account_profile = { owner = "my-usermanager", surfaces = ["account"], visibility
 admin_users = { owner = "my-usermanager", surfaces = ["users"], visibility = "admin" }
 admin_invite = { owner = "my-usermanager", surfaces = ["invite", "reissue", "revoke"], visibility = "admin" }
 shared_shells = { owner = "app-factory", surfaces = ["identity_public_shell", "identity_authenticated_shell"], visibility = "composition" }
+identity_install = { owner = "app-factory", surfaces = ["install_identity_adapters"], visibility = "composition" }
 enrollment_capability_ddl = { owner = "my-auth", surfaces = ["ensure_sqlite_schema"], visibility = "host-bootstrap" }
 
 [upgrade_order]

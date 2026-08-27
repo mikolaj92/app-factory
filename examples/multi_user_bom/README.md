@@ -1,29 +1,43 @@
 # Multi-user platform BOM example
 
-Reference FastAPI host pinned to the immutable multi-user compatibility BOM:
+Reference FastAPI hosts pinned to the immutable multi-user compatibility BOM:
 
 | Package | Tag |
 |---------|-----|
-| app-factory | `v0.6.10` (editable path while developing this repo) |
-| my-auth | `v0.4.5` |
-| my-usermanager | `v0.5.6` |
+| app-factory | `v0.6.12` (editable path while developing this repo) |
+| my-auth | `v0.4.6` |
+| my-usermanager | `v0.5.8` |
 
 Machine-readable pins: [`bom/multi_user.toml`](../../bom/multi_user.toml).
 Human matrix / upgrade order / migration: [`COMPAT.md`](../../COMPAT.md).
+
+Two structurally different hosts share **one** installer
+(`install_identity_adapters`):
+
+| Host | Session | Paths | File |
+|------|---------|-------|------|
+| Cookie demo | raw cookie | defaults (`/login`, `/account`, …) | `app.py` |
+| Portal demo | signed `SessionMiddleware` | `PlatformPaths.root="/portal"` | `rooted_app.py` |
+
+Each host supplies only session transport, persistence, and the RBAC catalog.
+Passkey ceremony stays in my-auth; user lifecycle stays in my-usermanager.
 
 This generation uses my-auth packaged ceremony shells (no host
 `my_auth_overrides`). SQLite hosts call `SQLiteAuthDatabase.initialize()` only —
 do not follow it with `create_invitation_tables` or a dummy
 `SQLiteEnrollmentCapabilityStore(db)` construction. Enrollment DDL
-(`passkey_enrollment_capabilities`) is stamped by my-usermanager v0.5.6
-`initialize()` via my-auth v0.4.5 `ensure_sqlite_schema`, including already-current schemas.
+(`passkey_enrollment_capabilities`) is stamped by my-usermanager v0.5.8
+`initialize()` via my-auth v0.4.6 `ensure_sqlite_schema`, including already-current schemas.
+
+Chrome generation v0.6.11 / v0.4.6 / v0.5.7 had no composer — bump
+app-factory to v0.6.12 (and UM to v0.5.8 if still on v0.5.7).
 
 ## Why `override-dependencies`?
 
 `my-auth` and `my-usermanager` each declare nested `tool.uv.sources` for older
-app-factory tags (UM v0.5.6 / my-auth v0.4.5 nest app-factory@v0.6.6). Without a host override, `uv lock` fails with conflicting
+app-factory tags (UM v0.5.8 / my-auth v0.4.6 nest app-factory@v0.6.11). Without a host override, `uv lock` fails with conflicting
 URLs. This example (and production hosts) force one app-factory source.
-Do **not** override my-auth: UM v0.5.6 already nests my-auth@v0.4.5.
+Do **not** override my-auth: UM v0.5.8 already nests my-auth@v0.4.6.
 
 ```toml
 [tool.uv]
@@ -36,6 +50,7 @@ override-dependencies = ["app-factory[platform]"]
 cd examples/multi_user_bom
 uv sync
 uv run uvicorn app:app --reload --port 8770
+# rooted host: uv run uvicorn rooted_app:app --reload --port 8771
 ```
 
 Open http://127.0.0.1:8770 — switch between the seeded admin (2 passkeys) and
@@ -46,7 +61,11 @@ member (1 passkey), invite a user, and open activation/recovery capability URLs.
 ```bash
 cd examples/multi_user_bom
 uv run pytest -q
+uv run ruff check app.py rooted_app.py policy.py tests
 ```
+
+`tests/test_adapter_composition.py` runs the same installer against both hosts
+and checks conflict / idempotency / fail-closed auth.
 
 ## Surfaces exercised
 
@@ -59,6 +78,8 @@ uv run pytest -q
 | Account | `/account` | my-usermanager on identity authenticated shell |
 | Admin users | `/admin/users` | my-usermanager |
 | Invite / reissue / revoke | `/admin/users` (POST `/admin/users/invite`) | my-usermanager packaged admin UI |
+
+Rooted host serves the same surfaces under `/portal/…`.
 
 ## Production pin recipe
 
@@ -73,7 +94,7 @@ dependencies = [
 override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.6.10" }
-my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.4.5" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.5.6" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.6.12" }
+my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.4.6" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.5.8" }
 ```

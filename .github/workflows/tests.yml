@@ -27,3 +27,5 @@ jobs:
           tests/test_fastapi.py
           tests/test_shared_pin_contract.py
           tests/test_multi_user_bom.py
+          tests/test_adapters.py
+          tests/test_shared_mechanisms.py
