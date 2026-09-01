@@ -7,7 +7,7 @@ The goal is one place to ship the resilient same-origin chrome, Jinja head
 partials, and optional CDN pins so product apps do **not** re-implement
 Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.6.12` (identity-adapter composition; multi-user BOM is v0.6.12 / my-auth v0.4.6 / my-usermanager v0.5.8)
+**Tag:** `v0.6.13` (identity-adapter composition; multi-user BOM is v0.6.13 / my-auth v0.4.7 / my-usermanager v0.5.9)
 
 ---
 
@@ -17,10 +17,10 @@ This package is the thin shared layer in a small platform. Together:
 
 | Piece | Role | How consumers get it |
 |-------|------|----------------------|
-| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.6.12` directly; multi-user hosts follow `COMPAT.md` |
+| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.6.13` directly; multi-user hosts follow `COMPAT.md` |
 | **basecoat-factory** | Maintainer-only build source for the generated Basecoat/UI asset bundle | Not a runtime dependency |
-| **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.4.6` |
-| **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.5.8` |
+| **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.4.7` |
+| **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.5.9` |
 | **FastAPI + Jinja2 + HTMX + Alpine** | Server-rendered app shell | App code; core scripts/CSS served by the app |
 
 ### Dependency rule
@@ -95,7 +95,7 @@ route authorization, domain validation, accepted upload formats, and copy.
 
 ---
 
-## Bundled core assets (`v0.6.12`)
+## Bundled core assets (`v0.6.13`)
 
 The wheel ships all core files. `MANIFEST.json` pins filenames, versions, and
 SHA-384 digests; the runtime verifies it on first access.
@@ -208,9 +208,9 @@ dependencies = [
 override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.6.12" }
-my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.4.6" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.5.8" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.6.13" }
+my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.4.7" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.5.9" }
 ```
 
 ```bash
@@ -488,8 +488,8 @@ factory_template_dirs()
 
 | app-factory | basecoat-css | Notes |
 |-------------|---------------|-------|
-| **v0.6.12** | **1.0.2** | Additive on v0.6.11: `install_identity_adapters` + focused passkey/usermanager/session helpers; BOM row my-auth v0.4.6 / my-usermanager v0.5.8. No chrome change. |
-| **v0.6.11** | **1.0.2** | Shared browser mechanisms (HTMX redirect, session CSRF, toast boot, pagination). Multi-user BOM stayed on v0.6.10 until matching auth tags; chrome generation with my-auth v0.4.6 / my-usermanager v0.5.7 had no composer. |
+| **v0.6.13** | **1.0.2** | Additive on v0.6.11: `install_identity_adapters` + focused passkey/usermanager/session helpers; BOM row my-auth v0.4.7 / my-usermanager v0.5.9. No chrome change. |
+| **v0.6.11** | **1.0.2** | Shared browser mechanisms (HTMX redirect, session CSRF, toast boot, pagination). Multi-user BOM stayed on v0.6.10 until matching auth tags; chrome generation with my-auth v0.4.7 / my-usermanager v0.5.7 had no composer. |
 | **v0.6.7** | **1.0.2** | Additive on v0.6.6: BOM row my-auth v0.4.5 / my-usermanager v0.5.6 (nested chrome v0.6.6; initialize() stamps enrollment on current schemas). No chrome change. |
 | **v0.6.6** | **1.0.2** | Additive on v0.6.5: slim TAP `client_shell` (no HTMX/Alpine) + `PlatformPaths.invite` default `/admin/users`; same my-auth v0.4.2 / my-usermanager v0.5.4 |
 | **v0.6.5** | **1.0.2** | Multi-user platform BOM + enrollment capability DDL in ensure_sqlite_schema (my-auth v0.4.2) + nested my-auth pin (my-usermanager v0.5.4); hosts override app-factory only |
