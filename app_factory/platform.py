@@ -18,7 +18,7 @@ mount prefix.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from typing import Any
 
@@ -438,19 +438,13 @@ def install_platform(
     *,
     environments: Iterable[Environment],
     config: PlatformConfig | None = None,
-    passkey_service: Any | None = None,
-    passkey_hooks: Any | None = None,
-    passkey_config: Any | None = None,
-    usermanager_installer: Callable[[FastAPI, AppFactoryUi], Any] | None = None,
     static_path: str = "/static/platform",
     mount_name: str = "app-factory-platform",
 ) -> PlatformInstall:
-    """Install shared chrome and optionally wire my-auth passkey UI.
+    """Install shared platform chrome without identity adapters.
 
-    When ``passkey_service`` and ``passkey_hooks`` are provided, requires the
-    ``platform`` (or at least ``my-auth[fastapi-htmx]``) extra and mounts the
-    packaged passkey routes. Hosts still supply session hooks; they do not
-    re-copy login templates or theme boot.
+    Hosts wiring passkey or user-manager surfaces call
+    :func:`app_factory.adapters.install_identity_adapters` instead.
     """
     resolved = config or PlatformConfig()
     env_list = list(environments)
@@ -463,35 +457,8 @@ def install_platform(
     for environment in env_list:
         apply_platform_context(environment, resolved)
 
-    passkey_ui = None
-    if passkey_service is not None or passkey_hooks is not None:
-        if passkey_service is None or passkey_hooks is None:
-            raise ValueError(
-                "passkey_service and passkey_hooks must both be provided to "
-                "install passkey UI"
-            )
-        try:
-            from app_factory.adapters.passkey import install_passkey_adapter
-        except ImportError as exc:
-            raise ImportError(
-                "install_platform passkey wiring requires my-auth[fastapi-htmx] "
-                "(install app-factory[platform])"
-            ) from exc
-        # my-auth ≥ v0.4.5 includes the router; do not include it again.
-        passkey_ui = install_passkey_adapter(
-            app,
-            platform=ui,
-            service=passkey_service,
-            hooks=passkey_hooks,
-            config=passkey_config,
-            platform_config=resolved,
-        )
-
-    if usermanager_installer is not None:
-        usermanager_installer(app, ui)
-
     app.state.app_factory_platform = PlatformInstall(
-        ui=ui, config=resolved, passkey_ui=passkey_ui
+        ui=ui, config=resolved, passkey_ui=None
     )
     return app.state.app_factory_platform
 
