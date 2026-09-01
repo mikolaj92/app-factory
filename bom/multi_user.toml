@@ -7,9 +7,9 @@ version = "2026.08"
 generation = "identity-adapters"
 
 [pins]
-app-factory = "v0.6.14"
-my-auth = "v0.4.7"
-my-usermanager = "v0.5.10"
+app-factory = "v0.6.15"
+my-auth = "v0.4.8"
+my-usermanager = "v0.5.11"
 
 [sources]
 app-factory = "https://github.com/mikolaj92/app-factory"
@@ -18,10 +18,10 @@ my-usermanager = "https://github.com/mikolaj92/my-usermanager"
 
 [resolution]
 # Nested adapter uv.sources still declare their own app-factory git
-# tag (UM v0.5.10 / my-auth v0.4.7 both nest app-factory@v0.6.11). Hosts
+# tag (UM v0.5.11 / my-auth v0.4.8 both nest app-factory@v0.6.11). Hosts
 # MUST override app-factory so resolution selects exactly one source
-# (this row: v0.6.14). Do not override my-auth: UM v0.5.10 already nests
-# my-auth@v0.4.7.
+# (this row: v0.6.15). Do not override my-auth: UM v0.5.11 already nests
+# my-auth@v0.4.8.
 require_single_app_factory = true
 override_dependencies = ["app-factory[platform]"]
 
