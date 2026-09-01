@@ -17,9 +17,9 @@ dependencies = [
 
 [tool.uv]
 # Nested adapter uv.sources still declare app-factory@v0.6.11
-# (UM v0.5.8 / my-auth v0.4.6). Override app-factory only so the host
-# pin (this package, or tag v0.6.12) wins. Do not override my-auth —
-# UM v0.5.8 already nests my-auth@v0.4.6.
+# (UM v0.5.9 / my-auth v0.4.7). Override app-factory only so the host
+# pin (this package, or tag v0.6.13) wins. Do not override my-auth —
+# UM v0.5.9 already nests my-auth@v0.4.7.
 override-dependencies = [
   "app-factory[platform]",
 ]
@@ -28,8 +28,8 @@ override-dependencies = [
 # Local editable pin for developing app-factory against released auth tags.
 # Production hosts replace this with the immutable git tag from bom/multi_user.toml.
 app-factory = { path = "../..", editable = true }
-my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.4.6" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.5.8" }
+my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.4.7" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.5.9" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
