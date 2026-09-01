@@ -4,7 +4,7 @@ Reference FastAPI hosts pinned to the immutable multi-user compatibility BOM:
 
 | Package | Tag |
 |---------|-----|
-| app-factory | `v0.6.15` (editable path while developing this repo) |
+| app-factory | `v0.6.16` (editable path while developing this repo) |
 | my-auth | `v0.4.8` |
 | my-usermanager | `v0.5.11` |
 
@@ -30,7 +30,7 @@ do not follow it with `create_invitation_tables` or a dummy
 `initialize()` via my-auth v0.4.8 `ensure_sqlite_schema`, including already-current schemas.
 
 Chrome generation v0.6.11 / v0.4.8 / v0.5.7 had no composer — bump
-app-factory to v0.6.15 (and UM to v0.5.11 if still on v0.5.7).
+app-factory to v0.6.16 (and UM to v0.5.11 if still on v0.5.7).
 
 ## Why `override-dependencies`?
 
@@ -94,7 +94,7 @@ dependencies = [
 override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.6.15" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.6.16" }
 my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.4.8" }
 my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.5.11" }
 ```
