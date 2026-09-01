@@ -120,7 +120,7 @@ LICENSE_SOURCES = {
         "alpinejs",
         "MIT",
         "https://github.com/alpinejs/alpine",
-        "https://raw.githubusercontent.com/alpinejs/alpine/v3.15.12/LICENSE.md",
+        "https://raw.githubusercontent.com/alpinejs/alpine/v3.17.1/LICENSE.md",
     ),
     "tailwindcss.LICENSE": (
         "tailwindcss (build-time; incorporated into generated CSS)",

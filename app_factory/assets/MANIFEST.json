@@ -1,9 +1,9 @@
 {
   "alpine": {
     "filename": "alpine.min.js",
-    "integrity": "sha384-pb6hrQvo4s23cEUFtj0CZkzGE3jyK3pj26RIupXXxhSrrcUA/Cn0lZgcCrGH0t6L",
+    "integrity": "sha384-x6MR287ZDHWauvRTQIBc3b1F++s/03J/rBHbpRGwBoYbrqIN+3wRx4EXbU1u9NGO",
     "kind": "script",
-    "version": "3.15.12"
+    "version": "3.17.1"
   },
   "basecoat-css": {
     "filename": "basecoat-factory.min.css",
