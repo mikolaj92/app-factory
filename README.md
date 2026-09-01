@@ -35,9 +35,11 @@ This package is the thin shared layer in a small platform. Together:
 |---------|--------|
 | Bundled Basecoat UI / HTMX / Alpine files + manifest | **app-factory** |
 | Shared `<head>`, shell, optional CDN pins, and theme boot | **app-factory** |
-| Login / register HTML + passkey UI static | **my-auth** `install_passkey_ui` |
-| Generic account/admin HTML + UI static | **my-usermanager** `install_usermanager_ui` |
+| Login / register HTML + passkey UI static | **my-auth**, composed by app-factory `install_identity_adapters` |
+| Generic account/admin HTML + UI static | **my-usermanager**, composed by app-factory `install_identity_adapters` |
 | Domain routes, ORM, product CSS | **the app** |
+
+`install_platform()` is chrome-only. Multi-user hosts call `install_identity_adapters()` with `PasskeyBinding` and/or `UserManagerBinding`; they do not invoke the package installers directly.
 
 Apps should not ship:
 

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 from fastapi import FastAPI
 from jinja2 import ChoiceLoader, DictLoader, Environment, PackageLoader
 from starlette.testclient import TestClient
@@ -604,17 +603,6 @@ def test_platform_templates_forbid_pre_basecoat_class_names() -> None:
             if marker in body:
                 offenders.append(f"{path.name}:{marker}")
     assert offenders == []
-
-
-def test_passkey_partial_install_requires_both_args() -> None:
-    app = FastAPI()
-    with pytest.raises(ValueError, match="both"):
-        install_platform(
-            app,
-            environments=[],
-            passkey_service=object(),
-            passkey_hooks=None,
-        )
 
 
 def test_shell_boot_template_exports_config_contract() -> None:
