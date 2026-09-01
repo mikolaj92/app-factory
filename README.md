@@ -105,7 +105,7 @@ SHA-384 digests; the runtime verifies it on first access.
 | `basecoat-css` | basecoat-css **1.0.2**, built with the app shell safelist | style |
 | `basecoat-js-all` | basecoat-css **1.0.2** | script |
 | `htmx` | htmx.org **2.0.10** | script |
-| `alpine` | alpinejs **3.15.12** | script |
+| `alpine` | alpinejs **3.17.1** | script |
 | `material-symbols-css` | Material Symbols Outlined **v364** | style |
 | `material-symbols-font` | Material Symbols Outlined **v364** | font |
 
