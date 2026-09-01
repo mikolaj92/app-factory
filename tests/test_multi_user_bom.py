@@ -21,9 +21,9 @@ def test_bom_pins_are_immutable_tags() -> None:
     bom = _bom()
     pins = bom["pins"]
     assert pins == {
-        "app-factory": "v0.6.14",
-        "my-auth": "v0.4.7",
-        "my-usermanager": "v0.5.10",
+        "app-factory": "v0.6.15",
+        "my-auth": "v0.4.8",
+        "my-usermanager": "v0.5.11",
     }
     for name, tag in pins.items():
         assert tag.startswith("v"), name
