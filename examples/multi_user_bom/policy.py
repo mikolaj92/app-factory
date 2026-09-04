@@ -17,7 +17,6 @@ from my_usermanager.adapters.fastapi_htmx import (
     CapabilityOption,
     CsrfContext,
     InvitationResult,
-    PasskeyPanel,
     PermissionGrantRow,
     UserRow,
 )
@@ -71,7 +70,7 @@ class DemoPasskeyHooks:
         del request, flow_id
         user = self._demo.passkey_users.get(username) or passkey_user(username)
         self._demo.passkey_users[user.user_id] = user
-        return RegistrationContext(kind="bootstrap", user=user)
+        return RegistrationContext(kind="self_registration", user=user)
 
     def prepare_capability_registration_context(
         self,
@@ -97,10 +96,6 @@ class DemoPasskeyHooks:
 
     def logout(self, response: Response, request: Request) -> None:
         self._logout_user(response, request)
-
-    def registration_allowed(self, _request: Request) -> bool:
-        return True
-
 
 class DemoUserManagerHooks:
     """Demo RBAC catalog and invitation persistence. No installer glue."""
@@ -209,8 +204,8 @@ class DemoUserManagerHooks:
     def after_user_disabled_changed(self, *_args) -> None:
         return None
 
-    def render_passkey_panel(self, _request: Request, _current_user) -> PasskeyPanel:
-        return PasskeyPanel(template_name="auth/_integration_panel.html", context={})
+    def render_passkey_panel(self, _request: Request, _current_user) -> None:
+        return None
 
     def invite_user(
         self,

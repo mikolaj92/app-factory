@@ -58,7 +58,6 @@ class PasskeyBinding:
     register_success_url: str | None = "/"
     activation_success_url: str | None = "/account"
     recovery_success_url: str | None = "/login"
-    show_registration_link: Callable[..., Any] | None = None
     locale_cookie_name: str | None = None
     locale_query_param: str = "lang"
     supported_locales: tuple[str, ...] | None = None
@@ -169,7 +168,6 @@ def install_identity_adapters(
                 recovery_success_url=_rooted_success_url(
                     resolved, passkey.recovery_success_url, "login"
                 ),
-                show_registration_link=passkey.show_registration_link,
                 locale_cookie_name=passkey.locale_cookie_name,
                 locale_query_param=passkey.locale_query_param,
                 supported_locales=passkey.supported_locales,

@@ -112,7 +112,6 @@ def create_app(store: DemoStore | None = None) -> FastAPI:
             register_success_url="/",
             activation_success_url=PLATFORM_PATHS.account,
             recovery_success_url=PLATFORM_PATHS.login,
-            show_registration_link=lambda _request: True,
         ),
         usermanager=UserManagerBinding(
             hooks=DemoUserManagerHooks(

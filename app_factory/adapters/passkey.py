@@ -23,10 +23,7 @@ def _unused_render_login(_request: Request) -> HTMLResponse:
     raise RuntimeError("interactive rendering is owned by my-auth.fastapi_htmx")
 
 
-def _unused_render_register(
-    _request: Request, *, bootstrap: bool
-) -> HTMLResponse:
-    del bootstrap
+def _unused_render_register(_request: Request) -> HTMLResponse:
     raise RuntimeError("interactive rendering is owned by my-auth.fastapi_htmx")
 
 
@@ -57,7 +54,6 @@ def complete_passkey_hooks(hooks: Any) -> Any:
         get_auth_user=hooks.get_auth_user,
         login=hooks.login,
         logout=hooks.logout,
-        registration_allowed=hooks.registration_allowed,
         render_login=_attr("render_login", _unused_render_login),
         render_register=_attr("render_register", _unused_render_register),
         after_register=_attr(
@@ -125,7 +121,6 @@ def default_passkey_ui_config(
     register_success_url: str | None = None,
     activation_success_url: str | None = None,
     recovery_success_url: str | None = None,
-    show_registration_link: Callable[..., Any] | None = None,
     locale_cookie_name: str | None = None,
     locale_query_param: str = "lang",
     supported_locales: tuple[str, ...] | None = None,
@@ -155,8 +150,6 @@ def default_passkey_ui_config(
         kwargs["activation_success_url"] = activation_success_url
     if recovery_success_url is not None:
         kwargs["recovery_success_url"] = recovery_success_url
-    if show_registration_link is not None:
-        kwargs["show_registration_link"] = show_registration_link
     if locale_cookie_name is not None:
         kwargs["locale_cookie_name"] = locale_cookie_name
     if locale_query_param != "lang":
