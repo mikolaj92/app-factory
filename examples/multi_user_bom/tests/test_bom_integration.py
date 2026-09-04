@@ -39,7 +39,7 @@ def test_bom_pins_align_with_example_pyproject() -> None:
     assert example["tool"]["uv"]["override-dependencies"] == [
         "app-factory[platform]",
     ]
-    assert bom["pins"]["app-factory"] == "v0.6.16"
+    assert bom["pins"]["app-factory"] == "v0.6.27"
 
 
 def test_uv_lock_selects_single_app_factory_source() -> None:
@@ -69,19 +69,17 @@ def test_uv_lock_selects_single_app_factory_source() -> None:
     ), package_blocks
     # Nested adapter git tags for older app-factory must not appear as package sources.
     assert "git+https://github.com/mikolaj92/app-factory@v0.5." not in text
-    assert re.search(r'name = "my-auth"\nversion = "0\.4\.8"', text)
-    assert "tag=v0.4.8" in text
-    assert re.search(r'name = "my-usermanager"\nversion = "0\.5\.11"', text)
-    assert "tag=v0.5.11" in text
+    assert re.search(r'name = "my-auth"\nversion = "0\.5\.1"', text)
+    assert "tag=v0.5.1" in text
+    assert re.search(r'name = "my-usermanager"\nversion = "0\.6\.2"', text)
+    assert "tag=v0.6.2" in text
     assert "tag=v0.4.0" not in text
     assert "tag=v0.4.1" not in text
     assert "tag=v0.4.2" not in text
     assert "tag=v0.4.4" not in text
-    assert re.search(r"tag=v0\.5\.1(?!\d)", text) is None
     assert "tag=v0.5.2" not in text
     assert "tag=v0.5.4" not in text
     assert "tag=v0.5.5" not in text
-    assert not re.search(r'name = "my-auth"\nversion = "0\.5\.', text)
     assert 'name = "my-auth", extras = ["fastapi-htmx"]' not in text.split(
         "[manifest]", 1
     )[-1].split("[[package]]", 1)[0]
@@ -120,7 +118,7 @@ def test_credentials_page_is_owner_scoped_on_identity_shell(client: TestClient) 
     assert "Admin laptop" not in member_page.text
 
 
-def test_bootstrap_register_and_login_pages_render(client: TestClient) -> None:
+def test_self_registration_and_login_pages_render(client: TestClient) -> None:
     register = client.get("/register")
     login = client.get("/login")
     assert register.status_code == login.status_code == 200
