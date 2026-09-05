@@ -40,6 +40,7 @@ class SameOriginCsrfMiddleware(BaseHTTPMiddleware):
         *,
         trusted_origins: Iterable[str] = (),
         exempt_prefixes: Iterable[str] = (),
+        allow_missing_origin: bool = False,
     ) -> None:
         super().__init__(app)  # type: ignore[arg-type]
         self.trusted_origins = frozenset(
@@ -48,6 +49,7 @@ class SameOriginCsrfMiddleware(BaseHTTPMiddleware):
             if (normalized := (_origin_of(origin) or origin))
         )
         self.exempt_prefixes = tuple(exempt_prefixes)
+        self.allow_missing_origin = allow_missing_origin
 
     async def dispatch(self, request: Request, call_next):  # type: ignore[no-untyped-def]
         if request.method in _SAFE_METHODS or any(
@@ -58,6 +60,8 @@ class SameOriginCsrfMiddleware(BaseHTTPMiddleware):
         candidate = request.headers.get("origin") or request.headers.get("referer")
         supplied = _origin_of(candidate)
         request_origin = _origin_of(str(request.base_url))
+        if supplied is None and self.allow_missing_origin:
+            return await call_next(request)
         if supplied is None or supplied not in self.trusted_origins | {request_origin}:
             if request.headers.get("HX-Request", "").lower() == "true":
                 return HTMLResponse(

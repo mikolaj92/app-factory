@@ -89,6 +89,17 @@ def test_same_origin_csrf_accepts_request_host_and_rejects_cross_origin() -> Non
     assert rejected.json()["error"] == "CSRF validation failed"
 
 
+def test_same_origin_csrf_can_defer_missing_header_to_host_token_validation() -> None:
+    app = FastAPI()
+    app.add_middleware(SameOriginCsrfMiddleware, allow_missing_origin=True)
+
+    @app.post("/write")
+    def write() -> dict[str, bool]:
+        return {"ok": True}
+
+    assert TestClient(app).post("/write").status_code == 200
+
+
 def test_same_origin_csrf_returns_fragment_for_htmx_and_honors_exemptions() -> None:
     app = FastAPI()
     app.add_middleware(
