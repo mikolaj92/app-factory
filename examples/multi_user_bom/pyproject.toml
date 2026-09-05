@@ -18,7 +18,7 @@ dependencies = [
 [tool.uv]
 # Nested adapter uv.sources still declare app-factory@v0.6.21
 # (UM v0.6.2 / my-auth v0.5.1). Override app-factory only so the host
-# pin (this package, or tag v0.6.18) wins. Do not override my-auth —
+# pin (this package, or tag v0.6.19) wins. Do not override my-auth —
 # UM v0.6.2 already nests my-auth@v0.5.1.
 override-dependencies = [
   "app-factory[platform]",
