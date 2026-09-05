@@ -71,8 +71,8 @@ def test_uv_lock_selects_single_app_factory_source() -> None:
     assert "git+https://github.com/mikolaj92/app-factory@v0.5." not in text
     assert re.search(r'name = "my-auth"\nversion = "0\.5\.4"', text)
     assert "tag=v0.5.4" in text
-    assert re.search(r'name = "my-usermanager"\nversion = "0\.6\.4"', text)
-    assert "tag=v0.6.4" in text
+    assert re.search(r'name = "my-usermanager"\nversion = "0\.6\.5"', text)
+    assert "tag=v0.6.5" in text
     assert "tag=v0.4.0" not in text
     assert "tag=v0.4.1" not in text
     assert "tag=v0.4.2" not in text

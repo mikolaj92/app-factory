@@ -7,7 +7,7 @@ The goal is one place to ship the resilient same-origin chrome, Jinja head
 partials, and optional CDN pins so product apps do **not** re-implement
 Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.6.22` (request-safe app framework; multi-user BOM is v0.6.22 / my-auth v0.5.4 / my-usermanager v0.6.4)
+**Tag:** `v0.6.22` (request-safe app framework; multi-user BOM is v0.6.22 / my-auth v0.5.4 / my-usermanager v0.6.5)
 
 ---
 
@@ -20,7 +20,7 @@ This package is the thin shared layer in a small platform. Together:
 | **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.6.22` directly; multi-user hosts follow `COMPAT.md` |
 | **basecoat-factory** | Maintainer-only build source for the generated Basecoat/UI asset bundle | Not a runtime dependency |
 | **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.5.4` |
-| **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.6.4` |
+| **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.6.5` |
 | **FastAPI + Jinja2 + HTMX + Alpine** | Server-rendered app shell | App code; core scripts/CSS served by the app |
 
 ### Dependency rule
@@ -224,7 +224,7 @@ override-dependencies = ["app-factory[platform]"]
 [tool.uv.sources]
 app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.6.22" }
 my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.5.4" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.6.4" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.6.5" }
 ```
 
 ```bash
