@@ -21,6 +21,7 @@ worktree, vendored dependencies i `.venv`.
 | Emitype | 49 | 569 LOC | inline | 14 | 4 | CSS produktowy; pozostało dużo inline CSS i lokalny renderer. |
 | Lokay | 1 | 0 | 0 | 0 | 0 | Wzorcowy bez-CSS host Basecoat. |
 | Argus | 23 | 147 LOC | 5 plików | 0 | 1 | `landing.css` i client UI są produktowe; brak kopii komponentów. |
+| Hermes | 0 | 0 | 0 | 0 | 0 | Brak hostowego HTML/CSS/JS do deduplikacji. |
 | Rudy | 20 | 0 | 0 | 39 | 1 | Brak arkusza CSS, ale dużo inline stylowania statusów i tabel. |
 
 ## Co usunięto od razu
@@ -52,9 +53,11 @@ hostowe redefinicje Basecoat i użyć jego markup/data variants.
 
 Największe skupiska są w `run_detail.html`, `track.html` i
 `project_runs_table_partial.html`: ręczne czerwone/zielone/żółte gradienty,
-obramowania i kolory tekstu. Powinny używać `.alert` / `.badge` z
-`data-variant="destructive|success|warning|secondary"` tam, gdzie Basecoat ma
-wariant. Dynamiczne szerokości progress barów i kolumn tabel pozostają inline —
+obramowania i kolory tekstu. Powinny używać `.alert` / `.badge` z istniejącymi wariantami Basecoat
+(`destructive`, `secondary`, `outline`) tam, gdzie semantyka pasuje. Basecoat w
+obecnym bundlu nie ma `success` ani `warning`, więc nie należy ich udawać;
+zielony/żółty stan pozostaje małym hostowym stylem lub neutralnym wariantem.
+Dynamiczne szerokości progress barów i kolumn tabel pozostają inline —
 to dane, nie komponent CSS.
 
 ### 3. Emitype — przenieść `<style>` z fragmentów, nie centralizować domeny
