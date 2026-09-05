@@ -4,22 +4,30 @@ Pomiar bazowy wykonano na checkoutach odpowiadających `origin/main`, po migracj
 
 | Host | Identity/platform Python LOC | Lokalny renderer LOC | Wniosek |
 |---|---:|---:|---|
-| Anonimizator3000 | 1350 | 0 | Duży hostowy adapter identity; zaproszenia, profile i mapowanie domenowego użytkownika. |
+| Anonimizator3000 | 446 | 0 | Adapter spadł z ~726 do 446 LOC przez `StandardUserManagerUiHooks`; zostały zaproszenia, sesja i CSRF. |
 | PunkRecords | 0 | 0 | Brak lokalnego passkey/usermanager; chrome ogranicza się do konfiguracji platformy (90 LOC). |
 | PlnFlr | 0 | 0 | Najmniejszy poprawny host chrome-only; konfiguracja platformy 109 LOC. |
 | Lokay | 0 | 0 | Konsument shell/assets bez identity; brak istotnego wspólnego boilerplate’u. |
-| rnkstr | 1033 | 179 | Identity hooks są duże; 179 LOC lokalnego renderera page/fragment jest kandydatem do usunięcia. |
-| wolnyrolnik | 941 | 256 | Identity hooks plus największa duplikacja konfiguracji Jinja/renderera; token CSRF 47 LOC jest hostową polityką. |
-| emitype | 1450 | 239 | Największy adapter identity i renderer; lokalne wrappery pagination/loading wymagają osobnego cleanupu. |
-| Argus | 1120 | 0 | Duży adapter, ale zawiera politykę firm, grants i auditing; nie przenosić domeny do app-factory. |
+| rnkstr | 466 | 179 | Już na standardowych hooks; 179 LOC lokalnego renderera page/fragment jest następnym kandydatem. |
+| wolnyrolnik | 292 | 256 | Adapter spadł z ~423 do 292 LOC; token CSRF i renderer pozostają hostowe. |
+| emitype | 756 | 239 | Adapter spadł z ~797 do 756 LOC; katalog `svg.l*` / `report.access`, invitations i renderer zostają. |
+| Argus | 810 | 0 | Nadal lokalny adapter; polityka firm, grants i auditing nie idą do biblioteki. |
 | Hermes | 365 | 0 | Passkey dla pojedynczego operatora; większość to hostowa polityka/session/storage. |
-| Rudy | 1016 | 0 | Synchronizer-token CSRF pozostaje hostowy; runtime identity został całkowicie przepięty na `um_*`/`passkey_*`. |
+| Rudy | 370 | 0 | Cutover `um_*`/`passkey_*` + standard hooks; synchronizer-token CSRF i workflow grants zostają. |
 
 ## Co naprawdę się powtarza
 
-W sześciu hostach multi-user powtarza się ten sam kształt callbacków `UserManagerUiHooks`: `get_current_user`, `require_admin`, `list_users`, role/capability options, enable/disable, grant/revoke, invitations, profile i mapowanie `User -> UserRow`. Sam interfejs jest już wspólny, ale hosty nadal piszą 387–797 LOC adaptera. To największy pozostały koszt.
+Pięć hostów multi-user już dziedziczy `StandardUserManagerUiHooks`:
 
-Nie należy przenosić tych funkcji wprost do `app-factory`: operują na polityce, rolach, audycie i domenie. Następna redukcja należy do `my-usermanager` i powinna mieć formę opcjonalnego adaptera dla jego własnych standardowych stores/managera, z małymi callbackami hosta dla policy i efektów ubocznych.
+```text
+rnkstr            466 LOC
+Anonimizator3000  446 LOC
+Rudy              370 LOC
+wolnyrolnik       292 LOC
+emitype           756 LOC
+```
+
+Pozostały duży lokalny adapter to Argus (810 LOC): sesja operatora, `admin.access`, katalog ról/firm grants, operator audit i zaproszenia. Tego nie przenosić do `app-factory`.
 
 Drugim powtarzalnym obszarem są lokalne `smart_template_response` (rnkstr 179 LOC, wolnyrolnik 256 LOC, emitype 239 LOC). Hosty powinny stopniowo przejść na małe `app_factory.template_response`; warianty lokalizacji, tytułu i domenowych fragmentów pozostają w hostach.
 
@@ -32,7 +40,7 @@ Rudy (`msds-portal` commit `44f379c`) nie ma już runtime dual-read ani hostowej
 3. przebudowę FK `projects.owner_user_id` i `operator_reviews.reviewed_by`;
 4. usunięcie tabel legacy oraz historycznych `*_retired`.
 
-Relacje `projects -> runs -> operator_reviews` są zachowywane i sprawdzane przez `PRAGMA foreign_key_check`. Runtime tworzy i odczytuje użytkowników wyłącznie przez `my-usermanager`; passkeys i challenges należą wyłącznie do `my-auth`. Host zachował tylko session/admin policy, synchronizer-token CSRF, invitation delivery i politykę domenową. Pełny suite po cutoverze: `141 passed`; lock wskazuje dokładnie BOM `0.6.22 / 0.5.4 / 0.6.5`.
+Relacje `projects -> runs -> operator_reviews` są zachowywane i sprawdzane przez `PRAGMA foreign_key_check`. Runtime tworzy i odczytuje użytkowników wyłącznie przez `my-usermanager`; passkeys i challenges należą wyłącznie do `my-auth`. Host zachował session/admin policy, synchronizer-token CSRF, invitation delivery, katalog workflow i politykę domenową. Adapter UI (`7fd0a47`) dziedziczy `StandardUserManagerUiHooks`. Pełny suite po cutoverze: `141 passed`; lock wskazuje dokładnie BOM `0.6.22 / 0.5.4 / 0.6.5`.
 
 ## Czego nie centralizować
 
@@ -43,7 +51,8 @@ Relacje `projects -> runs -> operator_reviews` są zachowywane i sprawdzane prze
 
 ## Kolejność redukcji
 
-1. Dodać w `my-usermanager` standardowe hooks oparte o jego `UserManager`/stores; host podaje session lookup, `require_admin`, role catalog i opcjonalne side effects.
-2. Migrować renderer: najpierw rnkstr, potem Wolny Rolnik, na końcu Emitype (najwięcej lokalnych wyjątków).
-3. Usunąć lokalne wrappery pagination/loading dopiero po contract tests; nie centralizować produktowych stanów ładowania.
-4. Używać PlnFlr jako startera chrome-only, a `examples/multi_user_bom` jako startera identity. Nie tworzyć generatora ani nowego frameworka.
+1. ~~Dodać w `my-usermanager` standardowe hooks~~ — zrobione w `v0.6.5`; rnkstr, Anonimizator, Wolny Rolnik, Emitype i Rudy już dziedziczą.
+2. Przepnąć Argusa na `StandardUserManagerUiHooks` bez ruszania firm grants i operator audit.
+3. Migrować renderer: najpierw rnkstr, potem Wolny Rolnik, na końcu Emitype (najwięcej lokalnych wyjątków).
+4. Usunąć lokalne wrappery pagination/loading dopiero po contract tests; nie centralizować produktowych stanów ładowania.
+5. Używać PlnFlr jako startera chrome-only, a `examples/multi_user_bom` jako startera identity. Nie tworzyć generatora ani nowego frameworka.
