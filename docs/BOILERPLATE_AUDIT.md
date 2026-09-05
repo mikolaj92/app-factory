@@ -11,23 +11,24 @@ Pomiar bazowy wykonano na checkoutach odpowiadających `origin/main`, po migracj
 | rnkstr | 466 | 179 | Już na standardowych hooks; 179 LOC lokalnego renderera page/fragment jest następnym kandydatem. |
 | wolnyrolnik | 292 | 256 | Adapter spadł z ~423 do 292 LOC; token CSRF i renderer pozostają hostowe. |
 | emitype | 756 | 239 | Adapter spadł z ~797 do 756 LOC; katalog `svg.l*` / `report.access`, invitations i renderer zostają. |
-| Argus | 810 | 0 | Nadal lokalny adapter; polityka firm, grants i auditing nie idą do biblioteki. |
+| Argus | 754 | 0 | Dziedziczy `StandardUserManagerUiHooks` (PR #5680); sesja operatora, `admin.access`, firm grants i audit zostają. |
 | Hermes | 365 | 0 | Passkey dla pojedynczego operatora; większość to hostowa polityka/session/storage. |
 | Rudy | 370 | 0 | Cutover `um_*`/`passkey_*` + standard hooks; synchronizer-token CSRF i workflow grants zostają. |
 
 ## Co naprawdę się powtarza
 
-Pięć hostów multi-user już dziedziczy `StandardUserManagerUiHooks`:
+Sześć hostów multi-user już dziedziczy `StandardUserManagerUiHooks`:
 
 ```text
+emitype           756 LOC
+Argus             754 LOC
 rnkstr            466 LOC
 Anonimizator3000  446 LOC
 Rudy              370 LOC
 wolnyrolnik       292 LOC
-emitype           756 LOC
 ```
 
-Pozostały duży lokalny adapter to Argus (810 LOC): sesja operatora, `admin.access`, katalog ról/firm grants, operator audit i zaproszenia. Tego nie przenosić do `app-factory`.
+W Argusie zostały wyłącznie hostowe rzeczy: sesja operatora, `admin.access`, katalog ról/firm grants, operator audit i zaproszenia. Tego nie przenosić do `app-factory`.
 
 Drugim powtarzalnym obszarem są lokalne `smart_template_response` (rnkstr 179 LOC, wolnyrolnik 256 LOC, emitype 239 LOC). Hosty powinny stopniowo przejść na małe `app_factory.template_response`; warianty lokalizacji, tytułu i domenowych fragmentów pozostają w hostach.
 
@@ -51,8 +52,8 @@ Relacje `projects -> runs -> operator_reviews` są zachowywane i sprawdzane prze
 
 ## Kolejność redukcji
 
-1. ~~Dodać w `my-usermanager` standardowe hooks~~ — zrobione w `v0.6.5`; rnkstr, Anonimizator, Wolny Rolnik, Emitype i Rudy już dziedziczą.
-2. Przepnąć Argusa na `StandardUserManagerUiHooks` bez ruszania firm grants i operator audit.
+1. ~~Dodać w `my-usermanager` standardowe hooks~~ — zrobione w `v0.6.5`.
+2. ~~Przepnąć Argusa na `StandardUserManagerUiHooks`~~ — PR #5680, merge na `main`.
 3. Migrować renderer: najpierw rnkstr, potem Wolny Rolnik, na końcu Emitype (najwięcej lokalnych wyjątków).
 4. Usunąć lokalne wrappery pagination/loading dopiero po contract tests; nie centralizować produktowych stanów ładowania.
 5. Używać PlnFlr jako startera chrome-only, a `examples/multi_user_bom` jako startera identity. Nie tworzyć generatora ani nowego frameworka.
