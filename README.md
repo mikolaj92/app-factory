@@ -7,7 +7,7 @@ The goal is one place to ship the resilient same-origin chrome, Jinja head
 partials, and optional CDN pins so product apps do **not** re-implement
 Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.6.19` (request-safe app framework; multi-user BOM is v0.6.19 / my-auth v0.5.1 / my-usermanager v0.6.2)
+**Tag:** `v0.6.20` (request-safe app framework; multi-user BOM is v0.6.20 / my-auth v0.5.3 / my-usermanager v0.6.2)
 
 ---
 
@@ -17,9 +17,9 @@ This package is the thin shared layer in a small platform. Together:
 
 | Piece | Role | How consumers get it |
 |-------|------|----------------------|
-| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.6.19` directly; multi-user hosts follow `COMPAT.md` |
+| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.6.20` directly; multi-user hosts follow `COMPAT.md` |
 | **basecoat-factory** | Maintainer-only build source for the generated Basecoat/UI asset bundle | Not a runtime dependency |
-| **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.5.1` |
+| **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.5.3` |
 | **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.6.2` |
 | **FastAPI + Jinja2 + HTMX + Alpine** | Server-rendered app shell | App code; core scripts/CSS served by the app |
 
@@ -222,8 +222,8 @@ dependencies = [
 override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.6.19" }
-my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.5.1" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.6.20" }
+my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.5.3" }
 my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.6.2" }
 ```
 
@@ -502,16 +502,16 @@ factory_template_dirs()
 
 | app-factory | basecoat-css | Notes |
 |-------------|---------------|-------|
-| **v0.6.16** | **1.0.2** | Additive on v0.6.11: `install_identity_adapters` + focused passkey/usermanager/session helpers; BOM row my-auth v0.4.8 / my-usermanager v0.5.11. No chrome change. |
+| **v0.6.16** | **1.0.2** | Additive on v0.6.11: `install_identity_adapters` + focused passkey/usermanager/session helpers; BOM row my-auth v0.4.8 / my-usermanager v0.5.31. No chrome change. |
 | **v0.6.11** | **1.0.2** | Shared browser mechanisms (HTMX redirect, session CSRF, toast boot, pagination). Multi-user BOM stayed on v0.6.10 until matching auth tags; chrome generation with my-auth v0.4.8 / my-usermanager v0.5.7 had no composer. |
 | **v0.6.7** | **1.0.2** | Additive on v0.6.6: BOM row my-auth v0.4.5 / my-usermanager v0.5.6 (nested chrome v0.6.6; initialize() stamps enrollment on current schemas). No chrome change. |
 | **v0.6.6** | **1.0.2** | Additive on v0.6.5: slim TAP `client_shell` (no HTMX/Alpine) + `PlatformPaths.invite` default `/admin/users`; same my-auth v0.4.2 / my-usermanager v0.5.4 |
 | **v0.6.5** | **1.0.2** | Multi-user platform BOM + enrollment capability DDL in ensure_sqlite_schema (my-auth v0.4.2) + nested my-auth pin (my-usermanager v0.5.4); hosts override app-factory only |
 | **v0.6.4** | **1.0.2** | Multi-user platform BOM + packaged ceremony shells (my-auth v0.4.1) + invitation DDL in SQLiteAuthDatabase (my-usermanager v0.5.2) |
-| **v0.6.3** | **1.0.2** | Multi-user platform BOM + packaged invite admin (my-usermanager v0.5.1, my-auth v0.4.0) |
+| **v0.6.3** | **1.0.2** | Multi-user platform BOM + packaged invite admin (my-usermanager v0.5.3, my-auth v0.4.0) |
 | **v0.6.2** | **1.0.2** | Multi-user platform BOM + identity lifecycle shells/paths |
-| v0.5.19 | 1.0.2 | Full Basecoat + HTMX + Alpine + app shell + Material Symbols Outlined v364; hard pytest no-npm contract |
-| v0.5.17 | 1.0.2 | Basecoat-first contract docs + CSS keep-list |
+| v0.5.39 | 1.0.2 | Full Basecoat + HTMX + Alpine + app shell + Material Symbols Outlined v364; hard pytest no-npm contract |
+| v0.5.37 | 1.0.2 | Basecoat-first contract docs + CSS keep-list |
 
 Bump platform assets only through `uv run python scripts/refresh_platform_assets.py`.
 The script uses the committed npm lockfile, rebuilds CSS, records licenses and

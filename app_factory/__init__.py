@@ -156,4 +156,4 @@ __all__ = [
     "verify_cdn_manifest",
 ]
 
-__version__ = "0.6.19"
+__version__ = "0.6.20"
