@@ -26,6 +26,12 @@ try:
         AppFactoryUiConflict,
         install_app_factory_ui,
     )
+    from app_factory.product import (
+        ProductAppConfig,
+        ProductInstall,
+        create_product_app,
+        install_product_host,
+    )
     from app_factory.responses import htmx_redirect, template_response
     from app_factory.uploads import (
         UploadLimitExceeded,
@@ -34,6 +40,8 @@ try:
         read_uploads_bounded,
     )
 except ImportError:  # Optional fastapi extra is not installed.
+    ProductAppConfig = ProductInstall = None
+    create_product_app = install_product_host = None
     AppFactoryUi = AppFactoryUiConflict = SameOriginCsrfMiddleware = None
     SessionCsrfProtection = UploadLimitExceeded = UploadedFile = None
     htmx_redirect = install_app_factory_ui = read_upload_bounded = None
@@ -121,6 +129,10 @@ __all__ = [
     "PlatformLocale",
     "PlatformPaths",
     "PlatformUser",
+    "ProductAppConfig",
+    "ProductInstall",
+    "create_product_app",
+    "install_product_host",
     "SameOriginCsrfMiddleware",
     "SessionCsrfProtection",
     "UploadLimitExceeded",
