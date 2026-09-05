@@ -1,111 +1,94 @@
-# Audyt deduplikacji UI hostów
+# Audyt deduplikacji UI hostów — wykonane zmiany
 
-Stan po wspólnym BOM-ie `app-factory v0.6.22`, `my-auth v0.5.4`,
-`my-usermanager v0.6.5` i migracji standardowych UserManager hooks.
+BOM pozostaje bez zmian: `app-factory v0.6.22`, `my-auth v0.5.4`,
+`my-usermanager v0.6.5`. Nie dodano nowego komponentu ani release platformy.
 
-## Zakres
+## Zakres i rezultat
 
-Przejrzano rzeczywiste hosty: Anonimizator3000, PunkRecords, PlnFlr, rnkstr,
-Wolny Rolnik, Emitype, Lokay, Argus, Hermes i Rudy/MSDS Portal. Pominięto
-worktree, vendored dependencies i `.venv`.
+Przejrzano 10 rzeczywistych hostów: Anonimizator3000, PunkRecords, PlnFlr,
+rnkstr, Wolny Rolnik, Emitype, Lokay, Argus, Hermes i Rudy/MSDS Portal.
+Worktree i kopie nie są osobnymi produktami.
 
-## Wynik ilościowy
+Wszystkie sześć zaakceptowanych zmian jest na `main` hostów:
 
-| Host | HTML | CSS hosta | JS hosta | Inline `style` | `<style>` | Ocena |
-|---|---:|---:|---:|---:|---:|---|
-| Anonimizator3000 | 4 | 351 LOC | 0 | 0 | 0 | CSS częściowo duplikuje Basecoat. |
-| PunkRecords | 7 | 0 | inline chart boot | 1 | 1 | UI czyste; chart boot jest domenowy. |
-| PlnFlr | 5 | 76 LOC | 0 | 0 | 0 | CSS jest domenowym rendererem planu. |
-| rnkstr | 20 | Leaflet vendor | 26 plików | 2 | 1 | CSS prawie wyłącznie vendor; następny cel to renderer i duże skrypty domenowe. |
-| Wolny Rolnik | 11 | 0 | inline | 1 | 0 | Brak zbędnego hostowego CSS. |
-| Emitype | 49 | 569 LOC | inline | 14 | 4 | CSS produktowy; pozostało dużo inline CSS i lokalny renderer. |
-| Lokay | 1 | 0 | 0 | 0 | 0 | Wzorcowy bez-CSS host Basecoat. |
-| Argus | 23 | 147 LOC | 5 plików | 0 | 1 | `landing.css` i client UI są produktowe; brak kopii komponentów. |
-| Hermes | 0 | 0 | 0 | 0 | 0 | Brak hostowego HTML/CSS/JS do deduplikacji. |
-| Rudy | 20 | 0 | 0 | 39 | 1 | Brak arkusza CSS, ale dużo inline stylowania statusów i tabel. |
+| Host | Commity | Zmiana |
+|---|---|---|
+| Anonimizator3000 | `e6d1f50`, `42de1ed` | Usunięte prywatne theme/body i komponentowe overrides; layout ma nazwę `document-layout`, SVG nie zmienia ikon shella. |
+| Rudy | `83defcc`, `d17344e` | Statyczne gradienty/status colors i stare badge/button aliases zastąpione rzeczywistymi wariantami; poprawione zagnieżdżenie alertów. |
+| rnkstr | `00b7414` | Usunięty `smart_template_response`; jawne wywołania biblioteki w routes, hostowy `page_context` bez renderowania. |
+| Wolny Rolnik | `3322dbd` | Jak wyżej; usunięte nieużywane renderer redirects login/register i fallback pokazujący wyjątek. |
+| Emitype | `283e67da` | Usunięty renderer z legacy fallbackami; jawne page/fragment responses i hostowy kontekst błędów; cztery `<style>` usunięte z fragmentów. |
 
-## Co usunięto od razu
+Wcześniej Emitype `749bb319` usunął wrappery pagination/loading/form.
+Pagination importuje shared macro bezpośrednio. `components/card.html` zostaje:
+ma realnych konsumentów i normalizuje semantyczny markup Basecoat.
 
-Emitype commit `749bb319` usunął 141 linii martwych lub delegujących wrapperów:
+## Porównywalne pomiary zmienionych hostów
 
-- `components/pagination.html` — delegował 1:1 do
-  `app_factory/components/pagination.html`; importy wskazują teraz bezpośrednio
-  shared macro;
-- `components/loading-indicator.html` — nie miał konsumentów;
-- `components/form-components.html` — definiował nieużywane makra i był jedynym
-  konsumentem martwego spinnera.
+Liczby HTML to pliki, CSS to fizyczne linie w hostowych arkuszach;
+`style=` i `<style>` to wystąpienia w szablonach, nie liczba reguł CSS.
 
-Weryfikacja: `1054 passed, 2 skipped`; pięć testów Playwright pozostaje poza
-lokalnym środowiskiem.
+| Host | HTML teraz | CSS przed → po | Inline `style` przed → po | `<style>` przed → po |
+|---|---:|---:|---:|---:|
+| Anonimizator3000 | 4 | 351 → 272 LOC | 0 → 0 | 0 → 0 |
+| Rudy | 20 | 0 → 0 LOC | 39 → 21 | 1 → 1 |
+| Emitype | 46 | 569 → 753 LOC | 14 → 14 | 4 → 0 |
 
-## Kandydaci do usunięcia lub zastąpienia Basecoat
+Wzrost CSS Emitype wynika z przeniesienia stylów z HTML, nie z nowego systemu
+komponentów. Bundle nie ma `.prose`: Markdown artykułów i opisu wideo używa
+jednego scoped `.emitype-markdown` w `static/css/product-content.css`, z tokenami
+Basecoat zamiast niepoprawnego `hsl(var(--...))`. Ten sam arkusz zachowuje
+produktowe SVG/fullscreen. Formularz korzysta z natywnego `hidden` zamiast
+prywatnej klasy `is-collapsed`; disabled/inert/ARIA i prefill zostają.
 
-### 1. Anonimizator3000 — najwyższy zwrot CSS
+## Renderowanie i granice odpowiedzialności
 
-`src/anonimizator3000/static/app.css` nadal ustawia własne globalne tokeny,
-`body`, `.btn`, `.badge`, `.alert` i powierzchnie kart. Basecoat już posiada te
-komponenty i theme tokens. Do pozostawienia są wyłącznie layout i produktowe
-stany: dwukolumnowy upload/result, disclosure, progress/job metadata oraz
-responsywność. Nie należy przenosić tych reguł do `app-factory`; należy usunąć
-hostowe redefinicje Basecoat i użyć jego markup/data variants.
+Trzy hosty importują `app_factory.template_response` bezpośrednio. Routes
+jawnie podają `base.html`, `content_template` i `fragment_template` (Emitype
+błędy: `pages/error.html` + `partials/error.html`). Nie ma lokalnego renderera,
+zgadywania legacy fallbacków ani ujawniania wyjątków Jinja w odpowiedzi.
 
-### 2. Rudy — zamiana inline status CSS na Basecoat variants
+Hostowy `page_context` nadal odpowiada za sesję, grants/menu i domenowe dane.
+Nie mutuje wejściowego słownika ani `Environment.globals`. Emitype zachowuje
+przekazane request-scoped produkty oraz status-keyed error actions.
 
-Największe skupiska są w `run_detail.html`, `track.html` i
-`project_runs_table_partial.html`: ręczne czerwone/zielone/żółte gradienty,
-obramowania i kolory tekstu. Powinny używać `.alert` / `.badge` z istniejącymi wariantami Basecoat
-(`destructive`, `secondary`, `outline`) tam, gdzie semantyka pasuje. Basecoat w
-obecnym bundlu nie ma `success` ani `warning`, więc nie należy ich udawać;
-zielony/żółty stan pozostaje małym hostowym stylem lub neutralnym wariantem.
-Dynamiczne szerokości progress barów i kolumn tabel pozostają inline —
-to dane, nie komponent CSS.
+To redukcja ukrytej mechaniki, **nie redukcja całkowitego LOC**: jawne argumenty
+w call sites i nowe testy zwiększają liczbę linii. Nie przedstawiamy tego jako
+oszczędności netto kodu.
 
-### 3. Emitype — przenieść `<style>` z fragmentów, nie centralizować domeny
+## Weryfikacja
 
-`article_content.html`, `video_content.html`, `emitype_form_unified.html` i
-`svg_result_content.html` zawierają lokalne `<style>`. Reguły powtarzające card,
-input, button, alert lub zwykły spacing należy zastąpić Basecoat/classes.
-Specyficzne style SVG/raportu i `emi-choice-card` są domenowe i mogą zostać w
-`emi-raport.css` albo małym product CSS. Lokalny `card.html` jest realnie używany
-w 11 miejscach i tylko normalizuje semantyczny markup Basecoat — obecnie nie ma
-wartości w przenoszeniu go do `app-factory`.
+| Host | Wynik |
+|---|---|
+| Anonimizator3000 | `65 passed, 1 deselected` (`not real_anonymizer`). |
+| Rudy | Pełny pytest zielony po poprawce HTML; 143 testy (141 wcześniejszych + 2 kontrakty). |
+| rnkstr | `176 passed`. |
+| Wolny Rolnik | `42 passed`. |
+| Emitype | `1057 passed, 2 skipped, 5 deselected` bez `tests/test_ui`; osobno `26 passed` w `test_ui/test_templates.py`. |
+| Emitype browser | `2 passed`: prawdziwy Chromium, desktop/light i mobile/dark, odpowiedzi aplikacji oraz lokalne assety przez TestClient; toggle drugiej osoby, hidden/inert/ARIA, brak poziomego overflow. |
 
-### 4. Renderery page/fragment
+`uv lock --check` i `git diff --check` przeszły dla pięciu hostów. Focused Ruff
+przeszedł dla nowych testów i context helpers; zmienione pliki Python Emitype
+przeszły dodatkowo I/F. Pełny Ruff Rudy oraz istniejące TRY203 w `main.py`
+rnkstr/Wolnego Rolnika nie są zielonym gate'em — nie naprawiano niezwiązanych
+problemów przy zmianach UI.
 
-Pozostają trzy lokalne `smart_template_response`:
+Nie wykonano pełnej wizualnej regresji wszystkich hostów ani deployu/restartu
+produkcji. Browser smoke Emitype nie obejmuje całego istniejącego zestawu
+Playwright zależnego od serwera `localhost:8000`. Anonimizator nie uruchamiał
+lokalnych modeli GLiNER/Presidio.
 
-- rnkstr: 179 LOC;
-- Wolny Rolnik: 256 LOC;
-- Emitype: 239 LOC.
+## Co prawidłowo zostaje lokalne
 
-To większy wspólny koszt niż CSS w dwóch hostach bez arkuszy. Migrować kolejno
-na `app_factory.template_response`, zachowując hostowe session/domain context.
+- PlnFlr: SVG rooms/gaps/zones/labels/clipping; arkusz zawiera też małe reguły
+  x-cloak/HTMX, więc nie jest dosłownie w całości domenowy.
+- rnkstr: Leaflet i map/ranking interactions.
+- Emitype: SVG/report/Markdown i produktowy choice card.
+- Argus: landing/client workflow; nadal lokalne listowanie i mapowanie users.
+- PunkRecords: Chart.js boot.
+- Dynamiczne progress widths i dane wizualizacji; nie usuwano ich mechanicznie.
+- Hermes: brak osobnych plików HTML/CSS/JS nie dowodzi braku inline HTML w Python.
 
-## Co jest prawidłowo lokalne
-
-- PlnFlr `app.css`: SVG rooms, gaps, zones, labels i clipping;
-- rnkstr Leaflet CSS oraz map/ranking interactions;
-- Emitype SVG/report visualization i produktowy choice card;
-- Argus landing/client workflow presentation;
-- PunkRecords Chart.js konfiguracja;
-- dynamiczne progress widths, wykresy i kolory pochodzące z danych.
-
-## Czego nie dodawać do app-factory
-
-- wrapperów `card`, `button`, `badge`, `input`, `alert` — Basecoat już je ma;
-- generycznego spinner macro bez realnych konsumentów;
-- domenowych wariantów report/ranking/map/plan;
-- globalnego Alpine store ani wspólnego chart boot.
-
-## Zalecana kolejność następnych zmian
-
-1. Anonimizator3000: usunąć redefinicje `.btn/.badge/.alert/card` i globalne
-   theme/body CSS, zostawić product layout; testy + wizualny smoke.
-2. Rudy: zastąpić statyczne inline status colors wariantami Basecoat; zostawić
-   dynamiczne `width`.
-3. rnkstr: usunąć lokalny renderer page/fragment.
-4. Wolny Rolnik: usunąć lokalny renderer; brak CSS do centralizacji.
-5. Emitype: usunąć renderer, potem rozdzielić cztery `<style>` na Basecoat vs
-   domenowy CSS.
-6. Dopiero po tych zmianach rozważyć nowy release `app-factory`; obecny audyt
-   nie znalazł nowego wspólnego komponentu wymagającego dodania do biblioteki.
+Nie dodawać wrapper frameworka dla card/button/badge/input/alert. Bundle ma
+`destructive`, `secondary`, `outline`, **nie** ma `success`/`warning`. Rudy
+używa neutralnych wariantów, zachowując słowa i symbole oznaczające wynik.
