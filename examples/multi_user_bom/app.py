@@ -20,6 +20,7 @@ from app_factory.adapters import (
     UserManagerBinding,
     install_identity_adapters,
 )
+from app_factory import template_response
 from app_factory.platform import (
     MenuItem,
     PlatformConfig,
@@ -128,7 +129,8 @@ def create_app(store: DemoStore | None = None) -> FastAPI:
     @app.get("/", response_class=HTMLResponse)
     def home(request: Request) -> HTMLResponse:
         user_id = _session_user_id(request)
-        return TEMPLATES.TemplateResponse(
+        return template_response(
+            TEMPLATES.env,
             request,
             "home.html",
             {

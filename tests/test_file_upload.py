@@ -1,7 +1,17 @@
 from __future__ import annotations
 
-from jinja2 import Environment
+import asyncio
+from io import BytesIO
 
+import pytest
+from jinja2 import Environment
+from starlette.datastructures import Headers, UploadFile
+
+from app_factory import (
+    UploadLimitExceeded,
+    read_upload_bounded,
+    read_uploads_bounded,
+)
 from app_factory.jinja import configure_jinja_env
 
 
@@ -80,6 +90,91 @@ def test_shared_controller_uses_htmx_transport_not_fetch_or_xhr() -> None:
     assert "htmx:xhr:progress" in source
     assert "DataTransfer" in source
     assert "requestSubmit" in source
+
+
+def test_single_file_upload_does_not_render_batch_confirmation_field() -> None:
+    html = _render(id="upload", action="/upload", multiple=False)
+    assert "data-app-file-confirmed-count" not in html
+    assert 'data-label-confirm=""' in html
+
+
+def test_upload_field_help_is_automatically_described() -> None:
+    env = configure_jinja_env(Environment(autoescape=True))
+    html = env.from_string(
+        '{% from "app_factory/components/file_upload.html" import file_upload_field %}'
+        '{{ file_upload_field(id="docs", help_text="Maximum 5 MB") }}'
+    ).render()
+    assert 'id="docs-help"' in html
+    assert 'aria-describedby="docs-help"' in html
+
+
+def test_read_upload_bounded_returns_metadata_and_bytes() -> None:
+    upload = UploadFile(
+        BytesIO(b"document"),
+        filename="evidence.bin",
+        headers=Headers({"content-type": "application/x-evidence"}),
+    )
+    result = asyncio.run(read_upload_bounded(upload, max_bytes=8, chunk_size=3))
+    assert result.filename == "evidence.bin"
+    assert result.content_type == "application/x-evidence"
+    assert result.data == b"document"
+
+
+def test_read_upload_bounded_stops_after_limit() -> None:
+    upload = UploadFile(BytesIO(b"too large"), filename="large.bin")
+    with pytest.raises(UploadLimitExceeded) as raised:
+        asyncio.run(read_upload_bounded(upload, max_bytes=4, chunk_size=3))
+    assert raised.value.max_bytes == 4
+    assert raised.value.filename == "large.bin"
+    assert upload.file.tell() <= 6
+
+
+def test_read_upload_bounded_accepts_exact_limit_and_empty_file() -> None:
+    exact = UploadFile(BytesIO(b"1234"), filename="exact.bin")
+    assert asyncio.run(read_upload_bounded(exact, max_bytes=4, chunk_size=2)).data == b"1234"
+    empty = UploadFile(BytesIO(b""), filename=None)
+    result = asyncio.run(read_upload_bounded(empty, max_bytes=1))
+    assert result.filename == "upload"
+    assert result.content_type == "application/octet-stream"
+    assert result.data == b""
+
+
+def test_read_upload_bounded_validates_limits() -> None:
+    upload = UploadFile(BytesIO(b"x"), filename="x")
+    with pytest.raises(ValueError, match="max_bytes"):
+        asyncio.run(read_upload_bounded(upload, max_bytes=0))
+    with pytest.raises(ValueError, match="chunk_size"):
+        asyncio.run(read_upload_bounded(upload, max_bytes=1, chunk_size=0))
+
+
+def test_read_uploads_bounded_enforces_file_count_and_total_size() -> None:
+    uploads = [
+        UploadFile(BytesIO(b"one"), filename="one.bin"),
+        UploadFile(BytesIO(b"two"), filename="two.bin"),
+    ]
+    result = asyncio.run(
+        read_uploads_bounded(uploads, max_file_bytes=3, max_total_bytes=6, max_files=2)
+    )
+    assert [item.filename for item in result] == ["one.bin", "two.bin"]
+
+    too_many = [UploadFile(BytesIO(b"x"), filename=str(index)) for index in range(3)]
+    with pytest.raises(UploadLimitExceeded, match="file count"):
+        asyncio.run(
+            read_uploads_bounded(
+                too_many, max_file_bytes=2, max_total_bytes=4, max_files=2
+            )
+        )
+
+    too_large = [
+        UploadFile(BytesIO(b"123"), filename="one.bin"),
+        UploadFile(BytesIO(b"456"), filename="two.bin"),
+    ]
+    with pytest.raises(UploadLimitExceeded, match="total"):
+        asyncio.run(
+            read_uploads_bounded(
+                too_large, max_file_bytes=3, max_total_bytes=5, max_files=2
+            )
+        )
 
 
 def test_upload_field_composes_inside_a_host_form() -> None:

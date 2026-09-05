@@ -122,6 +122,20 @@ def test_runtime_version_matches_project_metadata():
 
     assert __version__ == project["project"]["version"]
 
+
+def test_readme_current_tag_matches_project_metadata() -> None:
+    root = Path(__file__).parents[1]
+    project = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    assert f"**Tag:** `v{project['project']['version']}`" in readme
+
+
+def test_bom_app_factory_pin_matches_project_version() -> None:
+    root = Path(__file__).parents[1]
+    project = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+    bom = tomllib.loads((root / "bom" / "multi_user.toml").read_text(encoding="utf-8"))
+    assert bom["pins"]["app-factory"] == f"v{project['project']['version']}"
+
 @pytest.mark.parametrize("static_path", ["", "/", "relative"])
 def test_static_path_must_be_an_absolute_non_root_path(static_path: str) -> None:
     with pytest.raises(ValueError):

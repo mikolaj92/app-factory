@@ -16,7 +16,11 @@
   };
   window.appToast = emit;
   document.addEventListener('app:toast', (event) => emit(event.detail || {}));
+  window.addEventListener('offline', () => emit());
   document.addEventListener('htmx:sendError', () => emit());
   document.addEventListener('htmx:timeout', () => emit());
+  document.addEventListener('htmx:responseError', (event) => {
+    if (event?.detail?.xhr?.status === 0) emit();
+  });
 })();
 </script>

@@ -3,12 +3,74 @@
 from __future__ import annotations
 
 import secrets
+from collections.abc import Iterable
 from typing import cast
+from urllib.parse import urlsplit
 
 try:
     from fastapi import Request
+    from fastapi.responses import HTMLResponse, JSONResponse
+    from starlette.middleware.base import BaseHTTPMiddleware
 except ImportError as exc:
     raise ImportError("app_factory.csrf requires app-factory[fastapi]") from exc
+
+
+_SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS", "TRACE"})
+
+
+def _origin_of(url: str | None) -> str | None:
+    if not url:
+        return None
+    parts = urlsplit(url)
+    if not parts.scheme or not parts.netloc:
+        return None
+    return f"{parts.scheme}://{parts.netloc}"
+
+
+class SameOriginCsrfMiddleware(BaseHTTPMiddleware):
+    """Reject cross-origin unsafe browser requests.
+
+    The request host is always accepted. Hosts may add trusted origins and
+    explicit path-prefix exemptions for webhooks or other cross-origin APIs.
+    """
+
+    def __init__(
+        self,
+        app: object,
+        *,
+        trusted_origins: Iterable[str] = (),
+        exempt_prefixes: Iterable[str] = (),
+    ) -> None:
+        super().__init__(app)  # type: ignore[arg-type]
+        self.trusted_origins = frozenset(
+            normalized
+            for origin in trusted_origins
+            if (normalized := (_origin_of(origin) or origin))
+        )
+        self.exempt_prefixes = tuple(exempt_prefixes)
+
+    async def dispatch(self, request: Request, call_next):  # type: ignore[no-untyped-def]
+        if request.method in _SAFE_METHODS or any(
+            request.url.path.startswith(prefix) for prefix in self.exempt_prefixes
+        ):
+            return await call_next(request)
+
+        candidate = request.headers.get("origin") or request.headers.get("referer")
+        supplied = _origin_of(candidate)
+        request_origin = _origin_of(str(request.base_url))
+        if supplied is None or supplied not in self.trusted_origins | {request_origin}:
+            if request.headers.get("HX-Request", "").lower() == "true":
+                return HTMLResponse(
+                    '<div class="alert" data-variant="destructive" role="alert">'
+                    "Request blocked: invalid origin. Please reload the page and "
+                    "try again.</div>",
+                    status_code=403,
+                )
+            return JSONResponse(
+                {"error": "CSRF validation failed", "detail": "Invalid or missing Origin."},
+                status_code=403,
+            )
+        return await call_next(request)
 
 
 class SessionCsrfProtection:

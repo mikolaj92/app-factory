@@ -24,7 +24,7 @@
   data-label-too-large="{{ too_large_label }}"
   data-label-wrong-type="{{ wrong_type_label }}"
   data-label-empty="{{ empty_label }}"
-  data-label-confirm="{{ confirm_label }}"
+  data-label-confirm="{{ confirm_label if multiple else '' }}"
   data-remove-label="{{ remove_label }}"
 >
   <label
@@ -52,7 +52,7 @@
       {% if required %}required{% endif %}
       data-app-file-input
       x-ref="input"
-      {% if describedby %}aria-describedby="{{ describedby }}"{% endif %}
+      {% if describedby or help_text %}aria-describedby="{{ describedby }}{% if describedby and help_text %} {% endif %}{% if help_text %}{{ id }}-help{% endif %}"{% endif %}
     >
   </label>
   {% if help_text %}<p class="text-sm text-muted-foreground" id="{{ id }}-help">{{ help_text }}</p>{% endif %}
@@ -117,7 +117,7 @@
     <span class="text-sm text-muted-foreground" data-app-file-progress-label>0%</span>
   </div>
   <p class="text-sm" role="status" aria-live="polite" data-app-file-status></p>
-  <input type="hidden" name="confirmed_count" value="" data-app-file-confirmed-count>
+  {% if multiple %}<input type="hidden" name="confirmed_count" value="" data-app-file-confirmed-count>{% endif %}
   <button class="btn w-full" data-variant="primary" data-size="lg" type="submit" data-app-file-submit>
     <span class="material-symbols-outlined" aria-hidden="true">upload</span>
     <span>{{ submit_label }}</span>

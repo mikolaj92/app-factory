@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
 import subprocess
 from pathlib import Path
 
 import pytest
+import httpx
 from fastapi import FastAPI, Request
 from jinja2 import DictLoader, Environment
-from starlette.testclient import TestClient
 
 from app_factory.adapters import (
     IdentityAdapterConflict,
@@ -80,10 +81,12 @@ def test_derived_page_context_fills_platform_globals() -> None:
     assert wrapped.list_users() == ()
 
 
-def test_platform_request_context_updates_environment_per_request() -> None:
+def test_platform_request_context_is_request_local_under_concurrency() -> None:
     app = FastAPI()
-    environment = Environment(loader=DictLoader({"x": "{{ platform_user }}"}))
+    environment = Environment(loader=DictLoader({"x": "unused"}))
     config = PlatformConfig(app_name="Ops")
+    both_requests_started = asyncio.Event()
+    started = 0
 
     def current_user(request: Request) -> PlatformUser | None:
         name = request.headers.get("x-user")
@@ -97,15 +100,27 @@ def test_platform_request_context_updates_environment_per_request() -> None:
     )
 
     @app.get("/ping")
-    def ping() -> dict[str, str]:
-        user = environment.globals.get("platform_user")
-        return {"name": getattr(user, "display_name", "")}
+    async def ping(request: Request) -> dict[str, str]:
+        nonlocal started
+        started += 1
+        if started == 2:
+            both_requests_started.set()
+        await both_requests_started.wait()
+        context = request.state.app_factory_platform_context
+        return {"name": getattr(context["platform_user"], "display_name", "")}
 
-    client = TestClient(app)
-    guest = client.get("/ping")
-    signed = client.get("/ping", headers={"x-user": "Ada"})
-    assert guest.json() == {"name": ""}
-    assert signed.json() == {"name": "Ada"}
+    async def exercise() -> tuple[httpx.Response, httpx.Response]:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            return await asyncio.gather(
+                client.get("/ping", headers={"x-user": "Ada"}),
+                client.get("/ping", headers={"x-user": "Bea"}),
+            )
+
+    ada, bea = asyncio.run(exercise())
+    assert ada.json() == {"name": "Ada"}
+    assert bea.json() == {"name": "Bea"}
+    assert "platform_user" not in environment.globals
 
 
 def test_install_identity_adapters_is_idempotent_and_conflicts() -> None:

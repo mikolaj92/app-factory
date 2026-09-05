@@ -20,16 +20,24 @@ from app_factory.cdn import (
 from app_factory.jinja import configure_jinja_env, factory_template_dirs
 
 try:
-    from app_factory.csrf import SessionCsrfProtection
+    from app_factory.csrf import SameOriginCsrfMiddleware, SessionCsrfProtection
     from app_factory.fastapi import (
         AppFactoryUi,
         AppFactoryUiConflict,
         install_app_factory_ui,
     )
-    from app_factory.responses import htmx_redirect
+    from app_factory.responses import htmx_redirect, template_response
+    from app_factory.uploads import (
+        UploadLimitExceeded,
+        UploadedFile,
+        read_upload_bounded,
+        read_uploads_bounded,
+    )
 except ImportError:  # Optional fastapi extra is not installed.
-    AppFactoryUi = AppFactoryUiConflict = SessionCsrfProtection = None
-    htmx_redirect = install_app_factory_ui = None
+    AppFactoryUi = AppFactoryUiConflict = SameOriginCsrfMiddleware = None
+    SessionCsrfProtection = UploadLimitExceeded = UploadedFile = None
+    htmx_redirect = install_app_factory_ui = read_upload_bounded = None
+    read_uploads_bounded = template_response = None
 
 try:
     from app_factory.adapters import (
@@ -113,7 +121,10 @@ __all__ = [
     "PlatformLocale",
     "PlatformPaths",
     "PlatformUser",
+    "SameOriginCsrfMiddleware",
     "SessionCsrfProtection",
+    "UploadLimitExceeded",
+    "UploadedFile",
     "UserManagerBinding",
     "apply_platform_context",
     "attach_platform_page_context",
@@ -127,6 +138,7 @@ __all__ = [
     "get_assets_dir",
     "get_platform_static_app",
     "htmx_redirect",
+    "template_response",
     "install_app_factory_ui",
     "install_identity_adapters",
     "install_passkey_adapter",
@@ -137,9 +149,11 @@ __all__ = [
     "passkey_paths_from_platform",
     "list_bundled_assets",
     "platform_asset_url",
+    "read_upload_bounded",
+    "read_uploads_bounded",
     "usermanager_config_from_platform",
     "verify_cdn_asset",
     "verify_cdn_manifest",
 ]
 
-__version__ = "0.6.17"
+__version__ = "0.6.18"

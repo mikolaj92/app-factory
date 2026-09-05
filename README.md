@@ -7,7 +7,7 @@ The goal is one place to ship the resilient same-origin chrome, Jinja head
 partials, and optional CDN pins so product apps do **not** re-implement
 Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.6.16` (identity-adapter composition; multi-user BOM is v0.6.16 / my-auth v0.4.8 / my-usermanager v0.5.11)
+**Tag:** `v0.6.18` (request-safe app framework; multi-user BOM is v0.6.18 / my-auth v0.5.1 / my-usermanager v0.6.2)
 
 ---
 
@@ -17,10 +17,10 @@ This package is the thin shared layer in a small platform. Together:
 
 | Piece | Role | How consumers get it |
 |-------|------|----------------------|
-| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.6.16` directly; multi-user hosts follow `COMPAT.md` |
+| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.6.18` directly; multi-user hosts follow `COMPAT.md` |
 | **basecoat-factory** | Maintainer-only build source for the generated Basecoat/UI asset bundle | Not a runtime dependency |
-| **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.4.8` |
-| **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.5.11` |
+| **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.5.1` |
+| **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.6.2` |
 | **FastAPI + Jinja2 + HTMX + Alpine** | Server-rendered app shell | App code; core scripts/CSS served by the app |
 
 ### Dependency rule
@@ -56,7 +56,10 @@ Apps should not ship:
 |---------------|---------|
 | `app_factory.assets` | Verified bundled core assets, URL helper, and lazy Starlette static app |
 | `app_factory.responses.htmx_redirect` | Native 303 plus `HX-Redirect` for HTMX full-page navigation |
+| `app_factory.responses.template_response` | Explicit full-page/HTMX-fragment renderer with request-local platform context |
+| `app_factory.csrf.SameOriginCsrfMiddleware` | Origin/Referer protection for unsafe cookie-session requests |
 | `app_factory.csrf.SessionCsrfProtection` | Signed-session CSRF adapter for host forms and my-usermanager |
+| `app_factory.uploads.read_upload_bounded` / `read_uploads_bounded` | Bounded in-memory read of one upload or a count/per-file/aggregate-limited batch; format policy stays host-owned |
 | `app_factory.cdn` | Optional CDN assets, `cdn_asset()`, SRI verification, `extend_manifest()` / `install_manifest()` |
 | `app_factory.jinja` | `configure_jinja_env()` — registers bundled/local and optional CDN helpers plus the template loader |
 | `app_factory.fastapi` | `install_app_factory_ui()` — the sole supported FastAPI mount/Jinja integration |
@@ -84,6 +87,12 @@ Apps should not ship:
   branch into each host.
 - Use `SessionCsrfProtection(session_key=...)` when the host already has signed
   `SessionMiddleware`; missing middleware fails explicitly.
+- Use `SameOriginCsrfMiddleware` instead of copying Origin/Referer middleware
+  into each cookie-session host. Pass trusted origins and webhook exemptions
+  explicitly; the current request origin is accepted automatically.
+- Use `template_response(...)` for an explicit page/fragment pair. Dynamic
+  platform values come from `request.state.app_factory_platform_context`; they
+  are never written into shared Jinja globals.
 - Set `toast_enabled = true` in shell context to install the Basecoat toaster and
   shared `htmx:sendError` / `htmx:timeout` bridge. Override
   `network_error_message` and `toast_region_label` as host copy.
@@ -126,6 +135,11 @@ target. The component provides picker/drop, selected-file removal, batch
 confirmation, busy state, and real `htmx:xhr:progress`; the normal multipart
 form remains the no-JS fallback. Server-side format and security validation
 remain consumer-owned.
+
+The backend companions `read_upload_bounded(...)` and `read_uploads_bounded(...)`
+read `UploadFile` objects in chunks and enforce per-file, aggregate, and file-count
+limits. They deliberately
+does not validate file formats, archives, malware, or product policy.
 
 Client pages opt into the same HTMX/Alpine generation without forking the shell:
 
@@ -208,9 +222,9 @@ dependencies = [
 override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.6.16" }
-my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.4.8" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.5.11" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.6.18" }
+my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.5.1" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.6.2" }
 ```
 
 ```bash

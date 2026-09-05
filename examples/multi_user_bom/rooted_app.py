@@ -16,6 +16,7 @@ from my_auth.fastapi import PasskeyCookies
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.status import HTTP_303_SEE_OTHER
 
+from app_factory import template_response
 from app_factory.adapters import (
     PasskeyBinding,
     UserManagerBinding,
@@ -131,7 +132,8 @@ def create_app(store: DemoStore | None = None) -> FastAPI:
     @app.get("/portal/", response_class=HTMLResponse)
     def home(request: Request) -> HTMLResponse:
         user_id = _session_user_id(request)
-        return TEMPLATES.TemplateResponse(
+        return template_response(
+            TEMPLATES.env,
             request,
             "home.html",
             {

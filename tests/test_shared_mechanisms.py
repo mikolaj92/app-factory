@@ -3,9 +3,14 @@ from __future__ import annotations
 import pytest
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
-from jinja2 import Environment
+from jinja2 import DictLoader, Environment
 
-from app_factory import SessionCsrfProtection, htmx_redirect
+from app_factory import (
+    SameOriginCsrfMiddleware,
+    SessionCsrfProtection,
+    htmx_redirect,
+    template_response,
+)
 from app_factory.jinja import configure_jinja_env
 
 
@@ -69,6 +74,90 @@ def test_pagination_is_native_htmx_accessible_and_encodes_query() -> None:
     assert "page=99" not in html
 
 
+def test_same_origin_csrf_accepts_request_host_and_rejects_cross_origin() -> None:
+    app = FastAPI()
+    app.add_middleware(SameOriginCsrfMiddleware)
+
+    @app.post("/write")
+    def write() -> dict[str, bool]:
+        return {"ok": True}
+
+    client = TestClient(app)
+    assert client.post("/write", headers={"Origin": "http://testserver"}).status_code == 200
+    rejected = client.post("/write", headers={"Origin": "https://attacker.example"})
+    assert rejected.status_code == 403
+    assert rejected.json()["error"] == "CSRF validation failed"
+
+
+def test_same_origin_csrf_returns_fragment_for_htmx_and_honors_exemptions() -> None:
+    app = FastAPI()
+    app.add_middleware(
+        SameOriginCsrfMiddleware,
+        trusted_origins=("https://console.example/path",),
+        exempt_prefixes=("/webhooks/",),
+    )
+
+    @app.post("/write")
+    @app.post("/webhooks/source")
+    def write() -> dict[str, bool]:
+        return {"ok": True}
+
+    client = TestClient(app)
+    trusted = client.post("/write", headers={"Origin": "https://console.example"})
+    assert trusted.status_code == 200
+    fragment = client.post(
+        "/write",
+        headers={"Origin": "https://attacker.example", "HX-Request": "true"},
+    )
+    assert fragment.status_code == 403
+    assert 'class="alert"' in fragment.text
+    assert client.post("/webhooks/source").status_code == 200
+
+
+def test_template_response_merges_request_local_platform_context() -> None:
+    app = FastAPI()
+    environment = configure_jinja_env(
+        Environment(loader=DictLoader({"page.html": "{{ app_name }}:{{ value }}"}))
+    )
+
+    @app.get("/")
+    def page(request: Request):
+        request.state.app_factory_platform_context = {
+            "app_name": "Request app",
+            "value": "platform",
+        }
+        return template_response(
+            environment,
+            request,
+            "page.html",
+            {"value": "host"},
+        )
+
+    response = TestClient(app).get("/")
+    assert response.text == "Request app:host"
+
+
+def test_page_or_fragment_response_uses_explicit_template() -> None:
+    app = FastAPI()
+    environment = Environment(
+        loader=DictLoader({"page.html": "page {{ value }}", "part.html": "part {{ value }}"})
+    )
+
+    @app.get("/")
+    def page(request: Request):
+        return template_response(
+            environment,
+            request,
+            "page.html",
+            {"value": "ready"},
+            fragment_template="part.html",
+        )
+
+    client = TestClient(app)
+    assert client.get("/").text == "page ready"
+    assert client.get("/", headers={"HX-Request": "true"}).text == "part ready"
+
+
 def test_toast_boot_is_opt_in_and_handles_network_failures_once() -> None:
     env = configure_jinja_env(Environment(autoescape=True))
     slim = env.get_template("app_factory/shell.html").render()
@@ -81,4 +170,6 @@ def test_toast_boot_is_opt_in_and_handles_network_failures_once() -> None:
     assert "window.__appToastBooted" in enabled
     assert "htmx:sendError" in enabled
     assert "htmx:timeout" in enabled
+    assert "htmx:responseError" in enabled
+    assert "window.addEventListener('offline'" in enabled
     assert "Offline" in enabled

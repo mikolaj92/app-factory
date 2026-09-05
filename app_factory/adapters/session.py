@@ -12,7 +12,6 @@ from app_factory.platform import (
     PlatformConfig,
     PlatformLocale,
     PlatformUser,
-    apply_platform_context,
     build_platform_context,
 )
 
@@ -82,13 +81,17 @@ def install_platform_request_context(
     current_user: CurrentUser | None = None,
     locales: PageLocales | None = None,
 ) -> None:
-    """Apply platform chrome globals on every request for the given envs.
+    """Expose request-local platform chrome context on ``request.state``.
+
+    ``environments`` remains accepted for API compatibility, but request data is
+    never written to shared Jinja ``Environment.globals``. Renderers merge
+    ``request.state.app_factory_platform_context`` into each template response.
 
     Add host ``SessionMiddleware`` *after* this installer (Starlette runs the
     last-added middleware first) so the session is available when
     ``current_user`` reads it.
     """
-    env_list = list(environments)
+    _ = tuple(environments)
 
     @app.middleware("http")
     async def bind_platform_context(request: Request, call_next):  # type: ignore[no-untyped-def]
@@ -98,12 +101,12 @@ def install_platform_request_context(
             resolved_locales, locale = locales(request)
             locale_args["locales"] = resolved_locales
             locale_args["locale"] = locale
-        for environment in env_list:
-            apply_platform_context(
-                environment,
+        request.state.app_factory_platform_context = dict(
+            build_platform_context(
                 config,
                 user=user,
                 current_path=request.url.path,
                 **locale_args,
             )
+        )
         return await call_next(request)

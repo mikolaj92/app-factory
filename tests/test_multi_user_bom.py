@@ -20,8 +20,9 @@ def _bom() -> dict:
 def test_bom_pins_are_immutable_tags() -> None:
     bom = _bom()
     pins = bom["pins"]
+    project = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     assert pins == {
-        "app-factory": "v0.6.27",
+        "app-factory": f"v{project['project']['version']}",
         "my-auth": "v0.5.1",
         "my-usermanager": "v0.6.2",
     }
