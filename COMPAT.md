@@ -7,7 +7,7 @@ Reference host: [`examples/multi_user_bom/`](examples/multi_user_bom/).
 
 | app-factory | my-auth | my-usermanager | Contract |
 |-------------|---------|----------------|----------|
-| **v0.6.20** | **v0.5.3** | **v0.6.2** | **Request-safe app framework generation**: neutral multi-user/multi-admin identity composition plus request-local Jinja context, explicit page/fragment rendering, shared Origin CSRF, backend bounded uploads, and improved shared upload/toast behavior. Authentication has no first-account bootstrap or enrollment policy; hosts own registration exposure and initial grants |
+| **v0.6.21** | **v0.5.4** | **v0.6.4** | **Request-safe app framework generation**: neutral multi-user/multi-admin identity composition plus request-local Jinja context, explicit page/fragment rendering, shared Origin CSRF, backend bounded uploads, and improved shared upload/toast behavior. Authentication has no first-account bootstrap or enrollment policy; hosts own registration exposure and initial grants |
 | **v0.6.16** | **v0.4.8** | **v0.5.31** | **Identity-adapter ownership cleanup** (same `install_identity_adapters` composer; UM uses canonical authenticated shell + platform session, split UI route groups, and split SQLite schema/store owners behind a stable facade). Hosts bump the full immutable row together |
 | **v0.6.13** | **v0.4.8** | **v0.5.9** | **Identity-adapter composition** (`install_identity_adapters` + focused passkey/usermanager/session helpers). Hosts supply paths, persistence, page context, and product policy hooks only — do not copy installer/render/session glue. Chrome generation v0.6.11/v0.4.8/v0.5.7 had no composition API; bump app-factory (and UM to v0.5.9 if still on v0.5.7). Keep my-auth 0.4.x (do not mix 0.5.x); hosts pin one immutable generation |
 | **v0.6.11** | **v0.4.8** | **v0.5.7** | **Chrome generation** (shared browser mechanisms + nested auth pins on app-factory v0.6.11). No generic installer composition — hosts still fork `install_passkey_ui` / `install_usermanager_ui` glue. Prefer the v0.6.13 row |
@@ -64,16 +64,16 @@ dependencies = [
 override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.6.20" }
-my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.5.3" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.6.2" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.6.21" }
+my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.5.4" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.6.4" }
 ```
 
 Do **not** float `my-usermanager` on `branch = "main"` for production hosts.
 Do **not** re-copy theme boot, shell boot, or platform foot templates into hosts.
 Do **not** mix BOM generations (for example app-factory v0.6.7 with my-auth v0.5.x).
 
-### Identity lifecycle capability matrix (BOM v0.6.20)
+### Identity lifecycle capability matrix (BOM v0.6.21)
 
 | Capability | Owner | Default surface | Visibility |
 |------------|-------|-----------------|------------|
