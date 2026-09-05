@@ -1,6 +1,6 @@
 # Audyt boilerplate’u po migracji BOM
 
-Pomiar wykonano na checkoutach odpowiadających `origin/main`, po migracji do `app-factory v0.6.22`, `my-auth v0.5.4`, `my-usermanager v0.6.4`. Liczby są liniami fizycznymi w plikach integracyjnych, nie rozmiarem domeny aplikacji. Mają wskazywać kolejność redukcji, a nie premiować krótszy kod.
+Pomiar bazowy wykonano na checkoutach odpowiadających `origin/main`, po migracji do `app-factory v0.6.22`, `my-auth v0.5.4`, `my-usermanager v0.6.5`. Liczby są liniami fizycznymi w plikach integracyjnych, nie rozmiarem domeny aplikacji. Mają wskazywać kolejność redukcji, a nie premiować krótszy kod.
 
 | Host | Identity/platform Python LOC | Lokalny renderer LOC | Wniosek |
 |---|---:|---:|---|
@@ -13,7 +13,7 @@ Pomiar wykonano na checkoutach odpowiadających `origin/main`, po migracji do `a
 | emitype | 1450 | 239 | Największy adapter identity i renderer; lokalne wrappery pagination/loading wymagają osobnego cleanupu. |
 | Argus | 1120 | 0 | Duży adapter, ale zawiera politykę firm, grants i auditing; nie przenosić domeny do app-factory. |
 | Hermes | 365 | 0 | Passkey dla pojedynczego operatora; większość to hostowa polityka/session/storage. |
-| Rudy | 1016 | 0 | Synchronizer-token CSRF i migracje direct-auth są świadomie hostowe. |
+| Rudy | 1016 | 0 | Synchronizer-token CSRF pozostaje hostowy; runtime identity został całkowicie przepięty na `um_*`/`passkey_*`. |
 
 ## Co naprawdę się powtarza
 
@@ -22,6 +22,17 @@ W sześciu hostach multi-user powtarza się ten sam kształt callbacków `UserMa
 Nie należy przenosić tych funkcji wprost do `app-factory`: operują na polityce, rolach, audycie i domenie. Następna redukcja należy do `my-usermanager` i powinna mieć formę opcjonalnego adaptera dla jego własnych standardowych stores/managera, z małymi callbackami hosta dla policy i efektów ubocznych.
 
 Drugim powtarzalnym obszarem są lokalne `smart_template_response` (rnkstr 179 LOC, wolnyrolnik 256 LOC, emitype 239 LOC). Hosty powinny stopniowo przejść na małe `app_factory.template_response`; warianty lokalizacji, tytułu i domenowych fragmentów pozostają w hostach.
+
+## Zakończony cutover Rudy
+
+Rudy (`msds-portal` commit `44f379c`) nie ma już runtime dual-read ani hostowej tabeli tożsamości `users`. Świeża baza tworzy domenowe klucze obce bezpośrednio do `um_users(user_id)`. Start istniejącej bazy wykonuje jednorazowo, fail-closed:
+
+1. utworzenie kanonicznych schematów `my-auth` i `my-usermanager`;
+2. skopiowanie historycznych users, credentials i workflow grants;
+3. przebudowę FK `projects.owner_user_id` i `operator_reviews.reviewed_by`;
+4. usunięcie tabel legacy oraz historycznych `*_retired`.
+
+Relacje `projects -> runs -> operator_reviews` są zachowywane i sprawdzane przez `PRAGMA foreign_key_check`. Runtime tworzy i odczytuje użytkowników wyłącznie przez `my-usermanager`; passkeys i challenges należą wyłącznie do `my-auth`. Host zachował tylko session/admin policy, synchronizer-token CSRF, invitation delivery i politykę domenową. Pełny suite po cutoverze: `141 passed`; lock wskazuje dokładnie BOM `0.6.22 / 0.5.4 / 0.6.5`.
 
 ## Czego nie centralizować
 
