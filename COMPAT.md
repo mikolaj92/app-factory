@@ -59,22 +59,21 @@ dependencies = [
 ]
 
 [tool.uv]
-# Nested adapter uv.sources still declare app-factory@v0.6.11
-# (UM v0.5.9 / my-auth v0.4.8). Override app-factory only. Do not
-# override my-auth — UM v0.5.9 already nests my-auth@v0.4.8.
+# Nested adapter sources may still pin an older app-factory release.
+# Override app-factory only; keep the three direct pins on one BOM row.
 override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.6.13" }
-my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.4.8" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.5.9" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.6.18" }
+my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.5.1" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.6.2" }
 ```
 
 Do **not** float `my-usermanager` on `branch = "main"` for production hosts.
 Do **not** re-copy theme boot, shell boot, or platform foot templates into hosts.
 Do **not** mix BOM generations (for example app-factory v0.6.7 with my-auth v0.5.x).
 
-### Identity lifecycle capability matrix (BOM v0.6.13)
+### Identity lifecycle capability matrix (BOM v0.6.18)
 
 | Capability | Owner | Default surface | Visibility |
 |------------|-------|-----------------|------------|
