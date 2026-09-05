@@ -74,6 +74,20 @@ def test_pagination_is_native_htmx_accessible_and_encodes_query() -> None:
     assert "page=99" not in html
 
 
+def test_pagination_preserves_existing_query_and_uses_shared_loading_indicator() -> None:
+    env = configure_jinja_env(Environment(autoescape=True))
+    template = env.from_string(
+        '{% from "app_factory/components/pagination.html" import pagination %}'
+        '{{ pagination(1, 2, "/items?kind=report", hx_target="#results") }}'
+    )
+
+    html = template.render()
+
+    assert 'href="/items?kind=report&amp;page=2"' in html
+    assert 'hx-indicator=".loading"' in html
+    assert "/items?kind=report?" not in html
+
+
 def test_same_origin_csrf_accepts_request_host_and_rejects_cross_origin() -> None:
     app = FastAPI()
     app.add_middleware(SameOriginCsrfMiddleware)

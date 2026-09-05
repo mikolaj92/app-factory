@@ -23,8 +23,8 @@
   {% endfor %}
 {% endif %}
 {% set prefix = (query.parts|join("&")) %}
-{% set separator = "&" if prefix else "" %}
-{% macro page_url(page) -%}{{ base_url }}?{{ prefix }}{{ separator }}{{ page_param|urlencode }}={{ page }}{%- endmacro %}
+{% set separator = "&" if "?" in base_url else "?" %}
+{% macro page_url(page) -%}{{ base_url }}{{ separator }}{{ prefix }}{{ "&" if prefix else "" }}{{ page_param|urlencode }}={{ page }}{%- endmacro %}
 {% macro link(page, label, rel="") -%}
 <a
   href="{{ page_url(page) }}"
@@ -35,6 +35,7 @@
   hx-get="{{ page_url(page) }}"
   hx-target="{{ hx_target }}"
   hx-swap="{{ hx_swap }}"
+  hx-indicator=".loading"
   {% if hx_push_url %}hx-push-url="true"{% endif %}
   {% endif %}
 >{{ label }}</a>

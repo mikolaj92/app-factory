@@ -234,6 +234,12 @@ uv lock && uv sync
 Reference integration (bootstrap, invite activation, credentials, recovery, admin users):
 [`examples/multi_user_bom/`](examples/multi_user_bom/).
 
+For a chrome-only product, the shortest starter is `install_platform(...)`, one
+`PlatformConfig`, and a template extending `app_factory/product_shell.html`.
+Do not copy passkey or user-manager installers into a new host; add the identity
+bindings only when the product needs them. The post-migration duplication audit
+and recommended cleanup order are in [`docs/BOILERPLATE_AUDIT.md`](docs/BOILERPLATE_AUDIT.md).
+
 ---
 
 ## Install the platform once
