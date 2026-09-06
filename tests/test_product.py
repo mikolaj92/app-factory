@@ -232,10 +232,11 @@ def test_htmx_http_error_escapes_non_string_detail_and_keeps_headers():
         assert denied.status_code == 403
         assert denied.headers["WWW-Authenticate"] == "Bearer"
         assert "<x>" not in denied.text
-        assert "&lt;x&gt;" in denied.text
+        assert "msg" not in denied.text
+        assert "Request denied." in denied.text
         empty = client.get("/empty", headers={"HX-Request": "true"})
         assert empty.status_code == 400
-        assert 'role="alert"' in empty.text
+        assert "Bad Request" in empty.text
 
 
 def test_request_callbacks_are_local_and_changed_bindings_conflict():

@@ -23,10 +23,16 @@ def _error_fragment(request: Request, status: int, detail: str, headers=None):
     )
 
 
+def _http_detail(detail: object) -> str:
+    if isinstance(detail, str) and detail:
+        return detail
+    return "Request denied."
+
+
 async def product_http_error(request: Request, exc: HTTPException):
     if exc.status_code >= 400:
         fragment = _error_fragment(
-            request, exc.status_code, str(exc.detail), exc.headers
+            request, exc.status_code, _http_detail(exc.detail), exc.headers
         )
         if fragment is not None:
             return fragment
