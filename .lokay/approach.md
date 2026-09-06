@@ -1,21 +1,30 @@
 # Approach plan
 
-<!-- lokay-approach source=deterministic repo=mikolaj92/app-factory issue=42 -->
+<!-- lokay-approach source=deterministic repo=mikolaj92/app-factory issue=83 -->
 
 Repository: `mikolaj92/app-factory`  
-Issue: #42 — PlatformPaths.invite defaultuje na ślepy /admin/users/invite
+Issue: #83 — Wspólna prezentacja rezultatów i bezpieczne pobieranie artefaktów
 
 ## Goal
 
-`PlatformPaths.invite` w kicie nadal defaultuje na `/admin/users/invite` (stara osobna strona). Po UM v0.5.1 formularz siedzi na liście users; POST zostaje na `/admin/users/invite`.
+Dostarczyć domenowo neutralny result panel oraz download route dla typed artifact references po terminalnym runie.
 
 ## Files likely touched
 
-- `PlatformPaths.invite`
+- `app_factory/runs.py` — `RunArtifact` metadata, `RunResult`, `RunArtifactStream`, `RunPort.get_result` / `open_artifact`
+- `app_factory/run_routes.py` — result panel on terminal success + authorized download route
+- `app_factory/__init__.py` — public exports
+- `app_factory/templates/app_factory/components/run_results.html` — values/links/downloads
+- `app_factory/templates/app_factory/components/run_detail.html` — include results fragment
+- `tests/test_runs.py` — presentation, authz, filename, digest mismatch
 
 ## Test plan
 
-- Run the smallest useful tests for files touched
+- Lokalny plik, external URL i metadata-only result mają osobne poprawne prezentacje.
+- Użytkownik bez authority nie może pobrać artifactu znając ID.
+- Filename nie pozwala wyjść poza storage ani wstrzyknąć headera.
+- Digest mismatch failuje i jest widoczny.
+- Widok działa jako fragment HTMX i pełna strona.
 
 ## Non-goals
 
@@ -25,4 +34,5 @@ Issue: #42 — PlatformPaths.invite defaultuje na ślepy /admin/users/invite
 
 - Trust intentional issue; this plan is evidence for later review, not a human gate.
 - Coding agent may refine details but should stay on the stated goal and non-goals.
-- Collector boundary: if implementation introduces unbounded collection, ship only a bounded collector patch that starts durably in the background after merge. The coding agent and mill must not populate data or wait for collection to finish.
+- Collector boundary: if implementation introduces unbounded collection, ship only a bounded collector patch that starts durably in the background after merge. The coding agent and lokay must not populate data or wait for collection to finish.
+- No explicit file paths in issue; infer from repo inspection.

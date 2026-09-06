@@ -1,17 +1,22 @@
 """Opt-in run HTTP transport; no scheduling or storage."""
 
 from collections.abc import Callable
+from hmac import compare_digest
+from pathlib import PurePosixPath
 from typing import Any, Protocol
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, StreamingResponse
 
 from app_factory.runs import (
     Run,
     RunAction,
+    RunArtifact,
     RunArtifacts,
+    RunArtifactStream,
     RunError,
     RunErrorResponse,
     RunIntent,
@@ -28,6 +33,36 @@ _ERROR_STATUS = {
     "unavailable": 503,
     "stale_version": 409,
 }
+_TERMINAL_SUCCESS = "succeeded"
+
+
+def safe_artifact_filename(value: str | None, *, fallback: str = "download") -> str:
+    raw = (value or "").split("\r", 1)[0].split("\n", 1)[0]
+    name = PurePosixPath(raw.replace("\\", "/")).name.strip().strip(".")
+    if not name or name in {".", ".."}:
+        name = fallback
+    return name[:180] or fallback
+
+
+def artifact_kind(item: RunArtifact) -> str:
+    if item.href:
+        return "external"
+    if item.filename or item.disposition or item.size is not None or item.digest:
+        return "download"
+    return "metadata"
+
+
+def artifact_download_url(prefix: str, run_id: str, artifact_id: str) -> str:
+    base = prefix.rstrip("/") or ""
+    return f"{base}/{run_id}/artifacts/{artifact_id}"
+
+
+def content_disposition(filename: str, disposition: str | None) -> str:
+    kind = disposition if disposition in {"inline", "attachment"} else "attachment"
+    ascii_name = filename.encode("ascii", "ignore").decode("ascii") or "download"
+    ascii_name = ascii_name.replace("\\", "_").replace('"', "")
+    encoded = quote(filename, safe="")
+    return f'{kind}; filename="{ascii_name}"; filename*=UTF-8\'\'{encoded}'
 
 
 class _RunRoute(APIRoute):
@@ -376,10 +411,25 @@ def create_run_view_router(
             )
 
         seconds = poll_seconds_for(run)
+        result = None
+        if run.status == _TERMINAL_SUCCESS:
+            getter = getattr(port, "get_result", None)
+            if getter is not None:
+                try:
+                    result = await getter(scope, run_id)
+                except RunError as exc:
+                    return error_response(
+                        request, target_id="run-detail", exc=exc, poll_url=poll_url
+                    )
         context = {
             "run": run,
             "poll_url": poll_url,
             "poll_seconds": seconds,
+            "result": result,
+            "artifact_kind": artifact_kind,
+            "download_url": lambda item: artifact_download_url(
+                prefix, run_id, item.id
+            ),
         }
         return page_or_fragment(
             request,
@@ -387,5 +437,53 @@ def create_run_view_router(
             context=context,
             retry_after=seconds,
         )
+
+    @router.get("/{run_id}/artifacts/{artifact_id}")
+    async def download(
+        request: Request,
+        run_id: str,
+        artifact_id: str,
+        port: RunPort = Depends(port_dependency),
+    ):
+        poll_url = f"{prefix.rstrip('/')}/{run_id}/artifacts/{artifact_id}"
+        try:
+            scope = await authorization(request, "artifact", run_id=run_id)
+            opener = getattr(port, "open_artifact", None)
+            if opener is None:
+                raise RunError("not_found", "Artifact missing")
+            stream = await opener(scope, run_id, artifact_id)
+            if not isinstance(stream, RunArtifactStream):
+                raise RunError("unavailable", "Invalid artifact stream")
+            artifact = stream.artifact
+            if artifact.id != artifact_id:
+                raise RunError("not_found", "Artifact missing")
+            expected = stream.digest or artifact.digest
+            actual = artifact.digest
+            if expected and actual and (
+                len(expected) != len(actual) or not compare_digest(expected, actual)
+            ):
+                raise RunError("conflict", "Artifact digest mismatch")
+            filename = safe_artifact_filename(
+                artifact.filename or artifact.label or artifact.name,
+                fallback=artifact.id,
+            )
+            media_type = artifact.media_type or "application/octet-stream"
+            if "\r" in media_type or "\n" in media_type or ";" in media_type:
+                media_type = "application/octet-stream"
+            headers = {
+                "Cache-Control": "no-store",
+                "X-Content-Type-Options": "nosniff",
+                "Content-Disposition": content_disposition(
+                    filename, artifact.disposition
+                ),
+            }
+            body = stream.body
+            if isinstance(body, (bytes, bytearray, memoryview)):
+                body = iter((bytes(body),))
+            return StreamingResponse(body, media_type=media_type, headers=headers)
+        except RunError as exc:
+            return error_response(
+                request, target_id="run-detail", exc=exc, poll_url=poll_url
+            )
 
     return router

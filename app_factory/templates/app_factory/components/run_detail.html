@@ -1,4 +1,5 @@
 <section id="run-detail" data-run-detail hx-history="false" aria-live="polite"
   {% if poll_seconds %}hx-get="{{ poll_url }}" hx-trigger="every {{ poll_seconds }}s" hx-target="#run-detail" hx-swap="outerHTML"{% endif %}>
   {% include "app_factory/components/run_card.html" %}
+  {% if result %}{% include "app_factory/components/run_results.html" %}{% endif %}
 </section>

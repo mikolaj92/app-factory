@@ -748,6 +748,285 @@ def test_cursors_cannot_cross_scopes(reference_host):
         assert response.json()["code"] == "invalid_request"
 
 
+def test_run_results_present_local_external_and_metadata_only():
+    from app_factory import (
+        Run,
+        RunArtifact,
+        RunResult,
+        create_run_view_router,
+        install_platform,
+    )
+    from jinja2 import Environment, select_autoescape
+
+    class Port:
+        async def get_run(self, scope, run_id):
+            return Run(
+                id=run_id,
+                status="succeeded",
+                created_at=datetime.now(timezone.utc),
+            )
+
+        async def get_result(self, scope, run_id):
+            return RunResult(
+                run_id=run_id,
+                values={"score": 3, "note": "ok <done>"},
+                links=[
+                    RunArtifact(
+                        id="pr",
+                        label="Pull request",
+                        media_type="text/html",
+                        href="https://example.test/pr/1",
+                    )
+                ],
+                artifacts=[
+                    RunArtifact(
+                        id="report",
+                        label="Report",
+                        media_type="application/pdf",
+                        size=12,
+                        digest="sha256:aaaaaaaa",
+                        disposition="attachment",
+                        filename="report.pdf",
+                    ),
+                    RunArtifact(
+                        id="summary",
+                        label="Summary",
+                        media_type="application/json",
+                    ),
+                ],
+            )
+
+    async def authorize(request, action, *, run_id=None, intent=None):
+        return "alice"
+
+    environment = Environment(autoescape=select_autoescape())
+    app = FastAPI()
+    install_platform(app, environments=[environment])
+    app.include_router(
+        create_run_view_router(lambda: Port(), authorize, environment=environment)
+    )
+    with TestClient(app) as client:
+        full = client.get("/runs/one")
+        fragment = client.get("/runs/one", headers={"HX-Request": "true"})
+    assert full.status_code == fragment.status_code == 200
+    assert "<html" in full.text and 'id="sidebar"' in full.text
+    assert "<html" not in fragment.text
+    assert 'id="run-results"' in fragment.text
+    assert "score" in fragment.text and "3" in fragment.text
+    assert "ok &lt;done&gt;" in fragment.text
+    assert 'href="https://example.test/pr/1"' in fragment.text
+    assert "Pull request" in fragment.text
+    assert 'href="/runs/one/artifacts/report"' in fragment.text
+    assert "Report" in fragment.text
+    assert "report.pdf" in fragment.text
+    assert "sha256:aaaaaaaa" in fragment.text
+    assert 'href="/runs/one/artifacts/summary"' not in fragment.text
+    assert "Summary" in fragment.text
+    assert 'data-artifact-kind="download"' in fragment.text
+    assert 'data-artifact-kind="external"' in fragment.text
+    assert 'data-artifact-kind="metadata"' in fragment.text
+
+
+@pytest.mark.parametrize("status", ["running", "failed", "cancelled", "waiting"])
+def test_run_results_stay_hidden_until_terminal_success(status):
+    from app_factory import Run, create_run_view_router, install_platform
+    from jinja2 import Environment, select_autoescape
+
+    class Port:
+        called = False
+
+        async def get_run(self, scope, run_id):
+            return Run(
+                id=run_id, status=status, created_at=datetime.now(timezone.utc)
+            )
+
+        async def get_result(self, scope, run_id):
+            self.called = True
+            raise AssertionError("results are not ready")
+
+    port = Port()
+
+    async def authorize(request, action, *, run_id=None, intent=None):
+        return "alice"
+
+    environment = Environment(autoescape=select_autoescape())
+    app = FastAPI()
+    install_platform(app, environments=[environment])
+    app.include_router(
+        create_run_view_router(lambda: port, authorize, environment=environment)
+    )
+    with TestClient(app) as client:
+        response = client.get("/runs/one", headers={"HX-Request": "true"})
+    assert response.status_code == 200
+    assert 'id="run-results"' not in response.text
+    assert port.called is False
+
+
+def test_artifact_download_reauthorizes_and_sets_safe_headers():
+    from app_factory import (
+        Run,
+        RunArtifact,
+        RunArtifactStream,
+        create_run_view_router,
+        install_platform,
+    )
+    from jinja2 import Environment, select_autoescape
+
+    payload = b"%PDF-report"
+    calls = []
+
+    class Port:
+        async def get_run(self, scope, run_id):
+            return Run(
+                id=run_id, status="succeeded", created_at=datetime.now(timezone.utc)
+            )
+
+        async def open_artifact(self, scope, run_id, artifact_id):
+            calls.append((scope, run_id, artifact_id))
+            return RunArtifactStream(
+                artifact=RunArtifact(
+                    id=artifact_id,
+                    label="Report",
+                    media_type="application/pdf",
+                    size=len(payload),
+                    digest="sha256:deadbeef",
+                    disposition="attachment",
+                    filename="../evil\r\nX-Injected: yes.pdf",
+                ),
+                body=iter([payload]),
+                digest="sha256:deadbeef",
+            )
+
+    async def authorize(request, action, *, run_id=None, intent=None):
+        calls.append((action, run_id))
+        return "alice"
+
+    environment = Environment(autoescape=select_autoescape())
+    app = FastAPI()
+    install_platform(app, environments=[environment])
+    app.include_router(
+        create_run_view_router(lambda: Port(), authorize, environment=environment)
+    )
+    with TestClient(app) as client:
+        response = client.get("/runs/one/artifacts/report")
+    assert response.status_code == 200
+    assert response.content == payload
+    assert response.headers["content-type"].startswith("application/pdf")
+    assert response.headers["x-content-type-options"] == "nosniff"
+    disposition = response.headers["content-disposition"]
+    assert "attachment" in disposition
+    assert "../" not in disposition
+    assert "\r" not in disposition and "\n" not in disposition
+    assert "X-Injected" not in disposition
+    assert "evil" in disposition
+    assert calls[0] == ("artifact", "one")
+    assert ("alice", "one", "report") in calls
+
+
+def test_artifact_download_denies_without_authority():
+    from app_factory import RunError, create_run_view_router, install_platform
+    from jinja2 import Environment, select_autoescape
+
+    called = False
+
+    class Port:
+        async def open_artifact(self, scope, run_id, artifact_id):
+            nonlocal called
+            called = True
+            raise AssertionError("port must not stream unauthorized artifacts")
+
+    async def authorize(request, action, *, run_id=None, intent=None):
+        raise RunError("forbidden", "Access denied")
+
+    environment = Environment(autoescape=select_autoescape())
+    app = FastAPI()
+    install_platform(app, environments=[environment])
+    app.include_router(
+        create_run_view_router(lambda: Port(), authorize, environment=environment)
+    )
+    with TestClient(app) as client:
+        native = client.get("/runs/one/artifacts/secret")
+        fragment = client.get(
+            "/runs/one/artifacts/secret", headers={"HX-Request": "true"}
+        )
+    assert native.status_code == 403
+    assert called is False
+    assert 'data-run-state="unauthorized"' in native.text
+    assert "<html" not in fragment.text
+    assert 'data-run-state="unauthorized"' in fragment.text
+
+
+def test_artifact_states_are_explicit_and_visible():
+    from app_factory import (
+        RunArtifact,
+        RunArtifactStream,
+        RunError,
+        create_run_view_router,
+        install_platform,
+    )
+    from jinja2 import Environment, select_autoescape
+
+    class Port:
+        error = None
+        stream = None
+
+        async def open_artifact(self, scope, run_id, artifact_id):
+            if self.error:
+                raise self.error
+            return self.stream
+
+    port = Port()
+
+    async def authorize(request, action, *, run_id=None, intent=None):
+        return "alice"
+
+    environment = Environment(autoescape=select_autoescape())
+    app = FastAPI()
+    install_platform(app, environments=[environment])
+    app.include_router(
+        create_run_view_router(lambda: port, authorize, environment=environment)
+    )
+    cases = [
+        (RunError("not_found", "Artifact missing"), 404, "not-found"),
+        (RunError("unavailable", "Artifact pending"), 503, "transient-error"),
+        (RunError("conflict", "Artifact expired"), 409, "stale-version"),
+    ]
+    with TestClient(app) as client:
+        for error, status, state in cases:
+            port.error = error
+            native = client.get("/runs/one/artifacts/report")
+            fragment = client.get(
+                "/runs/one/artifacts/report", headers={"HX-Request": "true"}
+            )
+            assert native.status_code == status
+            assert f'data-run-state="{state}"' in native.text
+            assert "<html" not in fragment.text
+            assert f'data-run-state="{state}"' in fragment.text
+            assert error.response.message in fragment.text or "Artifact" in fragment.text
+
+        port.error = None
+        port.stream = RunArtifactStream(
+            artifact=RunArtifact(
+                id="report",
+                label="Report",
+                media_type="text/plain",
+                digest="sha256:expected",
+                filename="report.txt",
+            ),
+            body=iter([b"hello"]),
+            digest="sha256:other",
+        )
+        mismatch = client.get("/runs/one/artifacts/report")
+        fragment = client.get(
+            "/runs/one/artifacts/report", headers={"HX-Request": "true"}
+        )
+    assert mismatch.status_code == 409
+    assert "digest" in mismatch.text.lower()
+    assert "<html" not in fragment.text
+    assert 'data-run-state="stale-version"' in fragment.text
+    assert "digest" in fragment.text.lower()
+
+
 def test_run_errors_are_router_local_and_include_dependency_failures():
     from app_factory import RunError, create_run_router
 
