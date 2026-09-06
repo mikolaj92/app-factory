@@ -73,7 +73,7 @@
           return item;
         }));
       }
-      if (submit) submit.disabled = files.length === 0;
+      if (submit) submit.disabled = input.required && files.length === 0;
       if (confirmed) confirmed.value = '';
       setStatus('');
     };
@@ -106,7 +106,7 @@
 
     form.addEventListener('htmx:beforeRequest', () => { if (submit) { submit.disabled = true; submit.setAttribute('aria-busy', 'true'); } if (progress) progress.hidden = false; });
     form.addEventListener('htmx:xhr:progress', (event) => { const pct = event.detail.total ? Math.round(event.detail.loaded / event.detail.total * 100) : 0; if (bar) bar.value = pct; if (progressLabel) progressLabel.textContent = `${pct}%`; });
-    form.addEventListener('htmx:afterRequest', () => { if (submit) { submit.removeAttribute('aria-busy'); submit.disabled = !(input.files && input.files.length); } });
+    form.addEventListener('htmx:afterRequest', () => { if (submit) { submit.removeAttribute('aria-busy'); submit.disabled = input.required && !(input.files && input.files.length); } });
     render();
   };
 
@@ -116,4 +116,5 @@
   if (document.readyState !== 'loading') initAll();
 })();
 </script>
+
 
