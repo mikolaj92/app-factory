@@ -1,5 +1,5 @@
-<tr data-run-history-row data-run-id="{{ run.id }}" data-run-status="{{ 'pending' if run.status == 'queued' else run.status }}">
+<tr data-run-history-row data-run-id="{{ run.id }}" data-run-status="{{ run.status }}">
   <td><a href="{{ run_links[run.id] }}">{{ run.id }}</a></td>
-  <td><span class="badge">{{ 'pending' if run.status == 'queued' else run.status }}</span></td>
+  <td><span class="badge">{{ run.status }}</span></td>
   <td><time datetime="{{ run.created_at.isoformat() }}">{{ run.created_at.isoformat() }}</time></td>
 </tr>

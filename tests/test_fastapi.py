@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import base64
 import hashlib
 import tomllib
@@ -135,6 +136,22 @@ def test_bom_app_factory_pin_matches_project_version() -> None:
     project = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
     bom = tomllib.loads((root / "bom" / "multi_user.toml").read_text(encoding="utf-8"))
     assert bom["pins"]["app-factory"] == f"v{project['project']['version']}"
+
+
+def test_package_init_does_not_mask_internal_import_errors() -> None:
+    root = Path(__file__).parents[1]
+    tree = ast.parse((root / "app_factory" / "__init__.py").read_text(encoding="utf-8"))
+    assigns_none = False
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ExceptHandler) and isinstance(node.type, ast.Name):
+            if node.type.id != "ImportError":
+                continue
+            for child in ast.walk(node):
+                if isinstance(child, ast.Assign):
+                    for target in child.targets:
+                        if isinstance(target, ast.Name) and target.id == "Run":
+                            assigns_none = True
+    assert not assigns_none
 
 @pytest.mark.parametrize("static_path", ["", "/", "relative"])
 def test_static_path_must_be_an_absolute_non_root_path(static_path: str) -> None:

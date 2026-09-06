@@ -181,10 +181,6 @@ def install_identity_adapters(
             config=ui_config,
             platform_config=resolved,
         )
-        platform = PlatformInstall(
-            ui=platform.ui, config=resolved, passkey_ui=passkey_ui
-        )
-        app.state.app_factory_platform = platform
 
     usermanager_ui = None
     if usermanager is not None:
@@ -208,16 +204,10 @@ def install_identity_adapters(
             base_template=usermanager.base_template,
         )
 
-    request_environments = list(env_list)
-    if passkey_ui is not None:
-        environment = getattr(passkey_ui, "environment", None)
-        if environment is not None and environment not in request_environments:
-            request_environments.append(environment)
     if current_user is not None or locales is not None:
         install_platform_request_context(
             app,
             config=resolved,
-            environments=request_environments,
             current_user=current_user,
             locales=locales,
         )

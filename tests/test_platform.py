@@ -580,7 +580,7 @@ def test_install_platform_mounts_chrome_and_registers_state() -> None:
         config=PlatformConfig(app_name="X"),
     )
     assert result.ui.static_path == "/static/platform"
-    assert result.passkey_ui is None
+    assert "passkey_ui" not in result.__dataclass_fields__
     assert app.state.app_factory_platform is result
 
     client = TestClient(app)

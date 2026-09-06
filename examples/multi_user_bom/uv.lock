@@ -38,7 +38,7 @@ wheels = [
 
 [[package]]
 name = "app-factory"
-version = "0.6.22"
+version = "0.6.23"
 source = { editable = "../../" }
 dependencies = [
     { name = "jinja2" },
@@ -47,6 +47,7 @@ dependencies = [
 [package.optional-dependencies]
 platform = [
     { name = "fastapi" },
+    { name = "python-multipart" },
     { name = "starlette" },
 ]
 
@@ -58,17 +59,20 @@ requires-dist = [
     { name = "fastapi", marker = "extra == 'platform'", specifier = ">=0.115" },
     { name = "httpx", marker = "extra == 'browser'", specifier = ">=0.27" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27" },
+    { name = "itsdangerous", marker = "extra == 'dev'", specifier = ">=2.2" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "playwright", marker = "extra == 'browser'", specifier = ">=1.49" },
     { name = "pytest", marker = "extra == 'browser'", specifier = ">=8" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "python-multipart", marker = "extra == 'browser'", specifier = ">=0.0.12" },
     { name = "python-multipart", marker = "extra == 'dev'", specifier = ">=0.0.12" },
+    { name = "python-multipart", marker = "extra == 'fastapi'", specifier = ">=0.0.20" },
+    { name = "python-multipart", marker = "extra == 'platform'", specifier = ">=0.0.20" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8" },
     { name = "starlette", marker = "extra == 'browser'", specifier = ">=0.37" },
     { name = "starlette", marker = "extra == 'dev'", specifier = ">=0.37" },
-    { name = "starlette", marker = "extra == 'fastapi'", specifier = ">=0.37" },
-    { name = "starlette", marker = "extra == 'platform'", specifier = ">=0.37" },
+    { name = "starlette", marker = "extra == 'fastapi'", specifier = ">=0.40" },
+    { name = "starlette", marker = "extra == 'platform'", specifier = ">=0.40" },
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'browser'", specifier = ">=0.32" },
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'dev'", specifier = ">=0.32" },
 ]

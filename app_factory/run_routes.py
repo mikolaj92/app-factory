@@ -109,9 +109,7 @@ def artifact_response(stream: object, artifact_id: str) -> StreamingResponse:
         len(expected) != len(actual) or not compare_digest(expected, actual)
     ):
         raise RunError("conflict", "Artifact digest mismatch")
-    filename = safe_artifact_filename(
-        artifact.filename or artifact.label or artifact.name
-    )
+    filename = safe_artifact_filename(artifact.filename or artifact.label)
     media_type = artifact.media_type or "application/octet-stream"
     if "\r" in media_type or "\n" in media_type or ";" in media_type:
         media_type = "application/octet-stream"
@@ -272,6 +270,8 @@ def create_run_view_router(
     from fastapi.responses import HTMLResponse
     from jinja2 import Environment
 
+    from app_factory.responses import template_response, wants_htmx_fragment
+
     if not isinstance(environment, Environment):
         raise TypeError("environment must be a Jinja2 Environment")
 
@@ -289,80 +289,14 @@ def create_run_view_router(
     def target_for(request: Request) -> str:
         base = prefix.rstrip("/") or ""
         path = request.url.path.rstrip("/")
-        rest = path[len(base):].lstrip("/") if base and path.startswith(base) else path.lstrip("/")
+        rest = (
+            path[len(base):].lstrip("/")
+            if base and path.startswith(base)
+            else path.lstrip("/")
+        )
         return "run-history" if rest == "" else "run-detail"
 
-    class _RunViewRoute(APIRoute):
-        def get_route_handler(self):
-            handler = super().get_route_handler()
-
-            async def handle(request: Request):
-                try:
-                    return await handler(request)
-                except RunError as exc:
-                    code = exc.response.code
-                    state = _STATE.get(code, "transient-error")
-                    status = _ERROR_STATUS.get(code, 503)
-                    retry_after = exc.response.retry_after
-                    poll_seconds = (
-                        retry_after if code == "unavailable" and retry_after else None
-                    )
-                    target_id = target_for(request)
-                    values = dict(
-                        getattr(request.state, "app_factory_platform_context", {}) or {}
-                    )
-                    values.update(
-                        {
-                            "request": request,
-                            "target_id": target_id,
-                            "state": state,
-                            "message": exc.response.message,
-                            "poll_url": str(request.url.path),
-                            "poll_seconds": poll_seconds,
-                        }
-                    )
-                    headers = {
-                        "Cache-Control": "no-store",
-                        "Vary": "HX-Request, HX-History-Restore-Request",
-                    }
-                    if retry_after:
-                        headers["Retry-After"] = str(retry_after)
-                    htmx = request.headers.get("HX-Request", "").lower() == "true"
-                    restore = (
-                        request.headers.get("HX-History-Restore-Request", "").lower()
-                        == "true"
-                    )
-                    fragment = htmx and not restore
-                    if fragment:
-                        html = environment.get_template(
-                            "app_factory/components/run_state.html"
-                        ).render(**values)
-                        return HTMLResponse(
-                            html, status_code=200 if status >= 400 else status, headers=headers
-                        )
-                    values["run_fragment"] = "app_factory/components/run_state.html"
-                    html = environment.get_template("app_factory/run_page.html").render(
-                        **values
-                    )
-                    return HTMLResponse(html, status_code=status, headers=headers)
-
-            return handle
-
-    router = APIRouter(
-        prefix=prefix, tags=["run-views"], route_class=_RunViewRoute
-    )
-
-
-    def is_htmx(request: Request) -> bool:
-        return request.headers.get("HX-Request", "").lower() == "true"
-
-    def is_history_restore(request: Request) -> bool:
-        return request.headers.get("HX-History-Restore-Request", "").lower() == "true"
-
-    def want_fragment(request: Request) -> bool:
-        return is_htmx(request) and not is_history_restore(request)
-
-    def base_headers(*, retry_after: int | None = None) -> dict[str, str]:
+    def headers_for(*, retry_after: int | None = None) -> dict[str, str]:
         headers = {
             "Cache-Control": "no-store",
             "Vary": "HX-Request, HX-History-Restore-Request",
@@ -379,20 +313,17 @@ def create_run_view_router(
         status_code: int = 200,
         retry_after: int | None = None,
     ) -> HTMLResponse:
-        headers = base_headers(retry_after=retry_after)
-        values = dict(getattr(request.state, "app_factory_platform_context", {}) or {})
-        values.update(context)
-        values["request"] = request
-        if want_fragment(request):
-            html = environment.get_template(fragment_template).render(**values)
-            return HTMLResponse(
-                html,
-                status_code=200 if status_code >= 400 else status_code,
-                headers=headers,
-            )
-        values["run_fragment"] = fragment_template
-        html = environment.get_template("app_factory/run_page.html").render(**values)
-        return HTMLResponse(html, status_code=status_code, headers=headers)
+        fragment = wants_htmx_fragment(request)
+        response = template_response(
+            environment,
+            request,
+            "app_factory/run_page.html",
+            {**context, "run_fragment": fragment_template},
+            fragment_template=fragment_template,
+            status_code=200 if fragment and status_code >= 400 else status_code,
+            headers=headers_for(retry_after=retry_after),
+        )
+        return response
 
     def error_response(
         request: Request,
@@ -402,24 +333,41 @@ def create_run_view_router(
         poll_url: str,
     ) -> HTMLResponse:
         code = exc.response.code
-        state = _STATE.get(code, "transient-error")
-        status = _ERROR_STATUS.get(code, 503)
         retry_after = exc.response.retry_after
-        poll_seconds = retry_after if code == "unavailable" and retry_after else None
-        context = {
-            "target_id": target_id,
-            "state": state,
-            "message": exc.response.message,
-            "poll_url": poll_url,
-            "poll_seconds": poll_seconds,
-        }
         return page_or_fragment(
             request,
             fragment_template="app_factory/components/run_state.html",
-            context=context,
-            status_code=status,
+            context={
+                "target_id": target_id,
+                "state": _STATE.get(code, "transient-error"),
+                "message": exc.response.message,
+                "poll_url": poll_url,
+                "poll_seconds": (
+                    retry_after if code == "unavailable" and retry_after else None
+                ),
+            },
+            status_code=_ERROR_STATUS.get(code, 503),
             retry_after=retry_after,
         )
+
+    class _RunViewRoute(APIRoute):
+        def get_route_handler(self):
+            handler = super().get_route_handler()
+
+            async def handle(request: Request):
+                try:
+                    return await handler(request)
+                except RunError as exc:
+                    return error_response(
+                        request,
+                        target_id=target_for(request),
+                        exc=exc,
+                        poll_url=str(request.url.path),
+                    )
+
+            return handle
+
+    router = APIRouter(prefix=prefix, tags=["run-views"], route_class=_RunViewRoute)
 
     def poll_seconds_for(run: Run) -> int | None:
         if run.status in _TERMINAL:
@@ -460,19 +408,18 @@ def create_run_view_router(
             )
 
         run_links = {run.id: f"{prefix.rstrip('/')}/{run.id}" for run in page.items}
-        context = {
-            "page": page,
-            "run_links": run_links,
-            "next_url": (
-                history_next_url(request, page.next_cursor)
-                if page.next_cursor
-                else None
-            ),
-        }
         return page_or_fragment(
             request,
             fragment_template="app_factory/components/run_history.html",
-            context=context,
+            context={
+                "page": page,
+                "run_links": run_links,
+                "next_url": (
+                    history_next_url(request, page.next_cursor)
+                    if page.next_cursor
+                    else None
+                ),
+            },
         )
 
     @router.get("/{run_id}", response_class=HTMLResponse)
@@ -501,21 +448,20 @@ def create_run_view_router(
                     return error_response(
                         request, target_id="run-detail", exc=exc, poll_url=poll_url
                     )
-        context = {
-            "run": run,
-            "poll_url": poll_url,
-            "poll_seconds": seconds,
-            "result": result,
-            "artifact_kind": artifact_kind,
-            "safe_href": safe_external_href,
-            "download_url": lambda item: artifact_download_url(
-                prefix, run_id, item.id
-            ),
-        }
         return page_or_fragment(
             request,
             fragment_template="app_factory/components/run_detail.html",
-            context=context,
+            context={
+                "run": run,
+                "poll_url": poll_url,
+                "poll_seconds": seconds,
+                "result": result,
+                "artifact_kind": artifact_kind,
+                "safe_href": safe_external_href,
+                "download_url": lambda item: artifact_download_url(
+                    prefix, run_id, item.id
+                ),
+            },
             retry_after=seconds,
         )
 

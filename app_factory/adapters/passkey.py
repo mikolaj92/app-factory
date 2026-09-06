@@ -82,13 +82,8 @@ def install_passkey_adapter(
     hooks: Any,
     config: Any | None = None,
     platform_config: PlatformConfig | None = None,
-    include_router: bool = False,
 ) -> Any:
-    """Mount packaged passkey UI and bind platform chrome to its environment.
-
-    ``install_passkey_ui`` (my-auth ≥ v0.4.5) already includes the router.
-    Pass ``include_router=True`` only for older adapters that do not.
-    """
+    """Mount packaged passkey UI and bind platform chrome to its environment."""
     try:
         from my_auth.fastapi_htmx import install_passkey_ui
     except ImportError as exc:
@@ -106,8 +101,6 @@ def install_passkey_adapter(
     environment = getattr(passkey_ui, "environment", None)
     if environment is not None and platform_config is not None:
         apply_platform_context(environment, platform_config)
-    if include_router:
-        app.include_router(passkey_ui.router)
     return passkey_ui
 
 

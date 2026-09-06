@@ -49,7 +49,7 @@ def make_host(*, files=None, builder=None, csrf=None):
                     intent,
                     Run(
                         id=f"run-{len(runs) + 1}",
-                        status="queued",
+                        status="pending",
                         created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
                     ),
                 )
@@ -419,7 +419,7 @@ def test_browser_htmx_swaps_errors_then_receipt_with_optional_upload():
             page.locator('[name="title"]').fill("Good")
             page.get_by_role("button", name="Start", exact=True).click()
             page.locator("#intake-status").wait_for()
-            assert page.locator("#intake-status").inner_text() == "queued"
+            assert page.locator("#intake-status").inner_text() == "pending"
             assert len(calls) == 1 and not errors
         finally:
             browser.close()

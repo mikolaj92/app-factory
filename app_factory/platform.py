@@ -268,7 +268,6 @@ class PlatformInstall:
 
     ui: AppFactoryUi
     config: PlatformConfig
-    passkey_ui: Any | None = None
 
 
 def build_platform_context(
@@ -457,9 +456,7 @@ def install_platform(
     for environment in env_list:
         apply_platform_context(environment, resolved)
 
-    app.state.app_factory_platform = PlatformInstall(
-        ui=ui, config=resolved, passkey_ui=None
-    )
+    app.state.app_factory_platform = PlatformInstall(ui=ui, config=resolved)
     return app.state.app_factory_platform
 
 

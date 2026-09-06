@@ -24,7 +24,7 @@ def test_run_detail_page_and_htmx_fragment():
         async def get_run(self, scope, run_id):
             calls.append((scope, run_id))
             return app_factory.Run(
-                id=run_id, status="queued", created_at=datetime.now(timezone.utc)
+                id=run_id, status="pending", created_at=datetime.now(timezone.utc)
             )
 
     async def authorize(request, action, *, run_id=None, intent=None):
@@ -59,7 +59,7 @@ def run_view_host():
     from jinja2 import Environment, select_autoescape
 
     class Port:
-        run = Run(id="one", status="queued", created_at=datetime.now(timezone.utc))
+        run = Run(id="one", status="pending", created_at=datetime.now(timezone.utc))
         error = None
         calls = []
 
@@ -94,7 +94,7 @@ def run_view_host():
 
 @pytest.mark.parametrize(
     "status",
-    ["pending", "queued", "running", "waiting", "succeeded", "failed", "cancelled"],
+    ["pending", "running", "waiting", "succeeded", "failed", "cancelled"],
 )
 def test_presentation_status_polling_and_waiting(run_view_host, status):
     from app_factory import Run
@@ -338,7 +338,7 @@ def test_create_retry_uses_host_idempotency_and_authorization():
             if key not in self.runs:
                 self.runs[key] = Run(
                     id=str(len(self.runs) + 1),
-                    status="queued",
+                    status="pending",
                     created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
                 )
             return self.runs[key]
@@ -403,7 +403,7 @@ def reference_host(request):
                 return self.runs[scope, run_id]
             run = Run(
                 id=str(len(self.runs) + 1),
-                status="queued",
+                status="pending",
                 created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
             )
             self.runs[scope, run.id] = run
@@ -442,7 +442,7 @@ def reference_host(request):
                 items=[
                     RunArtifact(
                         id="output",
-                        name="Output",
+                        label="Output",
                         href=f"/files/{run_id}",
                         media_type="text/plain",
                     )
@@ -458,7 +458,7 @@ def reference_host(request):
         def dto(self, job):
             return Run(
                 id=job["ref"],
-                status={0: "queued", 9: "cancelled"}[job["phase"]],
+                status={0: "pending", 9: "cancelled"}[job["phase"]],
                 created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
             )
 
@@ -513,7 +513,7 @@ def reference_host(request):
                 items=[
                     RunArtifact(
                         id="output",
-                        name="Output",
+                        label="Output",
                         href=f"/files/{run_id}",
                         media_type="text/plain",
                     )
@@ -684,7 +684,6 @@ def test_v1_schema_is_closed_and_documented(reference_host):
     schema = client.get("/openapi.json").json()
     models = schema["components"]["schemas"]
     assert models["Run"]["properties"]["status"]["enum"] == [
-        "queued",
         "pending",
         "running",
         "waiting",
