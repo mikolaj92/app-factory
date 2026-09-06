@@ -9,6 +9,321 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.testclient import TestClient
 
 
+def test_run_detail_page_and_htmx_fragment():
+    import app_factory
+    from jinja2 import Environment, select_autoescape
+
+    factory = getattr(app_factory, "create_run_view_router", None)
+    assert callable(factory), "Missing opt-in server-rendered run views"
+    environment = Environment(autoescape=select_autoescape())
+    app = FastAPI()
+    app_factory.install_platform(app, environments=[environment])
+    calls = []
+
+    class Port:
+        async def get_run(self, scope, run_id):
+            calls.append((scope, run_id))
+            return app_factory.Run(
+                id=run_id, status="queued", created_at=datetime.now(timezone.utc)
+            )
+
+    async def authorize(request, action, *, run_id=None, intent=None):
+        assert action == "read"
+        return "alice"
+
+    app.include_router(factory(lambda: Port(), authorize, environment=environment))
+    with TestClient(app) as client:
+        full = client.get("/runs/one")
+        fragment = client.get("/runs/one", headers={"HX-Request": "true"})
+    assert full.status_code == fragment.status_code == 200
+    assert "<html" in full.text and 'id="sidebar"' in full.text
+    assert "<html" not in fragment.text and "<script" not in fragment.text
+    assert 'id="run-detail"' in fragment.text
+    assert 'data-run-status="pending"' in fragment.text
+    assert 'hx-trigger="every 2s"' in fragment.text
+    assert 'hx-target="#run-detail"' in fragment.text
+    assert 'hx-swap="outerHTML"' in fragment.text
+    assert full.headers["cache-control"] == "no-store"
+    assert calls == [("alice", "one")] * 2
+
+
+@pytest.fixture
+def run_view_host():
+    from app_factory import (
+        Run,
+        RunPage,
+        RunError,
+        create_run_view_router,
+        install_platform,
+    )
+    from jinja2 import Environment, select_autoescape
+
+    class Port:
+        run = Run(id="one", status="queued", created_at=datetime.now(timezone.utc))
+        error = None
+        calls = []
+
+        async def get_run(self, scope, run_id):
+            self.calls.append((scope, run_id))
+            if self.error:
+                raise self.error
+            return self.run
+
+        async def list_runs(self, scope, *, cursor, limit):
+            self.calls.append((scope, cursor, limit))
+            if self.error:
+                raise self.error
+            return RunPage(items=[])
+
+    port = Port()
+    environment = Environment(autoescape=select_autoescape())
+    app = FastAPI()
+    install_platform(app, environments=[environment])
+
+    async def authorize(request, action, *, run_id=None, intent=None):
+        if request.headers.get("X-Deny"):
+            raise RunError("unauthorized", "Sign in")
+        return request.headers.get("X-Owner", "alice")
+
+    app.include_router(
+        create_run_view_router(lambda: port, authorize, environment=environment)
+    )
+    with TestClient(app) as client:
+        yield client, port
+
+
+@pytest.mark.parametrize(
+    "status",
+    ["pending", "queued", "running", "waiting", "succeeded", "failed", "cancelled"],
+)
+def test_presentation_status_polling_and_waiting(run_view_host, status):
+    from app_factory import Run
+
+    client, port = run_view_host
+    port.run = Run(
+        id="one",
+        status=status,
+        created_at=datetime.now(timezone.utc),
+        waiting_reason="Awaiting <approval>",
+        next_observation="Check tomorrow",
+        retry_after=7,
+    )
+    response = client.get("/runs/one", headers={"HX-Request": "true"})
+    assert response.status_code == 200
+    terminal = status in {"succeeded", "failed", "cancelled"}
+    assert ('hx-trigger="every 7s"' in response.text) == (not terminal)
+    assert (response.headers.get("Retry-After") == "7") == (not terminal)
+    if status == "waiting":
+        assert "Awaiting &lt;approval&gt;" in response.text
+        assert "Check tomorrow" in response.text
+    else:
+        assert "Check tomorrow" not in response.text
+
+
+def test_run_history_cursor_preserves_filters_and_scope(run_view_host):
+    from html import unescape
+    import re
+    from urllib.parse import parse_qs, urlsplit
+    from app_factory import RunPage
+
+    client, port = run_view_host
+
+    async def history(scope, *, cursor, limit):
+        port.calls.append((scope, cursor, limit))
+        return RunPage(items=[port.run], next_cursor="alice:next &/?")
+
+    port.list_runs = history
+    response = client.get(
+        "/runs?limit=1&tag=a&tag=b&status=waiting", headers={"HX-Request": "true"}
+    )
+    assert response.status_code == 200
+    assert "<html" not in response.text
+    assert 'id="run-history"' in response.text
+    assert "data-run-history-row" in response.text
+    url = unescape(re.search(r'href="([^"]+)"[^>]*rel="next"', response.text).group(1))
+    assert parse_qs(urlsplit(url).query) == {
+        "limit": ["1"],
+        "tag": ["a", "b"],
+        "status": ["waiting"],
+        "cursor": ["alice:next &/?"],
+    }
+    client.get(url, headers={"X-Owner": "bob"})
+    assert port.calls[-1] == ("bob", "alice:next &/?", 1)
+    before = len(port.calls)
+    denied = client.get(url, headers={"X-Deny": "yes", "HX-Request": "true"})
+    assert 'data-run-state="unauthorized"' in denied.text
+    assert len(port.calls) == before
+
+
+def test_run_history_empty_and_invalid_query(run_view_host):
+    client, port = run_view_host
+    assert 'data-run-state="empty"' in client.get("/runs").text
+    for query in ["limit=0", "limit=101", "cursor="]:
+        response = client.get("/runs?" + query)
+        assert response.status_code == 422
+        assert 'data-run-state="invalid-request"' in response.text
+
+
+@pytest.mark.parametrize(
+    "code,status,state",
+    [
+        ("unauthorized", 401, "unauthorized"),
+        ("forbidden", 403, "unauthorized"),
+        ("not_found", 404, "not-found"),
+        ("unavailable", 503, "transient-error"),
+        ("stale_version", 409, "stale-version"),
+    ],
+)
+def test_run_view_errors_swap_and_stop_or_back_off(run_view_host, code, status, state):
+    from app_factory import RunError
+
+    client, port = run_view_host
+    port.error = RunError(
+        code, "Safe <message>", retry_after=9 if code == "unavailable" else None
+    )
+    for path, target in [("/runs/one", "run-detail"), ("/runs", "run-history")]:
+        native = client.get(path)
+        fragment = client.get(path, headers={"HX-Request": "true"})
+        assert native.status_code == status
+        assert (
+            fragment.status_code == 200
+        )  # deliberate HTML error state, HTMX swaps by default
+        assert "<html" not in fragment.text
+        assert f'id="{target}"' in fragment.text
+        assert f'data-run-state="{state}"' in fragment.text
+        assert "Safe &lt;message&gt;" in fragment.text
+        assert ('hx-trigger="every 9s"' in fragment.text) == (code == "unavailable")
+        assert fragment.headers["cache-control"] == "no-store"
+        assert "HX-History-Restore-Request" in fragment.headers["vary"]
+
+
+def test_run_history_restore_returns_fresh_full_shell(run_view_host):
+    client, port = run_view_host
+    response = client.get(
+        "/runs/one",
+        headers={"HX-Request": "true", "HX-History-Restore-Request": "true"},
+    )
+    assert "<html" in response.text and 'id="sidebar"' in response.text
+    assert 'hx-history="false"' in response.text
+    assert port.calls == [("alice", "one")]
+
+
+def test_run_view_dependency_errors_are_html_and_retry_metadata_reaches_json():
+    from app_factory import (
+        RunError,
+        create_run_router,
+        create_run_view_router,
+        install_platform,
+    )
+    from jinja2 import Environment, select_autoescape
+
+    def dependency():
+        raise RunError("unavailable", "Try later", retry_after=13)
+
+    async def authorize(*args, **kwargs):
+        return "alice"
+
+    app = FastAPI()
+    env = Environment(autoescape=select_autoescape())
+    install_platform(app, environments=[env])
+    app.include_router(create_run_view_router(dependency, authorize, environment=env))
+    app.include_router(create_run_router(dependency, authorize, prefix="/api/runs"))
+    with TestClient(app) as client:
+        html = client.get("/runs", headers={"HX-Request": "true"})
+        assert 'data-run-state="transient-error"' in html.text
+        assert html.headers["Retry-After"] == "13"
+        api = client.get("/api/runs")
+        assert api.status_code == 503
+        assert api.headers["Retry-After"] == "13"
+        assert api.json()["retry_after"] == 13
+
+
+@pytest.mark.parametrize("delay", [0, -1, 1.5, float("inf")])
+def test_run_retry_after_rejects_invalid_intervals(delay):
+    from app_factory import Run, RunError
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        Run(
+            id="one",
+            status="running",
+            created_at=datetime.now(timezone.utc),
+            retry_after=delay,
+        )
+    with pytest.raises(ValidationError):
+        RunError("unavailable", "Retry later", retry_after=delay)
+
+
+def test_run_history_filters_are_host_owned_and_applied_before_paging():
+    from app_factory import (
+        Run,
+        RunPage,
+        RunError,
+        create_run_view_router,
+        install_platform,
+    )
+    from jinja2 import Environment, select_autoescape
+
+    records = [
+        ("alice", "red", "a"),
+        ("alice", "blue", "b"),
+        ("alice", "red", "c"),
+        ("bob", "red", "secret"),
+    ]
+
+    def dependency(request: Request):
+        tag = request.query_params.get("tag")
+
+        class Port:
+            async def list_runs(self, scope, *, cursor, limit):
+                filtered = [
+                    id
+                    for owner, color, id in records
+                    if owner == scope and color == tag
+                ]
+                if cursor and cursor not in filtered:
+                    raise RunError("invalid_request", "Invalid cursor")
+                start = filtered.index(cursor) + 1 if cursor else 0
+                ids = filtered[start : start + limit]
+                return RunPage(
+                    items=[
+                        Run(
+                            id=id,
+                            status="succeeded",
+                            created_at=datetime.now(timezone.utc),
+                        )
+                        for id in ids
+                    ],
+                    next_cursor=ids[-1] if start + limit < len(filtered) else None,
+                )
+
+        return Port()
+
+    async def authorize(request, action, **kwargs):
+        return request.headers.get("X-Owner", "alice")
+
+    app = FastAPI()
+    env = Environment(autoescape=select_autoescape())
+    install_platform(app, environments=[env])
+    app.include_router(
+        create_run_view_router(
+            dependency, authorize, environment=env, prefix="/portal/runs"
+        )
+    )
+    with TestClient(app) as client:
+        first = client.get("/portal/runs?tag=red&limit=1")
+        assert 'data-run-id="a"' in first.text
+        assert 'href="/portal/runs/a"' in first.text
+        assert 'data-run-id="b"' not in first.text
+        last = client.get("/portal/runs?tag=red&limit=1&cursor=a")
+        assert 'data-run-id="c"' in last.text and 'rel="next"' not in last.text
+        foreign = client.get(
+            "/portal/runs?tag=red&limit=1&cursor=a", headers={"X-Owner": "bob"}
+        )
+        assert foreign.status_code == 422
+        assert "secret" not in foreign.text
+
+
 def test_create_retry_uses_host_idempotency_and_authorization():
     from app_factory import Run, RunIntent, create_run_router
 
@@ -370,7 +685,9 @@ def test_v1_schema_is_closed_and_documented(reference_host):
     models = schema["components"]["schemas"]
     assert models["Run"]["properties"]["status"]["enum"] == [
         "queued",
+        "pending",
         "running",
+        "waiting",
         "succeeded",
         "failed",
         "cancelled",

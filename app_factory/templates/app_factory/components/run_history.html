@@ -1,0 +1,18 @@
+<section id="run-history" data-run-history hx-history="false">
+  <h1>Run history</h1>
+  {% if page.items %}
+  <div class="table-container">
+    <table class="table">
+      <thead><tr><th>Run</th><th>Status</th><th>Created</th></tr></thead>
+      <tbody>
+      {% for run in page.items %}{% include "app_factory/components/run_history_row.html" %}{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    {% with target_id='run-history-empty', state='empty', message='No runs found.' %}
+    {% include "app_factory/components/run_state.html" %}
+    {% endwith %}
+  {% endif %}
+  {% include "app_factory/components/run_pagination.html" %}
+</section>

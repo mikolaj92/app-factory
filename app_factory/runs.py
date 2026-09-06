@@ -8,7 +8,11 @@ from typing import Annotated, Literal, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
-RunStatus = Literal["queued", "running", "succeeded", "failed", "cancelled"]
+# queued remains accepted for existing v1 hosts; HTML presents it as pending.
+RunStatus = Literal[
+    "queued", "pending", "running", "waiting", "succeeded", "failed", "cancelled"
+]
+RetryAfter = Annotated[int, Field(ge=1)]
 RunAction = Literal["create", "read", "cancel", "artifact"]
 NonEmpty = Annotated[str, Field(min_length=1)]
 
@@ -29,6 +33,9 @@ class Run(_RunDTO):
     id: NonEmpty
     status: RunStatus
     created_at: datetime
+    waiting_reason: str | None = None
+    next_observation: str | None = None
+    retry_after: RetryAfter | None = None
 
 
 class RunPage(_RunDTO):
@@ -56,19 +63,25 @@ RunErrorCode = Literal[
     "conflict",
     "invalid_request",
     "unavailable",
+    "stale_version",
 ]
 
 
 class RunErrorResponse(_RunDTO):
     code: RunErrorCode
     message: str
+    retry_after: RetryAfter | None = None
 
 
 class RunError(Exception):
     """Expected public failure. Message MUST be safe to expose to clients."""
 
-    def __init__(self, code: RunErrorCode, message: str) -> None:
-        self.response = RunErrorResponse(code=code, message=message)
+    def __init__(
+        self, code: RunErrorCode, message: str, *, retry_after: int | None = None
+    ) -> None:
+        self.response = RunErrorResponse(
+            code=code, message=message, retry_after=retry_after
+        )
         super().__init__(message)
 
 
