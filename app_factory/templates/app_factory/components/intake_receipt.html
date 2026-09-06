@@ -1,0 +1,16 @@
+{% macro intake_receipt(spec, run, values, run_url, uploads=()) -%}
+<section id="{{ spec.id }}" class="app-stack" aria-live="polite">
+  <h2>{{ spec.title }}</h2>
+  <p>{{ run.id }}</p>
+  <dl>
+    {% for field in spec.fields %}
+    <dt>{{ field.label }}</dt>
+    <dd>{% if field.kind == 'select' %}{% for value, label in field.options %}{% if value == values.get(field.name) %}{{ label }}{% endif %}{% endfor %}{% else %}{{ values.get(field.name, '') }}{% endif %}</dd>
+    {% endfor %}
+  </dl>
+  {% if uploads %}<ul>{% for upload in uploads %}<li>{{ upload.filename }}</li>{% endfor %}</ul>{% endif %}
+  <div id="{{ spec.id }}-status" role="status">{{ run.status }}</div>
+  <a class="btn" href="{{ run_url }}">View status</a>
+</section>
+{%- endmacro %}
+{% if spec is defined %}{{ intake_receipt(spec, run, values, run_url, uploads) }}{% endif %}

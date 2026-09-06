@@ -1,0 +1,46 @@
+{# Single form, not a workflow. Host specs supply all product names. #}
+{% from "app_factory/components/file_upload.html" import file_upload_field %}
+{% macro intake(spec, action, csrf_token, idempotency_key, values={}, errors={}) -%}
+<section id="{{ spec.id }}" class="app-stack">
+  <h2>{{ spec.title }}</h2>
+  {% if errors %}<ul class="alert" data-variant="destructive" role="alert">
+    {% for name, message in errors.items() %}<li>{{ message }}</li>{% endfor %}
+  </ul>{% endif %}
+  <form method="post" action="{{ action }}" enctype="multipart/form-data"
+        hx-post="{{ action }}" hx-encoding="multipart/form-data"
+        hx-target="#{{ spec.id }}" hx-swap="outerHTML" class="app-stack"
+        x-data="{ dragover: false }">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
+    {% for field in spec.fields %}
+    <div class="app-stack app-stack--tight">
+      <label class="label" for="{{ spec.id }}-{{ field.name }}">{{ field.label }}</label>
+      {% if field.kind == 'select' %}
+      <select class="select" id="{{ spec.id }}-{{ field.name }}" name="{{ field.name }}" {% if field.required %}required{% endif %}
+              {% if errors.get(field.name) %}aria-invalid="true" aria-describedby="{{ spec.id }}-{{ field.name }}-error"{% endif %}>
+        <option value=""></option>
+        {% for value, label in field.options %}<option value="{{ value }}" {% if values.get(field.name) == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      {% else %}
+      <input class="input" type="text" id="{{ spec.id }}-{{ field.name }}" name="{{ field.name }}"
+             value="{{ values.get(field.name, '') }}" maxlength="{{ field.max_length }}" {% if field.required %}required{% endif %}
+             {% if errors.get(field.name) %}aria-invalid="true" aria-describedby="{{ spec.id }}-{{ field.name }}-error"{% endif %}>
+      {% endif %}
+      {% if errors.get(field.name) %}<p id="{{ spec.id }}-{{ field.name }}-error" class="text-sm">{{ errors[field.name] }}</p>{% endif %}
+    </div>
+    {% endfor %}
+    {% if spec.files %}
+    {{ file_upload_field(id=spec.id ~ '-' ~ spec.files.name, name=spec.files.name,
+         choose_label=spec.files.label, accept=spec.files.accept,
+         multiple=spec.files.max_files > 1, required=spec.files.required,
+         max_bytes=spec.files.max_file_bytes,
+         describedby=(spec.id ~ '-' ~ spec.files.name ~ '-error') if errors.get(spec.files.name) else '') }}
+    {% if errors.get(spec.files.name) %}<p id="{{ spec.id }}-{{ spec.files.name }}-error">{{ errors[spec.files.name] }}</p>{% endif %}
+    {% if errors %}<p>Select files again before submitting.</p>{% endif %}
+    <p role="status" data-app-file-status></p>
+    {% endif %}
+    <button class="btn" type="submit" data-app-file-submit>{{ spec.submit_label }}</button>
+  </form>
+</section>
+{%- endmacro %}
+{% if spec is defined %}{{ intake(spec, action, csrf_token, idempotency_key, values, errors) }}{% endif %}
