@@ -171,7 +171,72 @@ def create_run_view_router(
     }
     _TERMINAL = frozenset({"succeeded", "failed", "cancelled"})
 
-    router = APIRouter(prefix=prefix, tags=["run-views"])
+    def target_for(request: Request) -> str:
+        base = prefix.rstrip("/") or ""
+        path = request.url.path.rstrip("/")
+        rest = path[len(base):].lstrip("/") if base and path.startswith(base) else path.lstrip("/")
+        return "run-history" if rest == "" else "run-detail"
+
+    class _RunViewRoute(APIRoute):
+        def get_route_handler(self):
+            handler = super().get_route_handler()
+
+            async def handle(request: Request):
+                try:
+                    return await handler(request)
+                except RunError as exc:
+                    code = exc.response.code
+                    state = _STATE.get(code, "transient-error")
+                    status = _ERROR_STATUS.get(code, 503)
+                    retry_after = exc.response.retry_after
+                    poll_seconds = (
+                        retry_after if code == "unavailable" and retry_after else None
+                    )
+                    target_id = target_for(request)
+                    values = dict(
+                        getattr(request.state, "app_factory_platform_context", {}) or {}
+                    )
+                    values.update(
+                        {
+                            "request": request,
+                            "target_id": target_id,
+                            "state": state,
+                            "message": exc.response.message,
+                            "poll_url": str(request.url.path),
+                            "poll_seconds": poll_seconds,
+                        }
+                    )
+                    headers = {
+                        "Cache-Control": "no-store",
+                        "Vary": "HX-Request, HX-History-Restore-Request",
+                    }
+                    if retry_after:
+                        headers["Retry-After"] = str(retry_after)
+                    htmx = request.headers.get("HX-Request", "").lower() == "true"
+                    restore = (
+                        request.headers.get("HX-History-Restore-Request", "").lower()
+                        == "true"
+                    )
+                    fragment = htmx and not restore
+                    if fragment:
+                        html = environment.get_template(
+                            "app_factory/components/run_state.html"
+                        ).render(**values)
+                        return HTMLResponse(
+                            html, status_code=200 if status >= 400 else status, headers=headers
+                        )
+                    values["run_fragment"] = "app_factory/components/run_state.html"
+                    html = environment.get_template("app_factory/run_page.html").render(
+                        **values
+                    )
+                    return HTMLResponse(html, status_code=status, headers=headers)
+
+            return handle
+
+    router = APIRouter(
+        prefix=prefix, tags=["run-views"], route_class=_RunViewRoute
+    )
+
 
     def is_htmx(request: Request) -> bool:
         return request.headers.get("HX-Request", "").lower() == "true"
