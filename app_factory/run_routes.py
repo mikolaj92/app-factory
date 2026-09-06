@@ -22,6 +22,7 @@ from app_factory.runs import (
     RunIntent,
     RunPage,
     RunPort,
+    safe_external_href,
 )
 
 _ERROR_STATUS = {
@@ -34,18 +35,45 @@ _ERROR_STATUS = {
     "stale_version": 409,
 }
 _TERMINAL_SUCCESS = "succeeded"
+_ACTIVE_MEDIA = frozenset(
+    {
+        "text/html",
+        "application/xhtml+xml",
+        "image/svg+xml",
+        "text/xml",
+        "application/xml",
+        "application/javascript",
+        "text/javascript",
+        "application/xhtml",
+    }
+)
+
+
+def _filename_piece(value: str | None) -> str:
+    if not value:
+        return ""
+    cleaned = []
+    for ch in value:
+        if ord(ch) < 32 or ord(ch) == 127:
+            break
+        cleaned.append(ch)
+    name = PurePosixPath("".join(cleaned).replace("\\", "/")).name.strip().strip(".")
+    if not name or name in {".", ".."}:
+        return ""
+    return name[:180]
 
 
 def safe_artifact_filename(value: str | None, *, fallback: str = "download") -> str:
-    raw = (value or "").split("\r", 1)[0].split("\n", 1)[0]
-    name = PurePosixPath(raw.replace("\\", "/")).name.strip().strip(".")
-    if not name or name in {".", ".."}:
-        name = fallback
-    return name[:180] or fallback
+    return _filename_piece(value) or _filename_piece(fallback) or "download"
+
+
+def is_active_document(media_type: str) -> bool:
+    base = media_type.split(";", 1)[0].strip().lower()
+    return base in _ACTIVE_MEDIA or base.endswith("+xml")
 
 
 def artifact_kind(item: RunArtifact) -> str:
-    if item.href:
+    if safe_external_href(item.href):
         return "external"
     if item.filename or item.disposition or item.size is not None or item.digest:
         return "download"
@@ -59,10 +87,14 @@ def artifact_download_url(prefix: str, run_id: str, artifact_id: str) -> str:
 
 def content_disposition(filename: str, disposition: str | None) -> str:
     kind = disposition if disposition in {"inline", "attachment"} else "attachment"
-    ascii_name = filename.encode("ascii", "ignore").decode("ascii") or "download"
+    safe = safe_artifact_filename(filename)
+    ascii_name = safe.encode("ascii", "ignore").decode("ascii") or "download"
     ascii_name = ascii_name.replace("\\", "_").replace('"', "")
-    encoded = quote(filename, safe="")
-    return f'{kind}; filename="{ascii_name}"; filename*=UTF-8\'\'{encoded}'
+    encoded = quote(safe, safe="")
+    header = f'{kind}; filename="{ascii_name}"; filename*=UTF-8\'\'{encoded}'
+    if any(ord(ch) < 32 or ord(ch) == 127 for ch in header):
+        return 'attachment; filename="download"'
+    return header
 
 
 def artifact_response(stream: object, artifact_id: str) -> StreamingResponse:
@@ -78,12 +110,14 @@ def artifact_response(stream: object, artifact_id: str) -> StreamingResponse:
     ):
         raise RunError("conflict", "Artifact digest mismatch")
     filename = safe_artifact_filename(
-        artifact.filename or artifact.label or artifact.name,
-        fallback=artifact.id,
+        artifact.filename or artifact.label or artifact.name
     )
     media_type = artifact.media_type or "application/octet-stream"
     if "\r" in media_type or "\n" in media_type or ";" in media_type:
         media_type = "application/octet-stream"
+    disposition = artifact.disposition
+    if is_active_document(media_type):
+        disposition = "attachment"
     body = stream.body
     if isinstance(body, (bytes, bytearray, memoryview)):
         body = iter((bytes(body),))
@@ -93,9 +127,7 @@ def artifact_response(stream: object, artifact_id: str) -> StreamingResponse:
         headers={
             "Cache-Control": "no-store",
             "X-Content-Type-Options": "nosniff",
-            "Content-Disposition": content_disposition(
-                filename, artifact.disposition
-            ),
+            "Content-Disposition": content_disposition(filename, disposition),
         },
     )
 
@@ -475,6 +507,7 @@ def create_run_view_router(
             "poll_seconds": seconds,
             "result": result,
             "artifact_kind": artifact_kind,
+            "safe_href": safe_external_href,
             "download_url": lambda item: artifact_download_url(
                 prefix, run_id, item.id
             ),

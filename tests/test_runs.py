@@ -1086,6 +1086,150 @@ def test_json_artifact_download_reauthorizes_and_rejects_mismatch():
     assert "digest" in mismatch.json()["message"].lower()
 
 
+@pytest.mark.parametrize(
+    "href",
+    [
+        "javascript:alert(document.domain)",
+        "JAVASCRIPT:alert(1)",
+        "data:text/html,<script>alert(1)</script>",
+        "java\nscript:alert(1)",
+        "\x00javascript:alert(1)",
+        "https://example.test/ok\r\nX-Injected: yes",
+    ],
+)
+def test_result_href_rejects_non_http_schemes(href):
+    from app_factory import (
+        Run,
+        RunArtifact,
+        RunResult,
+        create_run_view_router,
+        install_platform,
+    )
+    from jinja2 import Environment, select_autoescape
+
+    artifact = RunArtifact(
+        id="xss",
+        label="Unsafe",
+        media_type="text/html",
+        href=href,
+    )
+    assert artifact.href is None or artifact.href.startswith(("http://", "https://"))
+    assert artifact.href is None
+
+    class Port:
+        async def get_run(self, scope, run_id):
+            return Run(
+                id=run_id, status="succeeded", created_at=datetime.now(timezone.utc)
+            )
+
+        async def get_result(self, scope, run_id):
+            return RunResult(run_id=run_id, links=[artifact])
+
+    async def authorize(request, action, *, run_id=None, intent=None):
+        return "alice"
+
+    environment = Environment(autoescape=select_autoescape())
+    app = FastAPI()
+    install_platform(app, environments=[environment])
+    app.include_router(
+        create_run_view_router(lambda: Port(), authorize, environment=environment)
+    )
+    with TestClient(app) as client:
+        fragment = client.get("/runs/one", headers={"HX-Request": "true"})
+    assert fragment.status_code == 200
+    assert "javascript:" not in fragment.text.lower()
+    assert "data:text/html" not in fragment.text.lower()
+    assert 'href="javascript' not in fragment.text.lower()
+    assert "Unsafe" in fragment.text
+
+
+def test_artifact_filename_fallback_strips_header_injection():
+    from app_factory import (
+        RunArtifact,
+        RunArtifactStream,
+        create_run_view_router,
+        install_platform,
+    )
+    from jinja2 import Environment, select_autoescape
+
+    payload = b"bytes"
+
+    class Port:
+        async def open_artifact(self, scope, run_id, artifact_id):
+            return RunArtifactStream(
+                artifact=RunArtifact(
+                    id=artifact_id,
+                    label="Report",
+                    media_type="application/pdf",
+                    filename=".",
+                    disposition="attachment",
+                ),
+                body=iter([payload]),
+            )
+
+    async def authorize(request, action, *, run_id=None, intent=None):
+        return "alice"
+
+    environment = Environment(autoescape=select_autoescape())
+    app = FastAPI()
+    install_platform(app, environments=[environment])
+    app.include_router(
+        create_run_view_router(lambda: Port(), authorize, environment=environment)
+    )
+    with TestClient(app) as client:
+        response = client.get("/runs/one/artifacts/bad%0D%0AX-Injected:%20yes")
+    assert response.status_code == 200
+    disposition = response.headers["content-disposition"]
+    assert "\r" not in disposition and "\n" not in disposition
+    assert "X-Injected" not in disposition
+
+
+@pytest.mark.parametrize(
+    "media_type,body",
+    [
+        ("text/html", b"<script>alert(document.domain)</script>"),
+        ("image/svg+xml", b"<svg xmlns='http://www.w3.org/2000/svg'><script>alert(1)</script></svg>"),
+    ],
+)
+def test_active_documents_are_not_served_inline(media_type, body):
+    from app_factory import (
+        RunArtifact,
+        RunArtifactStream,
+        create_run_view_router,
+        install_platform,
+    )
+    from jinja2 import Environment, select_autoescape
+
+    class Port:
+        async def open_artifact(self, scope, run_id, artifact_id):
+            return RunArtifactStream(
+                artifact=RunArtifact(
+                    id=artifact_id,
+                    label="Preview",
+                    media_type=media_type,
+                    disposition="inline",
+                    filename="preview",
+                ),
+                body=iter([body]),
+            )
+
+    async def authorize(request, action, *, run_id=None, intent=None):
+        return "alice"
+
+    environment = Environment(autoescape=select_autoescape())
+    app = FastAPI()
+    install_platform(app, environments=[environment])
+    app.include_router(
+        create_run_view_router(lambda: Port(), authorize, environment=environment)
+    )
+    with TestClient(app) as client:
+        response = client.get("/runs/one/artifacts/preview")
+    assert response.status_code == 200
+    assert response.content == body
+    assert "attachment" in response.headers["content-disposition"]
+    assert "inline" not in response.headers["content-disposition"]
+
+
 def test_run_errors_are_router_local_and_include_dependency_failures():
     from app_factory import RunError, create_run_router
 

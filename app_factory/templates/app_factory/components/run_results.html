@@ -13,16 +13,18 @@
   {% if result.links or result.artifacts %}
   <ul data-run-result-artifacts>
     {% for item in result.links %}
-    <li data-artifact-id="{{ item.id }}" data-artifact-kind="external">
-      {% if item.href %}<a href="{{ item.href }}" rel="noopener noreferrer">{{ item.label }}</a>{% else %}<span>{{ item.label }}</span>{% endif %}
+    {% set href = safe_href(item.href) %}
+    <li data-artifact-id="{{ item.id }}" data-artifact-kind="{{ 'external' if href else 'metadata' }}">
+      {% if href %}<a href="{{ href }}" rel="noopener noreferrer">{{ item.label }}</a>{% else %}<span>{{ item.label }}</span>{% endif %}
       {% if item.media_type %}<span class="badge">{{ item.media_type }}</span>{% endif %}
     </li>
     {% endfor %}
     {% for item in result.artifacts %}
     {% set kind = artifact_kind(item) %}
+    {% set href = safe_href(item.href) %}
     <li data-artifact-id="{{ item.id }}" data-artifact-kind="{{ kind }}">
-      {% if kind == 'external' and item.href %}
-      <a href="{{ item.href }}" rel="noopener noreferrer">{{ item.label }}</a>
+      {% if kind == 'external' and href %}
+      <a href="{{ href }}" rel="noopener noreferrer">{{ item.label }}</a>
       {% elif kind == 'download' %}
       <a href="{{ download_url(item) }}">{{ item.label }}</a>
       {% else %}
