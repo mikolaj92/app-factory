@@ -234,13 +234,74 @@ uv lock && uv sync
 Reference integration (bootstrap, invite activation, credentials, recovery, admin users):
 [`examples/multi_user_bom/`](examples/multi_user_bom/).
 
-For a chrome-only product, the shortest starter is `install_platform(...)`, one
-`PlatformConfig`, and a template extending `app_factory/product_shell.html`.
+For a new product, prefer `create_product_app(...)`, one `ProductAppConfig`,
+and a template extending `app_factory/product_shell.html` (see
+[`examples/minimal_host/app.py`](examples/minimal_host/app.py)).
 Do not copy passkey or user-manager installers into a new host; add the identity
 bindings only when the product needs them. The post-migration duplication audit
 and recommended cleanup order are in [`docs/BOILERPLATE_AUDIT.md`](docs/BOILERPLATE_AUDIT.md).
 
 ---
+
+## Thin product host
+
+```python
+from pathlib import Path
+from fastapi import APIRouter, Request
+from app_factory import ProductAppConfig, create_product_app, template_response
+from app_factory.platform import MenuItem, PlatformConfig
+
+router = APIRouter()
+
+@router.get("/")
+def home(request: Request):
+    return template_response(
+        request.app.state.app_factory_product.environment, request, "home.html"
+    )
+
+app = create_product_app(
+    ProductAppConfig(
+        template_directory=Path("templates"),
+        platform=PlatformConfig(app_name="My product", menu=(MenuItem("Home", "/"),)),
+    ),
+    routers=(router,),
+    # lifespan=host_lifespan,  # ordinary FastAPI async context manager
+)
+```
+
+This composes the existing installers: shared Jinja loader and same-origin
+assets, request-local user/locale context and theme chrome, strict Origin CSRF,
+standard HTTP/validation/500 handlers, and `GET /health` (`{"status": "ok"}`).
+Health is liveness only; it does not probe a product database. JSON clients retain
+FastAPI HTTP/422 semantics; HTMX receives escaped alert fragments. Unexpected
+errors return generic 500 copy, never exception details.
+
+Pass `passkey=PasskeyBinding(...)`, `usermanager=UserManagerBinding(...)`,
+`current_user=...`, and `locales=...` to opt into identity via
+`install_identity_adapters`. The usermanager environment defaults to the host's
+shared environment. Auth services, stores, RBAC hooks, session transport and
+form-token protection remain host-supplied; no database or auth ceremony is
+created. For signed sessions, add `SessionMiddleware` **after** composition
+(install `itsdangerous` in the host), and pass `SessionCsrfProtection()` in the
+identity bindings. Origin CSRF is always on; configure trusted origins or webhook
+prefix exemptions explicitly with `csrf_trusted_origins` / `csrf_exempt_prefixes`.
+Exemption prefixes are literal request paths, including any deployment prefix.
+
+`PlatformPaths.root` is the **route prefix** for domain routers, identity, health
+and static (the same convention as existing identity adapters), not FastAPI's
+ASGI `root_path`. Do not prefix supplied domain routers twice. Menu/brand URLs
+remain explicit host navigation data. A proxy must preserve this prefix.
+
+For an existing FastAPI app use `install_product_host(app, config, ...)`; its
+lifespan is left intact. The result (also `app.state.app_factory_product`) exposes
+`environment`, `platform`, and optional `identity`. Install before startup and
+before any lower-level factory installers. Compatible repeats with the same
+router objects and bindings return the same result without adding middleware or
+routes. Changed inputs, existing factory installations, custom standard error
+handlers and overlapping paths/mounts raise `ValueError`. Adapter route conflicts
+can only be checked after adapter installation; discard an app after a failed
+install rather than retrying it. Configure custom error handlers after bootstrap
+when deliberately replacing the defaults.
 
 ## Install the platform once
 
