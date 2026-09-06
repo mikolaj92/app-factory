@@ -77,8 +77,9 @@ def test_route_paths_flattens_lazy_includes_without_empty_compile():
         def effective_route_contexts(self):
             raise RuntimeError("lazy include failed")
 
-    # Broken lazy includes must not crash conflict checks during install.
-    assert list(route_paths([BrokenInclude()])) == []
+    # Inspection failures must abort installation, not hide route conflicts.
+    with pytest.raises(RuntimeError, match="lazy include failed"):
+        list(route_paths([BrokenInclude()]))
 
 
 def test_install_is_noop_for_same_inputs_and_rejects_changed_config_or_routers():

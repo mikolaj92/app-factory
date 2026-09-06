@@ -37,10 +37,7 @@ def route_paths(routes: Iterable[BaseRoute], prefix: str = "") -> Iterator[Route
     for route in routes:
         effective = getattr(route, "effective_route_contexts", None)
         if callable(effective):
-            try:
-                nested = tuple(effective())
-            except Exception:
-                nested = ()
+            nested = tuple(effective())
             if nested:
                 for item in nested:
                     mapped = _as_route_path(item, prefix)
