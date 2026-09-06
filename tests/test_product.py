@@ -73,6 +73,13 @@ def test_route_paths_flattens_lazy_includes_without_empty_compile():
     assert any(route.path == "/api/work" for route in paths)
     assert all(route.path for route in paths)
 
+    class BrokenInclude:
+        original_router = nested
+        include_context = object()
+
+    # Missing prefix must not crash conflict checks during install.
+    assert list(route_paths([BrokenInclude()])) == []
+
 
 def test_install_is_noop_for_same_inputs_and_rejects_changed_config_or_routers():
     app = FastAPI()
@@ -178,6 +185,29 @@ def test_standard_errors_keep_http_semantics_and_escape_htmx_detail():
             assert broken.status_code == 500
             assert "secret" not in broken.text
             assert "Internal Server Error" in broken.text
+
+
+def test_htmx_http_error_escapes_non_string_detail_and_keeps_headers():
+    router = APIRouter()
+
+    @router.get("/denied")
+    def denied():
+        raise HTTPException(403, {"msg": "<x>"}, headers={"WWW-Authenticate": "Bearer"})
+
+    @router.get("/empty")
+    def empty():
+        raise HTTPException(400, None)
+
+    app = create_product_app(ProductAppConfig(), routers=(router,))
+    with TestClient(app) as client:
+        denied = client.get("/denied", headers={"HX-Request": "true"})
+        assert denied.status_code == 403
+        assert denied.headers["WWW-Authenticate"] == "Bearer"
+        assert "<x>" not in denied.text
+        assert "&lt;x&gt;" in denied.text
+        empty = client.get("/empty", headers={"HX-Request": "true"})
+        assert empty.status_code == 400
+        assert 'role="alert"' in empty.text
 
 
 def test_request_callbacks_are_local_and_changed_bindings_conflict():

@@ -74,9 +74,10 @@ def route_paths(routes: Iterable[BaseRoute], prefix: str = "") -> Iterator[Route
     for route in routes:
         included = getattr(route, "original_router", None)
         if included is not None:
-            yield from route_paths(
-                included.routes, prefix + route.include_context.prefix
-            )
+            nested_prefix = getattr(getattr(route, "include_context", None), "prefix", None)
+            if nested_prefix is None:
+                continue
+            yield from route_paths(included.routes, prefix + nested_prefix)
             continue
         path = prefix + getattr(route, "path", "")
         if not path:
