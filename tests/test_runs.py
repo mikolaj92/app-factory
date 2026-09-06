@@ -1027,6 +1027,65 @@ def test_artifact_states_are_explicit_and_visible():
     assert "digest" in fragment.text.lower()
 
 
+def test_json_artifact_download_reauthorizes_and_rejects_mismatch():
+    from app_factory import (
+        RunArtifact,
+        RunArtifactStream,
+        RunError,
+        create_run_router,
+    )
+
+    payload = b"report-bytes"
+    calls = []
+
+    class Port:
+        artifact_digest = "sha256:deadbeef"
+        stream_digest = "sha256:deadbeef"
+
+        async def open_artifact(self, scope, run_id, artifact_id):
+            calls.append((scope, run_id, artifact_id))
+            return RunArtifactStream(
+                artifact=RunArtifact(
+                    id=artifact_id,
+                    label="Report",
+                    media_type="application/pdf",
+                    digest=self.artifact_digest,
+                    filename="../evil\r\nX-Injected: yes.pdf",
+                ),
+                body=iter([payload]),
+                digest=self.stream_digest,
+            )
+
+    port = Port()
+
+    async def authorize(request, action, *, run_id=None, intent=None):
+        calls.append((action, run_id))
+        if request.headers.get("X-Deny"):
+            raise RunError("forbidden", "Access denied")
+        return "alice"
+
+    app = FastAPI()
+    app.include_router(create_run_router(lambda: port, authorize, prefix="/api/runs"))
+    with TestClient(app) as client:
+        denied = client.get(
+            "/api/runs/one/artifacts/report", headers={"X-Deny": "yes"}
+        )
+        assert denied.status_code == 403
+        assert denied.json()["code"] == "forbidden"
+        assert calls == [("artifact", "one")]
+        ok = client.get("/api/runs/one/artifacts/report")
+        port.stream_digest = "sha256:otherxxxx"
+        mismatch = client.get("/api/runs/one/artifacts/report")
+    assert ok.status_code == 200
+    assert ok.content == payload
+    assert ok.headers["x-content-type-options"] == "nosniff"
+    assert "../" not in ok.headers["content-disposition"]
+    assert "X-Injected" not in ok.headers["content-disposition"]
+    assert mismatch.status_code == 409
+    assert mismatch.json()["code"] == "conflict"
+    assert "digest" in mismatch.json()["message"].lower()
+
+
 def test_run_errors_are_router_local_and_include_dependency_failures():
     from app_factory import RunError, create_run_router
 

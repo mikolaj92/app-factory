@@ -65,6 +65,41 @@ def content_disposition(filename: str, disposition: str | None) -> str:
     return f'{kind}; filename="{ascii_name}"; filename*=UTF-8\'\'{encoded}'
 
 
+def artifact_response(stream: object, artifact_id: str) -> StreamingResponse:
+    if not isinstance(stream, RunArtifactStream):
+        raise RunError("unavailable", "Invalid artifact stream")
+    artifact = stream.artifact
+    if artifact.id != artifact_id:
+        raise RunError("not_found", "Artifact missing")
+    expected = stream.digest or artifact.digest
+    actual = artifact.digest
+    if expected and actual and (
+        len(expected) != len(actual) or not compare_digest(expected, actual)
+    ):
+        raise RunError("conflict", "Artifact digest mismatch")
+    filename = safe_artifact_filename(
+        artifact.filename or artifact.label or artifact.name,
+        fallback=artifact.id,
+    )
+    media_type = artifact.media_type or "application/octet-stream"
+    if "\r" in media_type or "\n" in media_type or ";" in media_type:
+        media_type = "application/octet-stream"
+    body = stream.body
+    if isinstance(body, (bytes, bytearray, memoryview)):
+        body = iter((bytes(body),))
+    return StreamingResponse(
+        body,
+        media_type=media_type,
+        headers={
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+            "Content-Disposition": content_disposition(
+                filename, artifact.disposition
+            ),
+        },
+    )
+
+
 class _RunRoute(APIRoute):
     def get_route_handler(self):
         handler = super().get_route_handler()
@@ -175,6 +210,19 @@ def create_run_router(
     ) -> RunArtifacts:
         scope = await authorization(request, "artifact", run_id=run_id)
         return await port.list_artifacts(scope, run_id)
+
+    @router.get("/{run_id}/artifacts/{artifact_id}")
+    async def download(
+        request: Request,
+        run_id: str,
+        artifact_id: str,
+        port: RunPort = Depends(port_dependency),
+    ) -> StreamingResponse:
+        scope = await authorization(request, "artifact", run_id=run_id)
+        opener = getattr(port, "open_artifact", None)
+        if opener is None:
+            raise RunError("not_found", "Artifact missing")
+        return artifact_response(await opener(scope, run_id, artifact_id), artifact_id)
 
     return router
 
@@ -451,36 +499,9 @@ def create_run_view_router(
             opener = getattr(port, "open_artifact", None)
             if opener is None:
                 raise RunError("not_found", "Artifact missing")
-            stream = await opener(scope, run_id, artifact_id)
-            if not isinstance(stream, RunArtifactStream):
-                raise RunError("unavailable", "Invalid artifact stream")
-            artifact = stream.artifact
-            if artifact.id != artifact_id:
-                raise RunError("not_found", "Artifact missing")
-            expected = stream.digest or artifact.digest
-            actual = artifact.digest
-            if expected and actual and (
-                len(expected) != len(actual) or not compare_digest(expected, actual)
-            ):
-                raise RunError("conflict", "Artifact digest mismatch")
-            filename = safe_artifact_filename(
-                artifact.filename or artifact.label or artifact.name,
-                fallback=artifact.id,
+            return artifact_response(
+                await opener(scope, run_id, artifact_id), artifact_id
             )
-            media_type = artifact.media_type or "application/octet-stream"
-            if "\r" in media_type or "\n" in media_type or ";" in media_type:
-                media_type = "application/octet-stream"
-            headers = {
-                "Cache-Control": "no-store",
-                "X-Content-Type-Options": "nosniff",
-                "Content-Disposition": content_disposition(
-                    filename, artifact.disposition
-                ),
-            }
-            body = stream.body
-            if isinstance(body, (bytes, bytearray, memoryview)):
-                body = iter((bytes(body),))
-            return StreamingResponse(body, media_type=media_type, headers=headers)
         except RunError as exc:
             return error_response(
                 request, target_id="run-detail", exc=exc, poll_url=poll_url

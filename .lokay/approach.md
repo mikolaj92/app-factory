@@ -12,7 +12,7 @@ Dostarczyć domenowo neutralny result panel oraz download route dla typed artifa
 ## Files likely touched
 
 - `app_factory/runs.py` — `RunArtifact` metadata, `RunResult`, `RunArtifactStream`, `RunPort.get_result` / `open_artifact`
-- `app_factory/run_routes.py` — result panel on terminal success + authorized download route
+- `app_factory/run_routes.py` — result panel on terminal success + authorized download on JSON and HTML routers
 - `app_factory/__init__.py` — public exports
 - `app_factory/templates/app_factory/components/run_results.html` — values/links/downloads
 - `app_factory/templates/app_factory/components/run_detail.html` — include results fragment
