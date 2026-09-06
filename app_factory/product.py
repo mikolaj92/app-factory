@@ -229,9 +229,6 @@ def install_product_host(
             raise ValueError(
                 "csrf_protection is required when usermanager admin is enabled"
             )
-    root = config.platform.paths.root.rstrip("/")
-    static_path = join_platform_root(root, config.static_path.rstrip("/"))
-    health_path = join_platform_root(root, config.health_path)
     if not config.health_path.startswith("/") or config.health_path == "/":
         raise ValueError("health_path must be an absolute non-root path")
     if (
@@ -239,7 +236,12 @@ def install_product_host(
         or config.static_path == "/"
         or not config.mount_name
     ):
-        raise ValueError("static_path must be an absolute non-root path; mount_name is required")
+        raise ValueError(
+            "static_path must be an absolute non-root path; mount_name is required"
+        )
+    root = config.platform.paths.root.rstrip("/")
+    static_path = join_platform_root(root, config.static_path.rstrip("/"))
+    health_path = join_platform_root(root, config.health_path)
     if health_path == static_path or health_path.startswith(static_path + "/"):
         raise ValueError("health path conflicts with static mount")
     domain = APIRouter()

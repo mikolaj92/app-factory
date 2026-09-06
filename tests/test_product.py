@@ -121,7 +121,7 @@ def test_existing_static_mount_conflicts_with_platform_assets(tmp_path: Path):
 def test_relative_or_empty_host_paths_fail_before_install(kwargs):
     app = FastAPI()
     before = list(app.routes)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="absolute non-root path|mount_name"):
         install_product_host(app, ProductAppConfig(**kwargs))
     assert app.routes == before
 
