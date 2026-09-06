@@ -18,6 +18,7 @@ from app_factory.cdn import (
     verify_cdn_manifest,
 )
 from app_factory.jinja import configure_jinja_env, factory_template_dirs
+from app_factory.intake import IntakeError, IntakeField, IntakeFiles, IntakeSpec, IntakeSubmission
 
 try:
     from app_factory.csrf import SameOriginCsrfMiddleware, SessionCsrfProtection
@@ -32,6 +33,7 @@ try:
         create_product_app,
         install_product_host,
     )
+    from app_factory.intake_routes import IntakeBuilder, IntakeCsrf, create_intake_router
     from app_factory.run_routes import RunAuthorization, create_run_router
     from app_factory.runs import (
         Run, RunAction, RunArtifact, RunArtifacts, RunError, RunErrorCode,
@@ -49,6 +51,7 @@ except ImportError:  # Optional fastapi extra is not installed.
     RunArtifact = RunArtifacts = RunError = RunErrorCode = None
     RunErrorResponse = RunPage = None
     RunAuthorization = create_run_router = None
+    IntakeBuilder = IntakeCsrf = create_intake_router = None
     ProductAppConfig = ProductInstall = None
     create_product_app = install_product_host = None
     AppFactoryUi = AppFactoryUiConflict = SameOriginCsrfMiddleware = None
@@ -112,6 +115,14 @@ except ImportError:  # Optional fastapi extra is not installed.
     passkey_paths_from_platform = usermanager_config_from_platform = None
 
 __all__ = [
+    "IntakeError",
+    "IntakeField",
+    "IntakeFiles",
+    "IntakeSpec",
+    "IntakeSubmission",
+    "IntakeBuilder",
+    "IntakeCsrf",
+    "create_intake_router",
     "CDN_ASSET_MANIFEST",
     "CLIENT_SHELL",
     "IDENTITY_ADMIN_SURFACES",
