@@ -1,0 +1,41 @@
+<section id="run-results" class="app-stack" data-run-results aria-live="polite">
+  <h2>Results</h2>
+  {% if result.values %}
+  <dl data-run-result-values>
+    {% for key, value in result.values.items() %}
+    <div>
+      <dt>{{ key }}</dt>
+      <dd>{{ value }}</dd>
+    </div>
+    {% endfor %}
+  </dl>
+  {% endif %}
+  {% if result.links or result.artifacts %}
+  <ul data-run-result-artifacts>
+    {% for item in result.links %}
+    {% set href = safe_href(item.href) %}
+    <li data-artifact-id="{{ item.id }}" data-artifact-kind="{{ 'external' if href else 'metadata' }}">
+      {% if href %}<a href="{{ href }}" rel="noopener noreferrer">{{ item.label }}</a>{% else %}<span>{{ item.label }}</span>{% endif %}
+      {% if item.media_type %}<span class="badge">{{ item.media_type }}</span>{% endif %}
+    </li>
+    {% endfor %}
+    {% for item in result.artifacts %}
+    {% set kind = artifact_kind(item) %}
+    {% set href = safe_href(item.href) %}
+    <li data-artifact-id="{{ item.id }}" data-artifact-kind="{{ kind }}">
+      {% if kind == 'external' and href %}
+      <a href="{{ href }}" rel="noopener noreferrer">{{ item.label }}</a>
+      {% elif kind == 'download' %}
+      <a href="{{ download_url(item) }}">{{ item.label }}</a>
+      {% else %}
+      <span>{{ item.label }}</span>
+      {% endif %}
+      {% if item.filename %}<span>{{ item.filename }}</span>{% endif %}
+      {% if item.size is not none %}<span>{{ item.size }}</span>{% endif %}
+      {% if item.digest %}<span>{{ item.digest }}</span>{% endif %}
+      {% if item.media_type %}<span class="badge">{{ item.media_type }}</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>

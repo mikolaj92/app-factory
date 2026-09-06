@@ -3,10 +3,13 @@
 Requires app-factory[fastapi] (Pydantic v2). No workflow engine is imported.
 """
 
+from collections.abc import AsyncIterable, Iterable
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Annotated, Literal, Protocol
+from urllib.parse import urlparse
 
-from pydantic import BaseModel, ConfigDict, Field, JsonValue
+from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
 
 # queued remains accepted for existing v1 hosts; HTML presents it as pending.
 RunStatus = Literal[
@@ -15,6 +18,25 @@ RunStatus = Literal[
 RetryAfter = Annotated[int, Field(ge=1)]
 RunAction = Literal["create", "read", "cancel", "artifact"]
 NonEmpty = Annotated[str, Field(min_length=1)]
+ArtifactBody = Iterable[bytes] | AsyncIterable[bytes]
+
+
+def safe_external_href(value: str | None) -> str | None:
+    """Allow http(s) URLs and same-origin paths. Reject javascript/data/control chars."""
+    if not value:
+        return None
+    if any(ord(ch) < 32 or ord(ch) == 127 for ch in value):
+        return None
+    trimmed = value.strip()
+    parsed = urlparse(trimmed)
+    scheme = parsed.scheme.lower()
+    if scheme in {"http", "https"}:
+        return trimmed if parsed.netloc else None
+    if scheme or parsed.netloc or trimmed.startswith("//"):
+        return None
+    if trimmed.startswith("/"):
+        return trimmed
+    return None
 
 
 class _RunDTO(BaseModel):
@@ -44,16 +66,53 @@ class RunPage(_RunDTO):
 
 
 class RunArtifact(_RunDTO):
-    """Result metadata, not artifact bytes. Host owns URL safety/access policy."""
+    """Typed result reference. Bytes stay behind a host-owned artifact port."""
 
     id: NonEmpty
-    name: NonEmpty
-    href: NonEmpty
     media_type: NonEmpty
+    label: NonEmpty | None = None
+    size: Annotated[int, Field(ge=0)] | None = None
+    digest: NonEmpty | None = None
+    disposition: Literal["inline", "attachment"] | None = None
+    filename: NonEmpty | None = None
+    href: NonEmpty | None = None
+    name: NonEmpty | None = None
+
+    @model_validator(mode="after")
+    def _compat_label(self) -> "RunArtifact":
+        label = self.label or self.name
+        if not label:
+            raise ValueError("label or name is required")
+        if self.label is None:
+            object.__setattr__(self, "label", label)
+        if self.name is None:
+            object.__setattr__(self, "name", label)
+        href = safe_external_href(self.href)
+        if href != self.href:
+            object.__setattr__(self, "href", href)
+        return self
 
 
 class RunArtifacts(_RunDTO):
     items: list[RunArtifact]
+
+
+class RunResult(_RunDTO):
+    """Domain-neutral terminal values, external links, and downloadable artifacts."""
+
+    run_id: NonEmpty
+    values: dict[str, JsonValue] = Field(default_factory=dict)
+    links: list[RunArtifact] = Field(default_factory=list)
+    artifacts: list[RunArtifact] = Field(default_factory=list)
+
+
+@dataclass(frozen=True, slots=True)
+class RunArtifactStream:
+    """Host-owned byte stream plus the metadata the router must re-validate."""
+
+    artifact: RunArtifact
+    body: ArtifactBody
+    digest: str | None = None
 
 
 RunErrorCode = Literal[
@@ -122,4 +181,14 @@ class RunPort(Protocol):
 
         Links must be independently authorized or short-lived scoped URLs.
         """
+        ...
+
+    async def get_result(self, scope: str, run_id: str) -> RunResult:
+        """Return terminal values/links/artifacts without interpreting domain bytes."""
+        ...
+
+    async def open_artifact(
+        self, scope: str, run_id: str, artifact_id: str
+    ) -> RunArtifactStream:
+        """Open a scoped stream. Pending/expired/missing/mismatch MUST raise RunError."""
         ...

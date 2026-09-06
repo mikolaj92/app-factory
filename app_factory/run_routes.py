@@ -1,22 +1,28 @@
 """Opt-in run HTTP transport; no scheduling or storage."""
 
 from collections.abc import Callable
+from hmac import compare_digest
+from pathlib import PurePosixPath
 from typing import Any, Protocol
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, StreamingResponse
 
 from app_factory.runs import (
     Run,
     RunAction,
+    RunArtifact,
     RunArtifacts,
+    RunArtifactStream,
     RunError,
     RunErrorResponse,
     RunIntent,
     RunPage,
     RunPort,
+    safe_external_href,
 )
 
 _ERROR_STATUS = {
@@ -28,6 +34,102 @@ _ERROR_STATUS = {
     "unavailable": 503,
     "stale_version": 409,
 }
+_TERMINAL_SUCCESS = "succeeded"
+_ACTIVE_MEDIA = frozenset(
+    {
+        "text/html",
+        "application/xhtml+xml",
+        "image/svg+xml",
+        "text/xml",
+        "application/xml",
+        "application/javascript",
+        "text/javascript",
+        "application/xhtml",
+    }
+)
+
+
+def _filename_piece(value: str | None) -> str:
+    if not value:
+        return ""
+    cleaned = []
+    for ch in value:
+        if ord(ch) < 32 or ord(ch) == 127:
+            break
+        cleaned.append(ch)
+    name = PurePosixPath("".join(cleaned).replace("\\", "/")).name.strip().strip(".")
+    if not name or name in {".", ".."}:
+        return ""
+    return name[:180]
+
+
+def safe_artifact_filename(value: str | None, *, fallback: str = "download") -> str:
+    return _filename_piece(value) or _filename_piece(fallback) or "download"
+
+
+def is_active_document(media_type: str) -> bool:
+    base = media_type.split(";", 1)[0].strip().lower()
+    return base in _ACTIVE_MEDIA or base.endswith("+xml")
+
+
+def artifact_kind(item: RunArtifact) -> str:
+    if safe_external_href(item.href):
+        return "external"
+    if item.filename or item.disposition or item.size is not None or item.digest:
+        return "download"
+    return "metadata"
+
+
+def artifact_download_url(prefix: str, run_id: str, artifact_id: str) -> str:
+    base = prefix.rstrip("/") or ""
+    return f"{base}/{run_id}/artifacts/{artifact_id}"
+
+
+def content_disposition(filename: str, disposition: str | None) -> str:
+    kind = disposition if disposition in {"inline", "attachment"} else "attachment"
+    safe = safe_artifact_filename(filename)
+    ascii_name = safe.encode("ascii", "ignore").decode("ascii") or "download"
+    ascii_name = ascii_name.replace("\\", "_").replace('"', "")
+    encoded = quote(safe, safe="")
+    header = f'{kind}; filename="{ascii_name}"; filename*=UTF-8\'\'{encoded}'
+    if any(ord(ch) < 32 or ord(ch) == 127 for ch in header):
+        return 'attachment; filename="download"'
+    return header
+
+
+def artifact_response(stream: object, artifact_id: str) -> StreamingResponse:
+    if not isinstance(stream, RunArtifactStream):
+        raise RunError("unavailable", "Invalid artifact stream")
+    artifact = stream.artifact
+    if artifact.id != artifact_id:
+        raise RunError("not_found", "Artifact missing")
+    expected = stream.digest or artifact.digest
+    actual = artifact.digest
+    if expected and actual and (
+        len(expected) != len(actual) or not compare_digest(expected, actual)
+    ):
+        raise RunError("conflict", "Artifact digest mismatch")
+    filename = safe_artifact_filename(
+        artifact.filename or artifact.label or artifact.name
+    )
+    media_type = artifact.media_type or "application/octet-stream"
+    if "\r" in media_type or "\n" in media_type or ";" in media_type:
+        media_type = "application/octet-stream"
+    disposition = artifact.disposition
+    if is_active_document(media_type):
+        disposition = "attachment"
+    body = stream.body
+    if isinstance(body, (bytes, bytearray, memoryview)):
+        body = iter((bytes(body),))
+    return StreamingResponse(
+        body,
+        media_type=media_type,
+        headers={
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+            "Content-Disposition": content_disposition(filename, disposition),
+        },
+    )
 
 
 class _RunRoute(APIRoute):
@@ -140,6 +242,19 @@ def create_run_router(
     ) -> RunArtifacts:
         scope = await authorization(request, "artifact", run_id=run_id)
         return await port.list_artifacts(scope, run_id)
+
+    @router.get("/{run_id}/artifacts/{artifact_id}")
+    async def download(
+        request: Request,
+        run_id: str,
+        artifact_id: str,
+        port: RunPort = Depends(port_dependency),
+    ) -> StreamingResponse:
+        scope = await authorization(request, "artifact", run_id=run_id)
+        opener = getattr(port, "open_artifact", None)
+        if opener is None:
+            raise RunError("not_found", "Artifact missing")
+        return artifact_response(await opener(scope, run_id, artifact_id), artifact_id)
 
     return router
 
@@ -376,10 +491,26 @@ def create_run_view_router(
             )
 
         seconds = poll_seconds_for(run)
+        result = None
+        if run.status == _TERMINAL_SUCCESS:
+            getter = getattr(port, "get_result", None)
+            if getter is not None:
+                try:
+                    result = await getter(scope, run_id)
+                except RunError as exc:
+                    return error_response(
+                        request, target_id="run-detail", exc=exc, poll_url=poll_url
+                    )
         context = {
             "run": run,
             "poll_url": poll_url,
             "poll_seconds": seconds,
+            "result": result,
+            "artifact_kind": artifact_kind,
+            "safe_href": safe_external_href,
+            "download_url": lambda item: artifact_download_url(
+                prefix, run_id, item.id
+            ),
         }
         return page_or_fragment(
             request,
@@ -387,5 +518,26 @@ def create_run_view_router(
             context=context,
             retry_after=seconds,
         )
+
+    @router.get("/{run_id}/artifacts/{artifact_id}")
+    async def download(
+        request: Request,
+        run_id: str,
+        artifact_id: str,
+        port: RunPort = Depends(port_dependency),
+    ):
+        poll_url = f"{prefix.rstrip('/')}/{run_id}/artifacts/{artifact_id}"
+        try:
+            scope = await authorization(request, "artifact", run_id=run_id)
+            opener = getattr(port, "open_artifact", None)
+            if opener is None:
+                raise RunError("not_found", "Artifact missing")
+            return artifact_response(
+                await opener(scope, run_id, artifact_id), artifact_id
+            )
+        except RunError as exc:
+            return error_response(
+                request, target_id="run-detail", exc=exc, poll_url=poll_url
+            )
 
     return router

@@ -36,8 +36,9 @@ try:
     from app_factory.intake_routes import IntakeBuilder, IntakeCsrf, create_intake_router
     from app_factory.run_routes import RunAuthorization, create_run_router, create_run_view_router
     from app_factory.runs import (
-        Run, RunAction, RunArtifact, RunArtifacts, RunError, RunErrorCode,
-        RunErrorResponse, RunIntent, RunPage, RunPort, RunStatus,
+        Run, RunAction, RunArtifact, RunArtifacts, RunArtifactStream, RunError,
+        RunErrorCode, RunErrorResponse, RunIntent, RunPage, RunPort, RunResult,
+        RunStatus,
     )
     from app_factory.responses import htmx_redirect, template_response
     from app_factory.uploads import (
@@ -48,8 +49,8 @@ try:
     )
 except ImportError:  # Optional fastapi extra is not installed.
     Run = RunAction = RunIntent = RunPort = RunStatus = None
-    RunArtifact = RunArtifacts = RunError = RunErrorCode = None
-    RunErrorResponse = RunPage = None
+    RunArtifact = RunArtifacts = RunArtifactStream = RunError = RunErrorCode = None
+    RunErrorResponse = RunPage = RunResult = None
     RunAuthorization = create_run_router = create_run_view_router = None
     IntakeBuilder = IntakeCsrf = create_intake_router = None
     ProductAppConfig = ProductInstall = None
@@ -155,10 +156,12 @@ __all__ = [
     "RunAction",
     "RunArtifact",
     "RunArtifacts",
+    "RunArtifactStream",
     "RunError",
     "RunErrorCode",
     "RunErrorResponse",
     "RunPage",
+    "RunResult",
     "RunAuthorization",
     "RunIntent",
     "RunPort",
