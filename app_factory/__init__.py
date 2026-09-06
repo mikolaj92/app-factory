@@ -32,6 +32,11 @@ try:
         create_product_app,
         install_product_host,
     )
+    from app_factory.run_routes import RunAuthorization, create_run_router
+    from app_factory.runs import (
+        Run, RunAction, RunArtifact, RunArtifacts, RunError, RunErrorCode,
+        RunErrorResponse, RunIntent, RunPage, RunPort, RunStatus,
+    )
     from app_factory.responses import htmx_redirect, template_response
     from app_factory.uploads import (
         UploadLimitExceeded,
@@ -40,6 +45,10 @@ try:
         read_uploads_bounded,
     )
 except ImportError:  # Optional fastapi extra is not installed.
+    Run = RunAction = RunIntent = RunPort = RunStatus = None
+    RunArtifact = RunArtifacts = RunError = RunErrorCode = None
+    RunErrorResponse = RunPage = None
+    RunAuthorization = create_run_router = None
     ProductAppConfig = ProductInstall = None
     create_product_app = install_product_host = None
     AppFactoryUi = AppFactoryUiConflict = SameOriginCsrfMiddleware = None
@@ -131,6 +140,19 @@ __all__ = [
     "PlatformUser",
     "ProductAppConfig",
     "ProductInstall",
+    "Run",
+    "RunAction",
+    "RunArtifact",
+    "RunArtifacts",
+    "RunError",
+    "RunErrorCode",
+    "RunErrorResponse",
+    "RunPage",
+    "RunAuthorization",
+    "RunIntent",
+    "RunPort",
+    "RunStatus",
+    "create_run_router",
     "create_product_app",
     "install_product_host",
     "SameOriginCsrfMiddleware",
