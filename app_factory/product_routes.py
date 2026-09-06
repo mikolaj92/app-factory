@@ -18,7 +18,9 @@ class RoutePath:
 
 def _as_route_path(route: object, prefix: str = "") -> RoutePath | None:
     path = prefix + getattr(route, "path", "")
-    if not path:
+    # Starlette normalizes Mount("/") to an empty path, but its regex
+    # still captures every request and must participate in conflict checks.
+    if not path and not isinstance(route, Mount):
         return None
     regex = getattr(route, "path_regex", None) if not prefix else None
     if regex is None:

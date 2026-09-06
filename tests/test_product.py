@@ -118,11 +118,12 @@ def test_included_starlette_route_conflict_fails_before_install():
     assert not hasattr(app.state, "app_factory_product")
 
 
-def test_existing_static_mount_conflicts_with_platform_assets(tmp_path: Path):
+@pytest.mark.parametrize("mount_path", ["/static", "/"])
+def test_existing_static_mount_conflicts_with_platform_assets(tmp_path: Path, mount_path):
     from starlette.staticfiles import StaticFiles
 
     app = FastAPI()
-    app.mount("/static", StaticFiles(directory=tmp_path), name="host-static")
+    app.mount(mount_path, StaticFiles(directory=tmp_path), name="host-static")
     before = list(app.routes)
     with pytest.raises(ValueError, match="conflict"):
         install_product_host(app, ProductAppConfig())
