@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 from app_factory import ProductAppConfig, create_product_app, template_response
 from app_factory import install_product_host
 from app_factory.platform import MenuItem, PlatformConfig, PlatformPaths, PlatformUser
-from app_factory.product import route_paths
+from app_factory.product_routes import route_paths
 
 
 def test_one_composition_serves_shell_assets_health_and_protects_mutations(
