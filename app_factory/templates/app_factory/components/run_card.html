@@ -1,0 +1,11 @@
+<article class="card" data-run-card data-run-id="{{ run.id }}" data-run-status="{{ 'pending' if run.status == 'queued' else run.status }}">
+  <header><h2>{{ run.id }}</h2></header>
+  <section>
+    <p><span class="badge" data-run-status-label>{{ 'pending' if run.status == 'queued' else run.status }}</span></p>
+    {% if run.status == 'waiting' %}
+    {% if run.waiting_reason %}<p data-run-waiting-reason>{{ run.waiting_reason }}</p>{% endif %}
+    {% if run.next_observation %}<p data-run-next-observation>{{ run.next_observation }}</p>{% endif %}
+    {% endif %}
+    <time datetime="{{ run.created_at.isoformat() }}">{{ run.created_at.isoformat() }}</time>
+  </section>
+</article>

@@ -26,6 +26,7 @@ _ERROR_STATUS = {
     "conflict": 409,
     "invalid_request": 422,
     "unavailable": 503,
+    "stale_version": 409,
 }
 
 
@@ -41,11 +42,15 @@ class _RunRoute(APIRoute):
                     code="invalid_request",
                     message="Invalid run request",
                 )
-                return JSONResponse(error.model_dump(mode="json"), status_code=422)
+                return JSONResponse(error.model_dump(mode="json", exclude_none=True), status_code=422)
             except RunError as exc:
                 return JSONResponse(
-                    exc.response.model_dump(mode="json"),
+                    exc.response.model_dump(mode="json", exclude_none=True),
                     status_code=_ERROR_STATUS[exc.response.code],
+                    headers=(
+                        {"Retry-After": str(exc.response.retry_after)}
+                        if exc.response.retry_after else None
+                    ),
                 )
 
         return handle

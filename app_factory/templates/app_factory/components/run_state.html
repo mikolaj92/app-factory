@@ -1,0 +1,10 @@
+<section id="{{ target_id }}" data-run-state="{{ state }}" hx-history="false" aria-live="polite"
+  {% if poll_seconds %}hx-get="{{ poll_url }}" hx-trigger="every {{ poll_seconds }}s" hx-target="#{{ target_id }}" hx-swap="outerHTML"{% endif %}>
+  <div class="alert" role="{{ 'status' if state == 'empty' else 'alert' }}">
+    <h2>{{ state | replace('-', ' ') | capitalize }}</h2>
+    <p>{{ message }}</p>
+  </div>
+  {% if state in ['transient-error', 'stale-version'] %}
+  <a class="btn" href="{{ poll_url }}">Refresh</a>
+  {% endif %}
+</section>
