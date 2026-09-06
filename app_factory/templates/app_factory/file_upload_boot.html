@@ -89,7 +89,7 @@
 
     form.addEventListener('submit', (event) => {
       const files = Array.from(input.files || []);
-      if (!files.length) { event.preventDefault(); setStatus(field.dataset.labelEmpty, 'error'); return; }
+      if (!files.length && input.required) { event.preventDefault(); setStatus(field.dataset.labelEmpty, 'error'); return; }
       const max = Number.parseInt(field.dataset.maxBytes || '', 10);
       const oversized = Number.isFinite(max) ? files.filter((file) => file.size > max) : [];
       if (oversized.length) { event.preventDefault(); setStatus(message(field.dataset.labelTooLarge, { file: oversized.map((f) => f.name).join(', ') }), 'error'); return; }
@@ -116,3 +116,4 @@
   if (document.readyState !== 'loading') initAll();
 })();
 </script>
+
