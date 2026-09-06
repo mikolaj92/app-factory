@@ -11,9 +11,8 @@ from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
 
-# queued remains accepted for existing v1 hosts; HTML presents it as pending.
 RunStatus = Literal[
-    "queued", "pending", "running", "waiting", "succeeded", "failed", "cancelled"
+    "pending", "running", "waiting", "succeeded", "failed", "cancelled"
 ]
 RetryAfter = Annotated[int, Field(ge=1)]
 RunAction = Literal["create", "read", "cancel", "artifact"]

@@ -39,7 +39,7 @@ def test_bom_pins_align_with_example_pyproject() -> None:
     assert example["tool"]["uv"]["override-dependencies"] == [
         "app-factory[platform]",
     ]
-    assert bom["pins"]["app-factory"] == "v0.6.22"
+    assert bom["pins"]["app-factory"] == f"v{tomllib.loads((REPO_ROOT / 'pyproject.toml').read_text())['project']['version']}"
 
 
 def test_uv_lock_selects_single_app_factory_source() -> None:

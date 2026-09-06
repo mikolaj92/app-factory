@@ -18,9 +18,20 @@ from app_factory.cdn import (
     verify_cdn_manifest,
 )
 from app_factory.jinja import configure_jinja_env, factory_template_dirs
-from app_factory.intake import IntakeError, IntakeField, IntakeFiles, IntakeSpec, IntakeSubmission
+from app_factory.intake import (
+    IntakeError,
+    IntakeField,
+    IntakeFiles,
+    IntakeSpec,
+    IntakeSubmission,
+)
 
 try:
+    import fastapi as _fastapi
+except ImportError:
+    _fastapi = None
+
+if _fastapi is not None:
     from app_factory.csrf import SameOriginCsrfMiddleware, SessionCsrfProtection
     from app_factory.fastapi import (
         AppFactoryUi,
@@ -34,10 +45,24 @@ try:
         install_product_host,
     )
     from app_factory.intake_routes import IntakeBuilder, IntakeCsrf, create_intake_router
-    from app_factory.run_routes import RunAuthorization, create_run_router, create_run_view_router
+    from app_factory.run_routes import (
+        RunAuthorization,
+        create_run_router,
+        create_run_view_router,
+    )
     from app_factory.runs import (
-        Run, RunAction, RunArtifact, RunArtifacts, RunArtifactStream, RunError,
-        RunErrorCode, RunErrorResponse, RunIntent, RunPage, RunPort, RunResult,
+        Run,
+        RunAction,
+        RunArtifact,
+        RunArtifacts,
+        RunArtifactStream,
+        RunError,
+        RunErrorCode,
+        RunErrorResponse,
+        RunIntent,
+        RunPage,
+        RunPort,
+        RunResult,
         RunStatus,
     )
     from app_factory.responses import htmx_redirect, template_response
@@ -47,20 +72,6 @@ try:
         read_upload_bounded,
         read_uploads_bounded,
     )
-except ImportError:  # Optional fastapi extra is not installed.
-    Run = RunAction = RunIntent = RunPort = RunStatus = None
-    RunArtifact = RunArtifacts = RunArtifactStream = RunError = RunErrorCode = None
-    RunErrorResponse = RunPage = RunResult = None
-    RunAuthorization = create_run_router = create_run_view_router = None
-    IntakeBuilder = IntakeCsrf = create_intake_router = None
-    ProductAppConfig = ProductInstall = None
-    create_product_app = install_product_host = None
-    AppFactoryUi = AppFactoryUiConflict = SameOriginCsrfMiddleware = None
-    SessionCsrfProtection = UploadLimitExceeded = UploadedFile = None
-    htmx_redirect = install_app_factory_ui = read_upload_bounded = None
-    read_uploads_bounded = template_response = None
-
-try:
     from app_factory.adapters import (
         IdentityAdapterConflict,
         IdentityInstall,
@@ -98,7 +109,18 @@ try:
         install_platform,
         join_platform_root,
     )
-except ImportError:  # Optional fastapi extra is not installed.
+else:
+    Run = RunAction = RunIntent = RunPort = RunStatus = None
+    RunArtifact = RunArtifacts = RunArtifactStream = RunError = RunErrorCode = None
+    RunErrorResponse = RunPage = RunResult = None
+    RunAuthorization = create_run_router = create_run_view_router = None
+    IntakeBuilder = IntakeCsrf = create_intake_router = None
+    ProductAppConfig = ProductInstall = None
+    create_product_app = install_product_host = None
+    AppFactoryUi = AppFactoryUiConflict = SameOriginCsrfMiddleware = None
+    SessionCsrfProtection = UploadLimitExceeded = UploadedFile = None
+    htmx_redirect = install_app_factory_ui = read_upload_bounded = None
+    read_uploads_bounded = template_response = None
     CLIENT_SHELL = None
     IDENTITY_ADMIN_SURFACES = IDENTITY_AUTHENTICATED_SURFACES = None
     IDENTITY_AUTHENTICATED_SHELL = IDENTITY_DENIED = IDENTITY_DENIED_FRAGMENT = None
@@ -205,4 +227,4 @@ __all__ = [
     "verify_cdn_manifest",
 ]
 
-__version__ = "0.6.22"
+__version__ = "0.6.23"

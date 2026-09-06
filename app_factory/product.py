@@ -204,7 +204,6 @@ def install_product_host(
         install_platform_request_context(
             app,
             config=config.platform,
-            environments=[environment],
             current_user=current_user,
             locales=locales,
         )

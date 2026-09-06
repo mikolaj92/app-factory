@@ -181,6 +181,14 @@ def test_page_or_fragment_response_uses_explicit_template() -> None:
     client = TestClient(app)
     assert client.get("/").text == "page ready"
     assert client.get("/", headers={"HX-Request": "true"}).text == "part ready"
+    restore = client.get(
+        "/",
+        headers={
+            "HX-Request": "true",
+            "HX-History-Restore-Request": "true",
+        },
+    )
+    assert restore.text == "page ready"
 
 
 def test_toast_boot_is_opt_in_and_handles_network_failures_once() -> None:

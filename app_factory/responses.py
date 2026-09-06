@@ -13,6 +13,13 @@ except ImportError as exc:
     raise ImportError("app_factory.responses requires app-factory[fastapi]") from exc
 
 
+def wants_htmx_fragment(request: Request) -> bool:
+    """True for HTMX swaps; false for native navigation and history restore."""
+    if request.headers.get("HX-Request", "").lower() != "true":
+        return False
+    return request.headers.get("HX-History-Restore-Request", "").lower() != "true"
+
+
 def template_response(
     environment: Environment,
     request: Request,
@@ -27,16 +34,14 @@ def template_response(
 
     Host values override platform defaults. No template naming conventions,
     database access, or domain error policy are hidden in this helper.
+    History restore always receives the full page template.
     """
     selected = (
         fragment_template
-        if fragment_template
-        and request.headers.get("HX-Request", "").lower() == "true"
+        if fragment_template and wants_htmx_fragment(request)
         else template
     )
-    values = dict(
-        getattr(request.state, "app_factory_platform_context", {}) or {}
-    )
+    values = dict(getattr(request.state, "app_factory_platform_context", {}) or {})
     if context:
         values.update(context)
     values["request"] = request

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import subprocess
 from pathlib import Path
 
@@ -95,7 +96,6 @@ def test_platform_request_context_is_request_local_under_concurrency() -> None:
     install_platform_request_context(
         app,
         config=config,
-        environments=[environment],
         current_user=current_user,
     )
 
@@ -121,6 +121,9 @@ def test_platform_request_context_is_request_local_under_concurrency() -> None:
     assert ada.json() == {"name": "Ada"}
     assert bea.json() == {"name": "Bea"}
     assert "platform_user" not in environment.globals
+    assert "environments" not in inspect.signature(
+        install_platform_request_context
+    ).parameters
 
 
 def test_install_identity_adapters_is_idempotent_and_conflicts() -> None:
@@ -149,6 +152,8 @@ def test_adapter_modules_pass_ruff() -> None:
     root = Path(__file__).resolve().parents[1]
     completed = subprocess.run(
         [
+            "uv",
+            "run",
             "ruff",
             "check",
             "app_factory/adapters",
@@ -177,3 +182,11 @@ def test_identity_install_fails_closed_without_passkey_pair_or_csrf() -> None:
             environments=[environment],
             usermanager=UserManagerBinding(hooks=object()),
         )
+
+
+def test_passkey_adapter_does_not_reinclude_router() -> None:
+    from app_factory.adapters.passkey import install_passkey_adapter
+
+    assert "include_router" not in inspect.signature(
+        install_passkey_adapter
+    ).parameters
