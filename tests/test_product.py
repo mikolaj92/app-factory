@@ -98,6 +98,17 @@ def test_install_is_noop_for_same_inputs_and_rejects_changed_config_or_routers()
     assert before == (app.routes, app.user_middleware, app.exception_handlers)
 
 
+def test_existing_static_mount_conflicts_with_platform_assets(tmp_path: Path):
+    from starlette.staticfiles import StaticFiles
+
+    app = FastAPI()
+    app.mount("/static", StaticFiles(directory=tmp_path), name="host-static")
+    before = list(app.routes)
+    with pytest.raises(ValueError, match="conflict"):
+        install_product_host(app, ProductAppConfig())
+    assert app.routes == before
+
+
 @pytest.mark.parametrize(
     "path", ["/health", "/static/platform", "/static/platform/file.css", "/{path:path}"]
 )

@@ -82,9 +82,12 @@ def route_paths(routes: Iterable[BaseRoute], prefix: str = "") -> Iterator[Route
         path = prefix + getattr(route, "path", "")
         if not path:
             continue
+        regex = getattr(route, "path_regex", None) if not prefix else None
+        if regex is None:
+            regex = compile_path(path)[0]
         yield RoutePath(
             path,
-            compile_path(path)[0],
+            regex,
             getattr(route, "name", None),
             frozenset(getattr(route, "methods", ()) or ()),
             isinstance(route, Mount),
