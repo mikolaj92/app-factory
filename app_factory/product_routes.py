@@ -33,14 +33,20 @@ def _as_route_path(route: object, prefix: str = "") -> RoutePath | None:
 
 
 def route_paths(routes: Iterable[BaseRoute], prefix: str = "") -> Iterator[RoutePath]:
-    """Flatten lazy includes without depending on FastAPI private route types."""
+    """Flatten eager routes and FastAPI's internal lazy route contexts."""
     for route in routes:
         effective = getattr(route, "effective_route_contexts", None)
         if callable(effective):
             nested = tuple(effective())
             if nested:
                 for item in nested:
-                    mapped = _as_route_path(item, prefix)
+                    # Non-APIRoutes keep their prefixed path/regex on the
+                    # wrapped Starlette route, not on the effective context.
+                    starlette_route = getattr(item, "starlette_route", None)
+                    mapped = _as_route_path(
+                        starlette_route if starlette_route is not None else item,
+                        prefix,
+                    )
                     if mapped is not None:
                         yield mapped
                 continue

@@ -99,6 +99,25 @@ def test_install_is_noop_for_same_inputs_and_rejects_changed_config_or_routers()
     assert before == (app.routes, app.user_middleware, app.exception_handlers)
 
 
+def test_included_starlette_route_conflict_fails_before_install():
+    router = APIRouter()
+    router.add_route("/health", lambda request: None, methods=["GET"])
+    app = FastAPI()
+    app.include_router(router, prefix="/portal")
+    before = (list(app.routes), list(app.user_middleware))
+
+    with pytest.raises(ValueError, match="conflict"):
+        install_product_host(
+            app,
+            ProductAppConfig(
+                platform=PlatformConfig(paths=PlatformPaths(root="/portal"))
+            ),
+        )
+
+    assert before == (app.routes, app.user_middleware)
+    assert not hasattr(app.state, "app_factory_product")
+
+
 def test_existing_static_mount_conflicts_with_platform_assets(tmp_path: Path):
     from starlette.staticfiles import StaticFiles
 
