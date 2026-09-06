@@ -2,20 +2,24 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field, replace
+from html import escape
 from pathlib import Path
 from functools import partial
+from re import Pattern
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.exceptions import RequestValidationError
 from fastapi.exception_handlers import (
     http_exception_handler,
     request_validation_exception_handler,
 )
+from fastapi.responses import HTMLResponse, JSONResponse
 from starlette.exceptions import HTTPException
 from jinja2 import Environment
+from starlette.routing import BaseRoute, Mount, compile_path
 from starlette.types import Lifespan
 
 from app_factory.adapters import (
@@ -26,16 +30,6 @@ from app_factory.adapters import (
     install_platform_request_context,
 )
 from app_factory.adapters.session import CurrentUser, PageLocales
-from app_factory.product_routes import (
-    route_paths,
-    check_reserved_routes,
-    check_domain_routes,
-)
-from app_factory.product_errors import (
-    product_http_error,
-    product_validation_error,
-    product_server_error,
-)
 from app_factory.csrf import SameOriginCsrfMiddleware
 from app_factory.assets import platform_asset_url
 from app_factory.platform import (
@@ -64,6 +58,112 @@ class ProductInstall:
     environment: Environment
     platform: PlatformInstall
     identity: IdentityInstall | None = None
+
+
+@dataclass(frozen=True)
+class RoutePath:
+    path: str
+    regex: Pattern[str]
+    name: str | None
+    methods: frozenset[str]
+    mount: bool
+
+
+def route_paths(routes: Iterable[BaseRoute], prefix: str = "") -> Iterator[RoutePath]:
+    """Flatten lazy includes (new FastAPI) without changing routing behavior."""
+    for route in routes:
+        included = getattr(route, "original_router", None)
+        if included is not None:
+            yield from route_paths(
+                included.routes, prefix + route.include_context.prefix
+            )
+            continue
+        path = prefix + getattr(route, "path", "")
+        if not path:
+            continue
+        yield RoutePath(
+            path,
+            compile_path(path)[0],
+            getattr(route, "name", None),
+            frozenset(getattr(route, "methods", ()) or ()),
+            isinstance(route, Mount),
+        )
+
+
+def check_reserved_routes(
+    routes: Iterable[RoutePath], static: str, health: str, name: str
+) -> None:
+    for route in routes:
+        if (
+            route.name in (name, "app-factory-health")
+            or route.path == health
+            or route.path == static
+            or route.path.startswith(static + "/")
+            or route.regex.fullmatch(health)
+            or route.regex.fullmatch(static + "/file.css")
+            or (
+                route.mount
+                and (
+                    health.startswith(route.path + "/")
+                    or static.startswith(route.path + "/")
+                )
+            )
+        ):
+            raise ValueError(f"product host path/mount conflict: {route.path!r}")
+
+
+def check_domain_routes(
+    domain: Iterable[RoutePath], installed: Iterable[RoutePath]
+) -> None:
+    existing = list(installed)
+    for route in domain:
+        for other in existing:
+            overlap = (
+                route.path == other.path
+                or other.regex.fullmatch(route.path)
+                or route.regex.fullmatch(other.path)
+                or (other.mount and route.path.startswith(other.path + "/"))
+            )
+            if overlap and (
+                not route.methods or not other.methods or route.methods & other.methods
+            ):
+                raise ValueError(f"product host route conflict: {route.path!r}")
+        existing.append(route)
+
+
+def _error_fragment(request: Request, status: int, detail: str, headers=None):
+    if request.headers.get("HX-Request", "").lower() != "true":
+        return None
+    return HTMLResponse(
+        '<div class="alert" data-variant="destructive" role="alert">'
+        f"{escape(detail)}</div>",
+        status_code=status,
+        headers=headers,
+    )
+
+
+async def product_http_error(request: Request, exc: HTTPException):
+    if exc.status_code >= 400:
+        fragment = _error_fragment(
+            request, exc.status_code, str(exc.detail), exc.headers
+        )
+        if fragment is not None:
+            return fragment
+    return await http_exception_handler(request, exc)
+
+
+async def product_validation_error(request: Request, exc: RequestValidationError):
+    fragment = _error_fragment(request, 422, "Invalid request.")
+    if fragment is not None:
+        return fragment
+    return await request_validation_exception_handler(request, exc)
+
+
+async def product_server_error(request: Request, _exc: Exception):
+    fragment = _error_fragment(request, 500, "Internal Server Error")
+    if fragment is not None:
+        return fragment
+    return JSONResponse({"detail": "Internal Server Error"}, status_code=500)
 
 
 def install_product_host(

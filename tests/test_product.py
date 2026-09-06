@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 from app_factory import ProductAppConfig, create_product_app, template_response
 from app_factory import install_product_host
 from app_factory.platform import MenuItem, PlatformConfig, PlatformPaths, PlatformUser
+from app_factory.product import route_paths
 
 
 def test_one_composition_serves_shell_assets_health_and_protects_mutations(
@@ -59,6 +60,18 @@ def test_one_composition_serves_shell_assets_health_and_protects_mutations(
         assert client.post("/work", headers={"Origin": "http://testserver"}).json() == {
             "domain": True
         }
+
+
+def test_route_paths_flattens_lazy_includes_without_empty_compile():
+    host = FastAPI()
+    nested = APIRouter()
+    nested.add_api_route("/work", lambda: {"ok": True})
+    wrapper = APIRouter()
+    wrapper.include_router(nested, prefix="/api")
+    host.include_router(wrapper)
+    paths = list(route_paths(host.routes))
+    assert any(route.path == "/api/work" for route in paths)
+    assert all(route.path for route in paths)
 
 
 def test_install_is_noop_for_same_inputs_and_rejects_changed_config_or_routers():
