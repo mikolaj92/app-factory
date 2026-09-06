@@ -74,10 +74,10 @@ def test_route_paths_flattens_lazy_includes_without_empty_compile():
     assert all(route.path for route in paths)
 
     class BrokenInclude:
-        original_router = nested
-        include_context = object()
+        def effective_route_contexts(self):
+            raise RuntimeError("lazy include failed")
 
-    # Missing prefix must not crash conflict checks during install.
+    # Broken lazy includes must not crash conflict checks during install.
     assert list(route_paths([BrokenInclude()])) == []
 
 

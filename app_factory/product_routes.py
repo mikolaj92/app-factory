@@ -16,30 +16,40 @@ class RoutePath:
     mount: bool
 
 
+def _as_route_path(route: object, prefix: str = "") -> RoutePath | None:
+    path = prefix + getattr(route, "path", "")
+    if not path:
+        return None
+    regex = getattr(route, "path_regex", None) if not prefix else None
+    if regex is None:
+        regex = compile_path(path)[0]
+    return RoutePath(
+        path,
+        regex,
+        getattr(route, "name", None),
+        frozenset(getattr(route, "methods", ()) or ()),
+        isinstance(route, Mount),
+    )
+
+
 def route_paths(routes: Iterable[BaseRoute], prefix: str = "") -> Iterator[RoutePath]:
-    """Flatten lazy includes (new FastAPI) without changing routing behavior."""
+    """Flatten lazy includes without depending on FastAPI private route types."""
     for route in routes:
-        included = getattr(route, "original_router", None)
-        if included is not None:
-            context = getattr(route, "include_context", None)
-            nested_prefix = getattr(context, "prefix", None)
-            if nested_prefix is None:
+        effective = getattr(route, "effective_route_contexts", None)
+        if callable(effective):
+            try:
+                nested = tuple(effective())
+            except Exception:
+                nested = ()
+            if nested:
+                for item in nested:
+                    mapped = _as_route_path(item, prefix)
+                    if mapped is not None:
+                        yield mapped
                 continue
-            yield from route_paths(included.routes, prefix + nested_prefix)
-            continue
-        path = prefix + getattr(route, "path", "")
-        if not path:
-            continue
-        regex = getattr(route, "path_regex", None) if not prefix else None
-        if regex is None:
-            regex = compile_path(path)[0]
-        yield RoutePath(
-            path,
-            regex,
-            getattr(route, "name", None),
-            frozenset(getattr(route, "methods", ()) or ()),
-            isinstance(route, Mount),
-        )
+        mapped = _as_route_path(route, prefix)
+        if mapped is not None:
+            yield mapped
 
 
 def check_reserved_routes(
