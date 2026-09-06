@@ -74,7 +74,8 @@ def route_paths(routes: Iterable[BaseRoute], prefix: str = "") -> Iterator[Route
     for route in routes:
         included = getattr(route, "original_router", None)
         if included is not None:
-            nested_prefix = getattr(getattr(route, "include_context", None), "prefix", None)
+            context = getattr(route, "include_context", None)
+            nested_prefix = getattr(context, "prefix", None)
             if nested_prefix is None:
                 continue
             yield from route_paths(included.routes, prefix + nested_prefix)
@@ -231,8 +232,14 @@ def install_product_host(
     root = config.platform.paths.root.rstrip("/")
     static_path = join_platform_root(root, config.static_path.rstrip("/"))
     health_path = join_platform_root(root, config.health_path)
-    if config.static_path == "/" or not config.mount_name:
-        raise ValueError("static_path must be non-root; mount_name is required")
+    if not config.health_path.startswith("/") or config.health_path == "/":
+        raise ValueError("health_path must be an absolute non-root path")
+    if (
+        not config.static_path.startswith("/")
+        or config.static_path == "/"
+        or not config.mount_name
+    ):
+        raise ValueError("static_path must be an absolute non-root path; mount_name is required")
     if health_path == static_path or health_path.startswith(static_path + "/"):
         raise ValueError("health path conflicts with static mount")
     domain = APIRouter()

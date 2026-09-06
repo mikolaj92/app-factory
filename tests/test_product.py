@@ -110,6 +110,23 @@ def test_existing_static_mount_conflicts_with_platform_assets(tmp_path: Path):
 
 
 @pytest.mark.parametrize(
+    "kwargs",
+    (
+        {"health_path": "health"},
+        {"static_path": "static/platform"},
+        {"static_path": "/"},
+        {"mount_name": ""},
+    ),
+)
+def test_relative_or_empty_host_paths_fail_before_install(kwargs):
+    app = FastAPI()
+    before = list(app.routes)
+    with pytest.raises(ValueError):
+        install_product_host(app, ProductAppConfig(**kwargs))
+    assert app.routes == before
+
+
+@pytest.mark.parametrize(
     "path", ["/health", "/static/platform", "/static/platform/file.css", "/{path:path}"]
 )
 def test_conflicting_host_routes_fail_without_mutation(path):
