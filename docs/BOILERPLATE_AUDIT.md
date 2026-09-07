@@ -56,4 +56,4 @@ Relacje `projects -> runs -> operator_reviews` są zachowywane i sprawdzane prze
 2. ~~Przepnąć Argusa na `StandardUserManagerUiHooks`~~ — PR #5680, merge na `main`.
 3. ~~Migrować renderery rnkstr, Wolnego Rolnika i Emitype~~ — wykonane na `main`.
 4. ~~Usunąć martwe wrappery pagination/loading/form Emitype~~ — `749bb319`, kontrakty i testy przeszły; produktowe stany ładowania pozostają lokalne.
-5. Używać PlnFlr jako startera chrome-only, a `examples/multi_user_bom` jako startera identity. Nie tworzyć generatora ani nowego frameworka.
+5. Używać PlnFlr jako startera chrome-only, a `examples/multi_user_bom` jako startera identity. Nie tworzyć generatora ani nowego frameworka. Kontrakt cienkiego hosta (brak forka `product_shell` / platform assets, shared static, Origin CSRF / health, brak bezpośredniego `install_passkey_ui` / `install_usermanager_ui`) jest w `tests/test_host_conformance.py` i `app_factory.conformance`.
