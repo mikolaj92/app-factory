@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-import httpx
+import httpx2
 from fastapi import FastAPI, Request
 from jinja2 import DictLoader, Environment
 
@@ -109,9 +109,9 @@ def test_platform_request_context_is_request_local_under_concurrency() -> None:
         context = request.state.app_factory_platform_context
         return {"name": getattr(context["platform_user"], "display_name", "")}
 
-    async def exercise() -> tuple[httpx.Response, httpx.Response]:
-        transport = httpx.ASGITransport(app=app)
-        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+    async def exercise() -> tuple[httpx2.Response, httpx2.Response]:
+        transport = httpx2.ASGITransport(app=app)
+        async with httpx2.AsyncClient(transport=transport, base_url="http://test") as client:
             return await asyncio.gather(
                 client.get("/ping", headers={"x-user": "Ada"}),
                 client.get("/ping", headers={"x-user": "Bea"}),

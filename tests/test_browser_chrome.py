@@ -11,7 +11,7 @@ import threading
 import time
 from collections.abc import Iterator
 
-import httpx
+import httpx2
 import pytest
 import uvicorn
 
@@ -47,10 +47,10 @@ def live_server() -> Iterator[str]:
         if server.should_exit:
             break
         try:
-            with httpx.Client(base_url=base, timeout=0.5) as client:
+            with httpx2.Client(base_url=base, timeout=0.5) as client:
                 if client.get("/").status_code == 200:
                     break
-        except httpx.HTTPError:
+        except httpx2.HTTPError:
             time.sleep(0.05)
     else:
         server.should_exit = True

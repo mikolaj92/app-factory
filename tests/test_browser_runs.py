@@ -5,7 +5,7 @@ import threading
 import time
 from datetime import datetime, timezone
 
-import httpx
+import httpx2
 import pytest
 import uvicorn
 
@@ -76,9 +76,9 @@ def run_browser():
     try:
         for _ in range(100):
             try:
-                if httpx.get(base + "/openapi.json").status_code == 200:
+                if httpx2.get(base + "/openapi.json").status_code == 200:
                     break
-            except httpx.HTTPError:
+            except httpx2.HTTPError:
                 pass
             time.sleep(0.05)
         else:
