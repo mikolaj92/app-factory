@@ -1,5 +1,11 @@
 # app-factory
 
+### Unreleased API migration
+
+`RunArtifact` now requires one display field, `label`. Replace legacy `name=`
+with `label=` in constructors and JSON; `name` is rejected as an extra field.
+`filename` remains independent download metadata, not a second display label.
+
 Shared **frontend chrome** for FastAPI + Jinja2 + HTMX + Alpine applications,
 with locally bundled Basecoat UI assets and optional auth UI composition.
 

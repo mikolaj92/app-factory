@@ -110,7 +110,7 @@ def artifact_response(stream: object, artifact_id: str) -> StreamingResponse:
     ):
         raise RunError("conflict", "Artifact digest mismatch")
     filename = safe_artifact_filename(
-        artifact.filename or artifact.label or artifact.name
+        artifact.filename or artifact.label
     )
     media_type = artifact.media_type or "application/octet-stream"
     if "\r" in media_type or "\n" in media_type or ";" in media_type:

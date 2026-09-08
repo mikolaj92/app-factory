@@ -442,7 +442,7 @@ def reference_host(request):
                 items=[
                     RunArtifact(
                         id="output",
-                        name="Output",
+                        label="Output",
                         href=f"/files/{run_id}",
                         media_type="text/plain",
                     )
@@ -513,7 +513,7 @@ def reference_host(request):
                 items=[
                     RunArtifact(
                         id="output",
-                        name="Output",
+                        label="Output",
                         href=f"/files/{run_id}",
                         media_type="text/plain",
                     )

@@ -70,23 +70,15 @@ class RunArtifact(_RunDTO):
 
     id: NonEmpty
     media_type: NonEmpty
-    label: NonEmpty | None = None
+    label: NonEmpty
     size: Annotated[int, Field(ge=0)] | None = None
     digest: NonEmpty | None = None
     disposition: Literal["inline", "attachment"] | None = None
     filename: NonEmpty | None = None
     href: NonEmpty | None = None
-    name: NonEmpty | None = None
 
     @model_validator(mode="after")
-    def _compat_label(self) -> "RunArtifact":
-        label = self.label or self.name
-        if not label:
-            raise ValueError("label or name is required")
-        if self.label is None:
-            object.__setattr__(self, "label", label)
-        if self.name is None:
-            object.__setattr__(self, "name", label)
+    def _safe_href(self) -> "RunArtifact":
         href = safe_external_href(self.href)
         if href != self.href:
             object.__setattr__(self, "href", href)
