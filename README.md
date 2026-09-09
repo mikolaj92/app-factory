@@ -100,7 +100,7 @@ Apps should not ship:
   platform values come from `request.state.app_factory_platform_context`; they
   are never written into shared Jinja globals.
 - Set `toast_enabled = true` in shell context to install the Basecoat toaster and
-  shared `htmx:sendError` / `htmx:timeout` bridge. Override
+  shared `htmx:error` / `htmx:response:error` bridge. Override
   `network_error_message` and `toast_region_label` as host copy.
 - Import `app_factory/components/pagination.html` for accessible native links
   with optional `hx_target`, `hx_swap`, and `hx_push_url`.
@@ -119,10 +119,10 @@ SHA-384 digests; the runtime verifies it on first access.
 |------|-------------------|------|
 | `basecoat-css` | basecoat-css **1.0.2**, built with the app shell safelist | style |
 | `basecoat-js-all` | basecoat-css **1.0.2** | script |
-| `htmx` | htmx.org **2.0.10** | script |
-| `alpine` | alpinejs **3.17.1** | script |
-| `material-symbols-css` | Material Symbols Outlined **v364** | style |
-| `material-symbols-font` | Material Symbols Outlined **v364** | font |
+| `htmx` | htmx.org **4.0.0** | script |
+| `alpine` | alpinejs **3.17.2** | script |
+
+Icons in chrome and shared components are **inline Lucide SVGs** (the Basecoat-recommended set). The factory does not ship an icon font or a live CDN icon kit.
 
 ```python
 from app_factory import bundled_asset, list_bundled_assets, platform_asset_url
@@ -138,9 +138,10 @@ Exact sources, licenses, and digests are stored under `app_factory/assets/`.
 `app_factory/components/file_upload.html` exports domain-blind `file_upload` and `file_upload_field` Jinja macros.
 The host configures `accept`, `multiple`, `max_bytes`, labels, action, and HTMX
 target. The component provides picker/drop, selected-file removal, batch
-confirmation, busy state, and real `htmx:xhr:progress`; the normal multipart
+confirmation, busy state, and an HTMX request indicator; the normal multipart
 form remains the no-JS fallback. Server-side format and security validation
-remain consumer-owned.
+remain consumer-owned. HTMX 4 uses Fetch, so byte-level upload progress is not
+available from the transport.
 
 The backend companions `read_upload_bounded(...)` and `read_uploads_bounded(...)`
 read `UploadFile` objects in chunks and enforce per-file, aggregate, and file-count
@@ -197,9 +198,9 @@ the default manifest:
 
 | Name | Notes |
 |------|--------|
-| `chartjs` | Chart.js 4.4.1 |
+| `chartjs` | Chart.js 4.5.1 |
 | `leaflet-css` / `leaflet-js` | Leaflet 1.9.4 |
-| `sortablejs` | SortableJS 1.15.3 |
+| `sortablejs` | SortableJS 1.15.7 |
 
 ```python
 from app_factory.cdn import cdn_asset, extend_manifest, install_manifest
@@ -451,7 +452,7 @@ Constants: `CLIENT_SHELL`, `IDENTITY_PUBLIC_SHELL`, `IDENTITY_AUTHENTICATED_SHEL
   {% include "app_factory/head_assets.html" %}
   ```
 
-- Configures HTMX to send cookies (`withCredentials`).
+- Configures HTMX 4 same-origin credentials and keeps 4xx/5xx from swapping.
 - On HTMX **401**, redirects to `login_url` if set, else `/login`:
 
   ```jinja

@@ -24,8 +24,6 @@ _CORE_NAMES = {
     "htmx",
     "landing-css",
     "landing-js",
-    "material-symbols-css",
-    "material-symbols-font",
 }
 
 

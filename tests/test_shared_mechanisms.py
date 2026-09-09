@@ -74,7 +74,9 @@ def test_pagination_is_native_htmx_accessible_and_encodes_query() -> None:
     assert "page=99" not in html
 
 
-def test_pagination_preserves_existing_query_and_uses_shared_loading_indicator() -> None:
+def test_pagination_preserves_existing_query_and_uses_shared_loading_indicator() -> (
+    None
+):
     env = configure_jinja_env(Environment(autoescape=True))
     template = env.from_string(
         '{% from "app_factory/components/pagination.html" import pagination %}'
@@ -97,7 +99,10 @@ def test_same_origin_csrf_accepts_request_host_and_rejects_cross_origin() -> Non
         return {"ok": True}
 
     client = TestClient(app)
-    assert client.post("/write", headers={"Origin": "http://testserver"}).status_code == 200
+    assert (
+        client.post("/write", headers={"Origin": "http://testserver"}).status_code
+        == 200
+    )
     rejected = client.post("/write", headers={"Origin": "https://attacker.example"})
     assert rejected.status_code == 403
     assert rejected.json()["error"] == "CSRF validation failed"
@@ -165,7 +170,9 @@ def test_template_response_merges_request_local_platform_context() -> None:
 def test_page_or_fragment_response_uses_explicit_template() -> None:
     app = FastAPI()
     environment = Environment(
-        loader=DictLoader({"page.html": "page {{ value }}", "part.html": "part {{ value }}"})
+        loader=DictLoader(
+            {"page.html": "page {{ value }}", "part.html": "part {{ value }}"}
+        )
     )
 
     @app.get("/")
@@ -201,8 +208,10 @@ def test_toast_boot_is_opt_in_and_handles_network_failures_once() -> None:
     assert 'id="toaster"' not in slim
     assert 'id="toaster"' in enabled
     assert "window.__appToastBooted" in enabled
-    assert "htmx:sendError" in enabled
-    assert "htmx:timeout" in enabled
-    assert "htmx:responseError" in enabled
+    assert "htmx:error" in enabled
+    assert "htmx:response:error" in enabled
+    assert "htmx:sendError" not in enabled
+    assert "htmx:timeout" not in enabled
+    assert "htmx:responseError" not in enabled
     assert "window.addEventListener('offline'" in enabled
     assert "Offline" in enabled

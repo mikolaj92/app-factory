@@ -1,4 +1,4 @@
-<section id="{{ target_id }}" data-run-state="{{ state }}" hx-history="false" aria-live="polite"
+<section id="{{ target_id }}" data-run-state="{{ state }}" aria-live="polite"
   {% if poll_seconds %}hx-get="{{ poll_url }}" hx-trigger="every {{ poll_seconds }}s" hx-target="#{{ target_id }}" hx-swap="outerHTML"{% endif %}>
   <div class="alert" role="{{ 'status' if state == 'empty' else 'alert' }}">
     <h2>{{ state | replace('-', ' ') | capitalize }}</h2>

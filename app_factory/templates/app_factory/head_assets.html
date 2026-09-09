@@ -1,22 +1,25 @@
 {# Shared head: locally bundled core assets, configured by install_app_factory_ui(). #}
 {% include "app_factory/head_assets_slim.html" %}
+<meta name="htmx-config" content='{"noSwap":[204,304,"4xx","5xx"]}'>
 <script src="{{ platform_asset_url('htmx') }}"></script>
 <script src="{{ platform_asset_url('alpine') }}" defer></script>
 <script>
-  document.addEventListener('htmx:configRequest', function (event) {
-    if (event.detail && event.detail.xhr) {
-      event.detail.xhr.withCredentials = true;
+  document.addEventListener('htmx:config:request', function (event) {
+    var request = event.detail && event.detail.ctx && event.detail.ctx.request;
+    if (request) {
+      request.credentials = 'same-origin';
     }
   });
-  document.addEventListener('htmx:responseError', (event) => {
-    const status = event?.detail?.xhr?.status;
+  document.addEventListener('htmx:response:error', (event) => {
+    const status = event?.detail?.ctx?.response?.status;
     if (status === 401) {
       window.location.href = {{ (login_url if login_url is defined else '/login') | tojson }};
     }
   });
   // After HTMX swaps a fragment, re-init Alpine trees inside it (x-data/x-show).
-  document.addEventListener('htmx:afterSwap', function (event) {
-    var elt = event.detail && event.detail.elt;
+  document.addEventListener('htmx:after:swap', function (event) {
+    var ctx = event.detail && event.detail.ctx;
+    var elt = ctx && (ctx.target || ctx.sourceElement);
     if (!elt || typeof window.Alpine === 'undefined' || !window.Alpine.initTree) {
       return;
     }

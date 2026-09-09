@@ -124,7 +124,8 @@
     updateSidebarActiveLink();
     updateShellChrome();
     themeApi()?.refresh?.();
-    if (event?.detail?.target?.id === 'main-content' || event?.detail?.elt?.id === 'main-content') {
+    const swapped = event?.detail?.ctx?.target || event?.detail?.ctx?.sourceElement || event?.detail?.elt;
+    if (swapped?.id === 'main-content') {
       reinitPageScripts();
     }
   };
@@ -168,8 +169,8 @@
   });
 
   document.addEventListener('DOMContentLoaded', () => refreshChrome(false));
-  document.addEventListener('htmx:afterSwap', (event) => refreshChrome(false, event));
-  document.addEventListener('htmx:historyCacheHit', () => refreshChrome(true));
+  document.addEventListener('htmx:after:swap', (event) => refreshChrome(false, event));
+  document.addEventListener('htmx:before:history:restore', () => refreshChrome(true));
   window.addEventListener('popstate', () => {
     updateSidebarActiveLink();
     updateShellChrome();

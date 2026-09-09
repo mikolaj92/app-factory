@@ -21,6 +21,6 @@ def test_core_names_are_stable():
         "htmx",
         "landing-css",
         "landing-js",
-        "material-symbols-css",
-        "material-symbols-font",
     ]
+    assert bundled_asset("alpine").version == "3.17.2"
+    assert bundled_asset("htmx").version == "4.0.0"

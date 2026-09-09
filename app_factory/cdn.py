@@ -52,9 +52,9 @@ class CDNAsset:
 OPTIONAL_ASSETS: dict[str, CDNAsset] = {
     "chartjs": CDNAsset(
         name="chartjs",
-        version="4.4.1",
-        url="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js",
-        integrity="sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4",
+        version="4.5.1",
+        url="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js",
+        integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ",
         kind="script",
         order=50,
     ),
@@ -76,9 +76,9 @@ OPTIONAL_ASSETS: dict[str, CDNAsset] = {
     ),
     "sortablejs": CDNAsset(
         name="sortablejs",
-        version="1.15.3",
-        url="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js",
-        integrity="sha384-/jkFGhPVLS9HIUzX09xB5W3coE5q1X5NXZA/PuOAdOaRxUPczlZmKzYEq9QcJnW0",
+        version="1.15.7",
+        url="https://cdn.jsdelivr.net/npm/sortablejs@1.15.7/Sortable.min.js",
+        integrity="sha384-DgmC6Xe2bSN2WjTDXzWYbUbxyhNP+NNkGDR/g78pCXV7E7rcVTGxVg0uIVCUUcBc",
         kind="script",
         order=62,
     ),

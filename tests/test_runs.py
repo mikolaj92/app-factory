@@ -204,7 +204,7 @@ def test_run_history_restore_returns_fresh_full_shell(run_view_host):
         headers={"HX-Request": "true", "HX-History-Restore-Request": "true"},
     )
     assert "<html" in response.text and 'id="sidebar"' in response.text
-    assert 'hx-history="false"' in response.text
+    assert 'hx-history="false"' not in response.text
     assert port.calls == [("alice", "one")]
 
 
@@ -835,9 +835,7 @@ def test_run_results_stay_hidden_until_terminal_success(status):
         called = False
 
         async def get_run(self, scope, run_id):
-            return Run(
-                id=run_id, status=status, created_at=datetime.now(timezone.utc)
-            )
+            return Run(id=run_id, status=status, created_at=datetime.now(timezone.utc))
 
         async def get_result(self, scope, run_id):
             self.called = True
@@ -1001,7 +999,9 @@ def test_artifact_states_are_explicit_and_visible():
             assert f'data-run-state="{state}"' in native.text
             assert "<html" not in fragment.text
             assert f'data-run-state="{state}"' in fragment.text
-            assert error.response.message in fragment.text or "Artifact" in fragment.text
+            assert (
+                error.response.message in fragment.text or "Artifact" in fragment.text
+            )
 
         port.error = None
         port.stream = RunArtifactStream(
@@ -1066,9 +1066,7 @@ def test_json_artifact_download_reauthorizes_and_rejects_mismatch():
     app = FastAPI()
     app.include_router(create_run_router(lambda: port, authorize, prefix="/api/runs"))
     with TestClient(app) as client:
-        denied = client.get(
-            "/api/runs/one/artifacts/report", headers={"X-Deny": "yes"}
-        )
+        denied = client.get("/api/runs/one/artifacts/report", headers={"X-Deny": "yes"})
         assert denied.status_code == 403
         assert denied.json()["code"] == "forbidden"
         assert calls == [("artifact", "one")]
@@ -1187,7 +1185,10 @@ def test_artifact_filename_fallback_strips_header_injection():
     "media_type,body",
     [
         ("text/html", b"<script>alert(document.domain)</script>"),
-        ("image/svg+xml", b"<svg xmlns='http://www.w3.org/2000/svg'><script>alert(1)</script></svg>"),
+        (
+            "image/svg+xml",
+            b"<svg xmlns='http://www.w3.org/2000/svg'><script>alert(1)</script></svg>",
+        ),
     ],
 )
 def test_active_documents_are_not_served_inline(media_type, body):

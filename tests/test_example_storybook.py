@@ -5,8 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from jinja2 import Environment
 from starlette.testclient import TestClient
 
+from app_factory.jinja import configure_jinja_env
 from example.app import app
 
 client = TestClient(app)
@@ -69,7 +71,21 @@ def test_auth_surfaces_load_same_origin_platform_stack(
         assert asset_path in html
     assert "unpkg.com" not in html
     assert "cdn.jsdelivr.net" not in html
+    assert "material-symbols" not in html
     assert ('id="sidebar"' in html) is uses_product_shell
+
+
+def test_chrome_uses_inline_lucide_icons_not_icon_fonts() -> None:
+    html = client.get("/stories/signed-in").text
+    assert "lucide lucide-" in html
+    assert "material-symbols" not in html
+    env = configure_jinja_env(Environment(autoescape=True))
+    markup = env.from_string(
+        '{% from "app_factory/components/file_upload.html" import file_upload %}'
+        '{{ file_upload(id="u", action="/u") }}'
+    ).render()
+    assert "lucide-upload" in markup
+    assert "material-symbols" not in markup
 
 
 def test_guest_chrome_foot_vs_header() -> None:
@@ -158,6 +174,7 @@ def test_client_shell_is_slim_basecoat_without_htmx_alpine() -> None:
     assert "/static/platform/basecoat-js.min.js" in html
     assert "/static/platform/htmx.min.js" not in html
     assert "/static/platform/alpine.min.js" not in html
+    assert "htmx:config:request" not in html
     assert "htmx:configRequest" not in html
     assert "Alpine.initTree" not in html
 

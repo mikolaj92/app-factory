@@ -34,7 +34,9 @@ def _factory_env(extra_templates: dict[str, str] | None = None) -> Environment:
 
 def test_identity_template_constants_match_package_names() -> None:
     assert IDENTITY_PUBLIC_SHELL == "app_factory/identity_public_shell.html"
-    assert IDENTITY_AUTHENTICATED_SHELL == "app_factory/identity_authenticated_shell.html"
+    assert (
+        IDENTITY_AUTHENTICATED_SHELL == "app_factory/identity_authenticated_shell.html"
+    )
     assert IDENTITY_PUBLIC_STATE == "app_factory/identity_public_state.html"
     assert IDENTITY_DENIED == "app_factory/identity_denied.html"
     assert IDENTITY_DENIED_FRAGMENT == "app_factory/identity_denied_fragment.html"
@@ -115,9 +117,7 @@ def test_identity_authenticated_shell_reuses_product_chrome_and_identity_nav() -
 
 def test_identity_public_state_accepts_host_copy_without_enumeration() -> None:
     env = _factory_env(
-        {
-            "state.html": "{% include 'app_factory/identity_public_state.html' %}"
-        }
+        {"state.html": "{% include 'app_factory/identity_public_state.html' %}"}
     )
     html = env.get_template("state.html").render(
         identity_public_state_title="Łącze niedostępne",
@@ -182,7 +182,7 @@ def test_storybook_public_shells_preserve_locale_theme_and_invalid_states() -> N
     assert "data-platform-theme-locale" in valid.text
     assert "data-theme-toggle" in valid.text
     assert 'id="sidebar"' not in valid.text
-    assert "data-platform-identity-ceremony=\"activation\"" in valid.text
+    assert 'data-platform-identity-ceremony="activation"' in valid.text
     assert "data-platform-identity-host-notice" in valid.text
 
     invalid = client.get("/stories/activation?state=expired")
@@ -193,7 +193,7 @@ def test_storybook_public_shells_preserve_locale_theme_and_invalid_states() -> N
 
     recovery = client.get("/stories/recovery?capability=example")
     assert recovery.status_code == 200
-    assert "data-platform-identity-ceremony=\"recovery\"" in recovery.text
+    assert 'data-platform-identity-ceremony="recovery"' in recovery.text
 
     recovery_invalid = client.get("/stories/recovery?state=invalid")
     assert "data-platform-identity-public-state" in recovery_invalid.text
@@ -210,7 +210,7 @@ def test_storybook_authenticated_shells_and_fragment_swap() -> None:
 
     users = client.get("/stories/admin-users")
     assert users.status_code == 200
-    assert "data-platform-identity-ceremony=\"users\"" in users.text
+    assert 'data-platform-identity-ceremony="users"' in users.text
     assert "data-platform-users-fragment" in users.text
     assert 'hx-get="/stories/users/fragment"' in users.text
     assert 'hx-target="#users-fragment"' in users.text
@@ -270,6 +270,7 @@ def test_client_shell_is_slim_basecoat_document_without_htmx_alpine() -> None:
     assert "/static/platform/basecoat-js-all" in html
     assert "/static/platform/htmx" not in html
     assert "/static/platform/alpine" not in html
+    assert "htmx:config:request" not in html
     assert "htmx:configRequest" not in html
     assert "Alpine.initTree" not in html
     assert 'id="sidebar"' not in html

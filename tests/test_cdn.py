@@ -30,9 +30,11 @@ def test_core_assets_are_local_and_manifest_verified():
         "htmx",
         "landing-css",
         "landing-js",
-        "material-symbols-css",
-        "material-symbols-font",
     ]
+    assert bundled_asset("alpine").version == "3.17.2"
+    assert bundled_asset("basecoat-css").version == "1.0.2"
+    assert bundled_asset("basecoat-js-all").version == "1.0.2"
+    assert bundled_asset("htmx").version == "4.0.0"
     root = files("app_factory").joinpath("assets")
     for asset in assets:
         digest = "sha384-" + base64.b64encode(
@@ -51,13 +53,17 @@ def test_extend_manifest_adds_chartjs():
     m = extend_manifest(["chartjs"])
     assert [asset.name for asset in m] == ["chartjs"]
     assert len(m) == 1
+    assert cdn_asset("chartjs").version == "4.5.1"
+    assert cdn_asset("sortablejs").version == "1.15.7"
+    assert "4.4.1" not in cdn_asset("chartjs").url
+    assert "1.15.3" not in cdn_asset("sortablejs").url
 
 
 def test_install_manifest_updates_lookup():
     original = CDN_ASSET_MANIFEST
     try:
         install_manifest(extend_manifest(["chartjs"]))
-        assert cdn_asset("chartjs").version == "4.4.1"
+        assert cdn_asset("chartjs").version == "4.5.1"
     finally:
         install_manifest(original)
 
@@ -75,7 +81,13 @@ def test_head_partial_uses_only_same_origin_core_assets():
     assert "/static/platform/basecoat-js.min.js" in rendered
     assert "/static/platform/htmx.min.js" in rendered
     assert "/static/platform/alpine.min.js" in rendered
-    assert "/static/platform/material-symbols.css" in rendered
+    assert "htmx:config:request" in rendered
+    assert "htmx:after:swap" in rendered
+    assert "htmx:response:error" in rendered
+    assert "htmx:configRequest" not in rendered
+    assert "material-symbols" not in rendered
+    assert "unpkg.com" not in rendered
+    assert "cdn.jsdelivr.net" not in rendered
 
 
 def test_slim_head_partial_omits_htmx_and_alpine():
@@ -84,7 +96,7 @@ def test_slim_head_partial_omits_htmx_and_alpine():
     assert "https://" not in rendered
     assert "/static/platform/basecoat-factory.min.css" in rendered
     assert "/static/platform/basecoat-js.min.js" in rendered
-    assert "/static/platform/material-symbols.css" in rendered
+    assert "material-symbols" not in rendered
     assert "/static/platform/htmx.min.js" not in rendered
     assert "/static/platform/alpine.min.js" not in rendered
 
@@ -161,7 +173,9 @@ def test_local_bundled_assets_are_present_via_importlib_resources():
         "factory-content",
     )
     present = [name for name in forbidden_aliases if name in content]
-    assert not present, f"bundled CSS still contains removed factory-* aliases: {present}"
+    assert not present, (
+        f"bundled CSS still contains removed factory-* aliases: {present}"
+    )
 
 
 def test_bundled_css_hosts_need_no_tailwind_or_basecoat_install():

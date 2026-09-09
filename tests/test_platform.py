@@ -309,7 +309,7 @@ def test_landing_shell_renders_shared_frame_and_host_blocks() -> None:
     )
 
     assert 'class="app-shell app-landing"' in html
-    assert 'data-landing-shortcut' in html
+    assert "data-landing-shortcut" in html
     assert 'href="/app"' in html
     assert "Open app" in html
     assert "Temida" in html
@@ -333,6 +333,7 @@ def test_landing_assets_preserve_no_js_and_theme_contract() -> None:
     assert "root.classList.add('is-enhanced')" in script
     assert "is-reduced-motion" in script
     assert "IntersectionObserver" in script
+
 
 def test_factory_light_theme_uses_warm_paper_tokens() -> None:
     source = (
@@ -462,7 +463,10 @@ def test_theme_boot_uses_server_theme_and_syncs_html_attribute() -> None:
     assert "document.documentElement.dataset.theme" in html
     assert "validModes.has(serverMode) ? serverMode : 'auto'" in html
     assert "dataset.theme = isDark() ? 'dark' : 'light'" in html
-    assert "event.target.closest?.('[data-theme-toggle], button[data-theme], [role=\"button\"][data-theme]')" in html
+    assert (
+        "event.target.closest?.('[data-theme-toggle], button[data-theme], [role=\"button\"][data-theme]')"
+        in html
+    )
     assert "window.appTheme.toggle()" in html
     assert "closest?.('[data-theme], [data-theme-toggle]')" not in html
 
@@ -472,7 +476,8 @@ def test_head_assets_reinit_alpine_after_htmx_swap() -> None:
     html = environment.get_template("app_factory/head_assets.html").render(
         platform_asset_url=lambda name: f"/static/platform/{name}"
     )
-    assert "htmx:afterSwap" in html
+    assert "htmx:after:swap" in html
+    assert "htmx:configRequest" not in html
     assert "Alpine.initTree" in html
 
 
@@ -570,7 +575,6 @@ def test_platform_session_partial_accepts_host_labels() -> None:
     assert "Log out" not in html
 
 
-
 def test_install_platform_mounts_chrome_and_registers_state() -> None:
     app = FastAPI()
     environment = _env_with_factory()
@@ -614,8 +618,9 @@ def test_shell_boot_template_exports_config_contract() -> None:
     assert "getSidebar" in html
     assert "initBasecoat" in html
     assert "data-sidebar-toggle" in html
-    assert "htmx:afterSwap" in html
-    assert "htmx:historyCacheHit" in html
+    assert "htmx:after:swap" in html
+    assert "htmx:before:history:restore" in html
+    assert "htmx:historyCacheHit" not in html
     assert "basecoat:sidebar" in html
     assert "app-nav-link--active" in html
     assert "reinitPageScripts" in html
@@ -628,7 +633,7 @@ def test_shell_includes_shell_boot_after_head_extra() -> None:
         platform_asset_url=lambda name: f"/static/platform/{name}"
     )
     assert "window.__appShellBooted" in html
-    assert html.index("htmx:configRequest") < html.index("window.__appShellBooted")
+    assert html.index("htmx:config:request") < html.index("window.__appShellBooted")
 
 
 def test_bare_shell_header_links_brand_home() -> None:

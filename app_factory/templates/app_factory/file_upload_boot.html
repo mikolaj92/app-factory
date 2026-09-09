@@ -104,15 +104,27 @@
       }
     });
 
-    form.addEventListener('htmx:beforeRequest', () => { if (submit) { submit.disabled = true; submit.setAttribute('aria-busy', 'true'); } if (progress) progress.hidden = false; });
-    form.addEventListener('htmx:xhr:progress', (event) => { const pct = event.detail.total ? Math.round(event.detail.loaded / event.detail.total * 100) : 0; if (bar) bar.value = pct; if (progressLabel) progressLabel.textContent = `${pct}%`; });
-    form.addEventListener('htmx:afterRequest', () => { if (submit) { submit.removeAttribute('aria-busy'); submit.disabled = input.required && !(input.files && input.files.length); } });
+    form.addEventListener('htmx:before:request', () => {
+      if (submit) { submit.disabled = true; submit.setAttribute('aria-busy', 'true'); }
+      if (progress) progress.hidden = false;
+      if (bar) bar.removeAttribute('value');
+      if (progressLabel) progressLabel.textContent = '';
+    });
+    form.addEventListener('htmx:after:request', () => {
+      if (submit) { submit.removeAttribute('aria-busy'); submit.disabled = input.required && !(input.files && input.files.length); }
+      if (progress) progress.hidden = true;
+      if (bar) bar.value = 0;
+      if (progressLabel) progressLabel.textContent = '0%';
+    });
     render();
   };
 
   const initAll = (root = document) => root.querySelectorAll?.('[data-app-file-upload-field]').forEach(init);
   document.addEventListener('DOMContentLoaded', () => initAll());
-  document.addEventListener('htmx:afterSwap', (event) => initAll(event.detail?.elt || document));
+  document.addEventListener('htmx:after:swap', (event) => {
+    const ctx = event.detail && event.detail.ctx;
+    initAll((ctx && (ctx.target || ctx.sourceElement)) || document);
+  });
   if (document.readyState !== 'loading') initAll();
 })();
 </script>

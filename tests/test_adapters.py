@@ -111,7 +111,9 @@ def test_platform_request_context_is_request_local_under_concurrency() -> None:
 
     async def exercise() -> tuple[httpx2.Response, httpx2.Response]:
         transport = httpx2.ASGITransport(app=app)
-        async with httpx2.AsyncClient(transport=transport, base_url="http://test") as client:
+        async with httpx2.AsyncClient(
+            transport=transport, base_url="http://test"
+        ) as client:
             return await asyncio.gather(
                 client.get("/ping", headers={"x-user": "Ada"}),
                 client.get("/ping", headers={"x-user": "Bea"}),
@@ -121,21 +123,18 @@ def test_platform_request_context_is_request_local_under_concurrency() -> None:
     assert ada.json() == {"name": "Ada"}
     assert bea.json() == {"name": "Bea"}
     assert "platform_user" not in environment.globals
-    assert "environments" not in inspect.signature(
-        install_platform_request_context
-    ).parameters
+    assert (
+        "environments"
+        not in inspect.signature(install_platform_request_context).parameters
+    )
 
 
 def test_install_identity_adapters_is_idempotent_and_conflicts() -> None:
     app = FastAPI()
     environment = Environment(loader=DictLoader({}))
     config = PlatformConfig(app_name="One")
-    first = install_identity_adapters(
-        app, environments=[environment], config=config
-    )
-    second = install_identity_adapters(
-        app, environments=[environment], config=config
-    )
+    first = install_identity_adapters(app, environments=[environment], config=config)
+    second = install_identity_adapters(app, environments=[environment], config=config)
     assert first is second
     assert first.passkey_ui is None
     assert first.usermanager_ui is None
@@ -187,6 +186,4 @@ def test_identity_install_fails_closed_without_passkey_pair_or_csrf() -> None:
 def test_passkey_adapter_does_not_reinclude_router() -> None:
     from app_factory.adapters.passkey import install_passkey_adapter
 
-    assert "include_router" not in inspect.signature(
-        install_passkey_adapter
-    ).parameters
+    assert "include_router" not in inspect.signature(install_passkey_adapter).parameters

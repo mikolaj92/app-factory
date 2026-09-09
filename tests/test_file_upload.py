@@ -19,7 +19,7 @@ def _render(**kwargs: object) -> str:
     env = configure_jinja_env(Environment(autoescape=True))
     template = env.from_string(
         '{% from "app_factory/components/file_upload.html" import file_upload %}'
-        '{{ file_upload(**options) }}'
+        "{{ file_upload(**options) }}"
     )
     return template.render(options=kwargs)
 
@@ -46,6 +46,8 @@ def test_upload_is_domain_blind_and_host_configurable() -> None:
     assert "multiple" in html
     assert 'data-max-bytes="1234"' in html
     assert "DOCX" not in html and "PDF" not in html
+    assert "material-symbols" not in html
+    assert 'class="lucide lucide-upload"' in html or "lucide-upload" in html
 
 
 def test_upload_has_accessible_progress_and_no_js_fallback() -> None:
@@ -87,7 +89,10 @@ def test_shared_controller_uses_htmx_transport_not_fetch_or_xhr() -> None:
     )
     assert "new XMLHttpRequest" not in source
     assert "fetch(" not in source
-    assert "htmx:xhr:progress" in source
+    assert "htmx:before:request" in source
+    assert "htmx:after:request" in source
+    assert "htmx:after:swap" in source
+    assert "htmx:xhr:progress" not in source
     assert "DataTransfer" in source
     assert "requestSubmit" in source
 
@@ -131,7 +136,10 @@ def test_read_upload_bounded_stops_after_limit() -> None:
 
 def test_read_upload_bounded_accepts_exact_limit_and_empty_file() -> None:
     exact = UploadFile(BytesIO(b"1234"), filename="exact.bin")
-    assert asyncio.run(read_upload_bounded(exact, max_bytes=4, chunk_size=2)).data == b"1234"
+    assert (
+        asyncio.run(read_upload_bounded(exact, max_bytes=4, chunk_size=2)).data
+        == b"1234"
+    )
     empty = UploadFile(BytesIO(b""), filename=None)
     result = asyncio.run(read_upload_bounded(empty, max_bytes=1))
     assert result.filename == "upload"
@@ -183,11 +191,11 @@ def test_upload_field_composes_inside_a_host_form() -> None:
         '{% from "app_factory/components/file_upload.html" import file_upload_field %}'
         '<form method="post" data-app-file-upload>'
         '{{ file_upload_field(id="pdf", name="evidence", accept=".pdf") }}'
-        '<button data-app-file-submit>Save project</button></form>'
+        "<button data-app-file-submit>Save project</button></form>"
     )
     html = template.render()
     assert html.count("<form") == 1
-    assert 'data-app-file-upload-field' in html
+    assert "data-app-file-upload-field" in html
     assert 'name="evidence"' in html
     assert 'accept=".pdf"' in html
     html = env.from_string(
