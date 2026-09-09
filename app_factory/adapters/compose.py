@@ -14,6 +14,7 @@ from app_factory.adapters.passkey import (
     install_passkey_adapter,
     passkey_paths_from_platform,
 )
+from app_factory.adapters.route_contract import check_identity_routes
 from app_factory.adapters.session import (
     attach_platform_page_context,
     install_platform_request_context,
@@ -151,6 +152,7 @@ def install_identity_adapters(
         mount_name=mount_name,
     )
 
+    before_identity = {id(route) for route in app.routes}
     passkey_ui = None
     if passkey is not None:
         ui_config = passkey.ui_config
@@ -207,6 +209,12 @@ def install_identity_adapters(
             labels=dict(usermanager.labels) if usermanager.labels else None,
             base_template=usermanager.base_template,
         )
+
+    identity_routes = tuple(
+        route for route in app.routes if id(route) not in before_identity
+    )
+    check_identity_routes(app.routes, identity_routes)
+    app.state.app_factory_identity_routes = identity_routes
 
     request_environments = list(env_list)
     if passkey_ui is not None:

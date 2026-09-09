@@ -280,7 +280,10 @@ assets, request-local user/locale context and theme chrome, strict Origin CSRF,
 standard HTTP/validation/500 handlers, and `GET /health` (`{"status": "ok"}`).
 Health is liveness only; it does not probe a product database. JSON clients retain
 FastAPI HTTP/422 semantics; HTMX receives escaped alert fragments. Unexpected
-errors return generic 500 copy, never exception details.
+errors return generic 500 copy, never exception details. The shared shell also
+shows a safe, localized `network_error_message` in the HTMX target on failed
+requests, preserving the form for retry. It never swaps raw error responses
+(proxy HTML, JSON, or tracebacks); no per-product error JavaScript is needed.
 
 Pass `passkey=PasskeyBinding(...)`, `usermanager=UserManagerBinding(...)`,
 `current_user=...`, and `locales=...` to opt into identity via
@@ -305,7 +308,11 @@ before any lower-level factory installers. Compatible repeats with the same
 router objects and bindings return the same result without adding middleware or
 routes. Changed inputs, existing factory installations, custom standard error
 handlers and overlapping paths/mounts raise `ValueError`. Adapter route conflicts
-can only be checked after adapter installation; discard an app after a failed
+are checked using installed paths and methods, including earlier dynamic routes
+and root mounts. Disjoint HTTP methods and later catch-alls are allowed by the
+identity composer. `check_thin_host(..., identity=True)` repeats the ordered
+identity check, detecting shadowing introduced after composition. These checks
+can only run after adapter installation; discard an app after a failed
 install rather than retrying it. Configure custom error handlers after bootstrap
 when deliberately replacing the defaults.
 

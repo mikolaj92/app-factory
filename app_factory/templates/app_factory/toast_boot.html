@@ -20,7 +20,24 @@
   document.addEventListener('htmx:sendError', () => emit());
   document.addEventListener('htmx:timeout', () => emit());
   document.addEventListener('htmx:responseError', (event) => {
-    if (event?.detail?.xhr?.status === 0) emit();
+    const detail = event.detail || {};
+    const target = detail.target;
+    // Never swap arbitrary error bodies (proxy HTML, JSON, or tracebacks).
+    // Preserve the target/form so the user can correct input and retry.
+    if (target instanceof HTMLElement && target.isConnected) {
+      let alert = target.querySelector('[data-app-request-error]');
+      if (!alert) {
+        alert = document.createElement('div');
+        alert.className = 'alert';
+        alert.dataset.variant = 'destructive';
+        alert.dataset.appRequestError = '';
+        alert.setAttribute('role', 'alert');
+        target.prepend(alert);
+      }
+      alert.textContent = fallback;
+    } else {
+      emit();
+    }
   });
 })();
 </script>

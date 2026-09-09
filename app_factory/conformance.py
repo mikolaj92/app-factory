@@ -12,6 +12,7 @@ try:
 except ImportError as exc:  # pragma: no cover
     raise ImportError("app_factory.conformance requires app-factory[fastapi]") from exc
 
+from app_factory.adapters.route_contract import check_identity_routes
 from app_factory.csrf import SameOriginCsrfMiddleware
 from app_factory.product_errors import product_http_error, product_server_error
 
@@ -136,6 +137,14 @@ def check_thin_host(
         for route in app.routes
     ):
         problems.append(f"missing shared static mount at {expected_static}")
+
+    if identity:
+        try:
+            check_identity_routes(
+                app.routes, getattr(app.state, "app_factory_identity_routes", ())
+            )
+        except ValueError as exc:
+            problems.append(str(exc))
 
     origin_csrf = _has_same_origin_csrf(app)
     htmx_errors = _has_htmx_error_handlers(app)
