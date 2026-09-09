@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import fields
 from typing import Any
 
 from fastapi import FastAPI, Request
@@ -47,31 +48,30 @@ def complete_passkey_hooks(hooks: Any) -> Any:
     def _attr(name: str, default: Any) -> Any:
         return getattr(hooks, name, default)
 
-    return PasskeyRouteHooks(
-        get_session_user=hooks.get_session_user,
-        prepare_registration=hooks.prepare_registration,
-        complete_registration=hooks.complete_registration,
-        get_auth_user=hooks.get_auth_user,
-        login=hooks.login,
-        logout=hooks.logout,
-        render_login=_attr("render_login", _unused_render_login),
-        render_register=_attr("render_register", _unused_render_register),
-        after_register=_attr(
+    hook_kwargs: dict[str, Any] = {
+        "get_session_user": hooks.get_session_user,
+        "prepare_registration": hooks.prepare_registration,
+        "complete_registration": hooks.complete_registration,
+        "get_auth_user": hooks.get_auth_user,
+        "login": hooks.login,
+        "logout": hooks.logout,
+        "render_login": _attr("render_login", _unused_render_login),
+        "render_register": _attr("render_register", _unused_render_register),
+        "after_register": _attr(
             "after_register", lambda _request, _user, _credential: None
         ),
-        after_login=_attr("after_login", lambda _request, _user, _credential: None),
-        prepare_registration_context=_attr("prepare_registration_context", None),
-        prepare_capability_registration_context=_attr(
+        "after_login": _attr("after_login", lambda _request, _user, _credential: None),
+        "prepare_registration_context": _attr("prepare_registration_context", None),
+        "prepare_capability_registration_context": _attr(
             "prepare_capability_registration_context", None
         ),
-        render_capability_registration=_attr(
-            "render_capability_registration", None
-        ),
-        render_credential_management=_attr("render_credential_management", None),
-        allow_final_credential_removal=_attr(
-            "allow_final_credential_removal", None
-        ),
-    )
+        "render_capability_registration": _attr("render_capability_registration", None),
+        "render_credential_management": _attr("render_credential_management", None),
+        "allow_final_credential_removal": _attr("allow_final_credential_removal", None),
+    }
+    if any(field.name == "rate_limit" for field in fields(PasskeyRouteHooks)):
+        hook_kwargs["rate_limit"] = _attr("rate_limit", None)
+    return PasskeyRouteHooks(**hook_kwargs)
 
 
 def install_passkey_adapter(
