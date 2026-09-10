@@ -134,6 +134,13 @@ def test_readme_current_tag_matches_project_metadata() -> None:
     assert f"**Tag:** `v{project['project']['version']}`" in readme
 
 
+def test_readme_bundled_assets_heading_matches_project_metadata() -> None:
+    root = Path(__file__).parents[1]
+    project = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    assert f"## Bundled core assets (`v{project['project']['version']}`)" in readme
+
+
 def test_bom_app_factory_pin_matches_project_version() -> None:
     root = Path(__file__).parents[1]
     project = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
