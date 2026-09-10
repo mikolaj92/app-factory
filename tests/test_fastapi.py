@@ -141,6 +141,29 @@ def test_readme_bundled_assets_heading_matches_project_metadata() -> None:
     assert f"## Bundled core assets (`v{project['project']['version']}`)" in readme
 
 
+def test_readme_export_table_covers_product_host_api() -> None:
+    from app_factory import __all__ as public_names
+
+    readme = (Path(__file__).parents[1] / "README.md").read_text(encoding="utf-8")
+    exports = readme.split("## What this package exports", 1)[1].split("## ", 1)[0]
+    sketch = readme.split("## API sketch", 1)[1].split("## ", 1)[0]
+    required = (
+        "create_product_app",
+        "install_product_host",
+        "RunPort",
+        "create_run_router",
+        "create_run_view_router",
+        "IntakeSpec",
+        "create_intake_router",
+        "check_thin_host",
+    )
+    for symbol in required:
+        assert symbol in exports, symbol
+        assert symbol in sketch, symbol
+        assert symbol in public_names, symbol
+    assert "product_shell.html" in exports
+
+
 def test_bom_app_factory_pin_matches_project_version() -> None:
     root = Path(__file__).parents[1]
     project = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
