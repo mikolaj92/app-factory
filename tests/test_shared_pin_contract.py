@@ -34,6 +34,13 @@ def test_core_names_are_stable():
     assert bundled_asset("tailwind-browser").version == "4.3.3"
 
 
+def test_readme_lists_every_manifest_pin() -> None:
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    for asset in list_bundled_assets():
+        assert f"| `{asset.name}` |" in readme
+    assert "four bundled core files" not in readme
+
+
 def test_maintainer_build_has_no_npm_lock() -> None:
     assert not (BUILD_SRC / "package.json").exists()
     assert not (BUILD_SRC / "package-lock.json").exists()

@@ -122,6 +122,8 @@ SHA-384 digests; the runtime verifies it on first access.
 | `tailwind-browser` | `@tailwindcss/browser` **4.3.3** (registry tarball at refresh) | script |
 | `htmx` | HTMX **4.0.0** (GitHub dist) | script |
 | `alpine` | Alpine.js **3.17.2** (registry tarball at refresh) | script |
+| `landing-css` | factory landing **1.0.0** (landing page only, not `head_assets.html`) | style |
+| `landing-js` | factory landing **1.0.0** (landing page only, not `head_assets.html`) | script |
 
 Icons in chrome and shared components are **inline Lucide SVGs** (the Basecoat-recommended set). The factory does not ship an icon font or a live CDN icon kit.
 
@@ -447,7 +449,7 @@ Constants: `CLIENT_SHELL`, `IDENTITY_PUBLIC_SHELL`, `IDENTITY_AUTHENTICATED_SHEL
 
 ### `head_assets.html` behavior
 
-- Emits URLs for the four bundled core files under the installer-bound prefix.
+- Emits URLs for the five head pins (`basecoat-css`, `basecoat-js-all`, `tailwind-browser`, `htmx`, `alpine`) under the installer-bound prefix. That is not the full `MANIFEST.json` set: `landing-css` and `landing-js` stay on the landing template.
 - Optional single product stylesheet via template variable:
 
   ```jinja
