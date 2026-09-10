@@ -7,11 +7,12 @@ Run from the repo root:
     python scripts/refresh_platform_assets.py
 
 What it does:
-- Uses scripts/platform_assets_src (package.json + lock) for Basecoat/Alpine/Tailwind.
+- Uses scripts/platform_assets_src (package.json + lock) for Basecoat/Tailwind only.
 - Fetches HTMX minified dist from the pinned GitHub tag (no npm).
+- Fetches Alpine minified dist from the pinned npm tarball (no lock pin).
 - Runs `npm ci` from the committed lockfile.
 - Runs the CSS build.
-- Copies the runtime files (Basecoat CSS/JS, Alpine, landing extras) into a staging directory.
+- Copies the runtime files (Basecoat CSS/JS, landing extras) into a staging directory.
 - Fetches real license texts from the exact upstream sources for the pinned versions.
 - Validates that license content is non-empty and looks like a license (no 404/empty).
 - Computes sha384 for all bundled files.
@@ -29,11 +30,14 @@ from __future__ import annotations
 import base64
 import ctypes
 import hashlib
+import hmac
+import io
 import json
 import os
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 from pathlib import Path
 from urllib.error import HTTPError
@@ -66,6 +70,13 @@ HTMX_SOURCE_URL = (
 HTMX_LICENSE_URL = (
     f"https://raw.githubusercontent.com/bigskysoftware/htmx/v{HTMX_VERSION}/LICENSE"
 )
+ALPINE_VERSION = "3.17.2"
+ALPINE_FILENAME = "alpine.min.js"
+ALPINE_REGISTRY_URL = f"https://registry.npmjs.org/alpinejs/{ALPINE_VERSION}"
+ALPINE_DIST_PATH = "package/dist/cdn.min.js"
+ALPINE_LICENSE_URL = (
+    f"https://raw.githubusercontent.com/alpinejs/alpine/v{ALPINE_VERSION}/LICENSE.md"
+)
 CORE_FILES: dict[str, tuple[Path, str, str]] = {
     "basecoat-css": (
         BUILD_SRC / "dist" / "basecoat-factory.min.css",
@@ -77,23 +88,19 @@ CORE_FILES: dict[str, tuple[Path, str, str]] = {
         "basecoat-js.min.js",
         "script",
     ),
-    "alpine": (
-        BUILD_SRC / "node_modules" / "alpinejs" / "dist" / "cdn.min.js",
-        "alpine.min.js",
-        "script",
-    ),
 }
 LANDING_VERSION = "1.0.0"
 LANDING_FILES: dict[str, tuple[Path, str, str]] = {
     "landing-css": (ASSETS_DST / "landing.css", "landing.css", "style"),
     "landing-js": (ASSETS_DST / "landing.js", "landing.js", "script"),
 }
-HTMX_FILES: dict[str, tuple[None, str, str]] = {
+REMOTE_FILES: dict[str, tuple[None, str, str]] = {
     "htmx": (None, HTMX_FILENAME, "script"),
+    "alpine": (None, ALPINE_FILENAME, "script"),
 }
 BUNDLED_FILES: dict[str, tuple[Path | None, str, str]] = {
     **CORE_FILES,
-    **HTMX_FILES,
+    **REMOTE_FILES,
     **LANDING_FILES,
 }
 
@@ -105,10 +112,10 @@ LICENSE_SOURCES = {
         HTMX_LICENSE_URL,
     ),
     "alpine.LICENSE": (
-        "alpinejs",
+        "Alpine.js",
         "MIT",
         "https://github.com/alpinejs/alpine",
-        "https://raw.githubusercontent.com/alpinejs/alpine/v3.17.2/LICENSE.md",
+        ALPINE_LICENSE_URL,
     ),
     "tailwindcss.LICENSE": (
         "tailwindcss (build-time; incorporated into generated CSS)",
@@ -146,6 +153,34 @@ def validate_license(text: bytes, source: str, *, required: tuple[bytes, ...]) -
         raise RuntimeError(f"invalid or incomplete license content from {source}")
 
 
+def fetch_alpine_cdn() -> bytes:
+    metadata = json.loads(fetch_bytes(ALPINE_REGISTRY_URL))
+    dist = metadata.get("dist") if isinstance(metadata, dict) else None
+    tarball = dist.get("tarball") if isinstance(dist, dict) else None
+    integrity = dist.get("integrity") if isinstance(dist, dict) else None
+    if not isinstance(tarball, str) or not tarball.startswith(
+        "https://registry.npmjs.org/"
+    ):
+        raise RuntimeError("alpinejs registry metadata has no npm tarball")
+    if not isinstance(integrity, str) or not integrity.startswith("sha512-"):
+        raise RuntimeError("alpinejs registry metadata has no sha512 integrity")
+    archive = fetch_bytes(tarball)
+    digest = "sha512-" + base64.b64encode(hashlib.sha512(archive).digest()).decode(
+        "ascii"
+    )
+    if not hmac.compare_digest(digest, integrity):
+        raise RuntimeError("alpinejs tarball integrity mismatch")
+    with tarfile.open(fileobj=io.BytesIO(archive), mode="r:gz") as tar:
+        member = tar.getmember(ALPINE_DIST_PATH)
+        extracted = tar.extractfile(member)
+        if extracted is None:
+            raise RuntimeError(f"alpinejs tarball missing {ALPINE_DIST_PATH}")
+        body = extracted.read()
+    if not body:
+        raise RuntimeError("alpinejs cdn.min.js is empty")
+    return body
+
+
 def build_and_stage() -> Path:
     """Run the full build in the pinned sources and return a staging dir with final layout."""
     if not (BUILD_SRC / "package.json").exists():
@@ -162,11 +197,14 @@ def build_and_stage() -> Path:
     assets_stage = stage / "assets"
     assets_stage.mkdir()
 
-    for source, filename, _kind in BUNDLED_FILES.values():
-        if source is None:
+    for name, (source, filename, _kind) in BUNDLED_FILES.items():
+        if name == "htmx":
             (assets_stage / filename).write_bytes(fetch_bytes(HTMX_SOURCE_URL))
             continue
-        if not source.is_file():
+        if name == "alpine":
+            (assets_stage / filename).write_bytes(fetch_alpine_cdn())
+            continue
+        if source is None or not source.is_file():
             raise RuntimeError(f"expected asset not found: {source}")
         shutil.copy2(source, assets_stage / filename)
 
@@ -245,9 +283,9 @@ def build_and_stage() -> Path:
                 if name in LANDING_FILES
                 else HTMX_VERSION
                 if name == "htmx"
-                else read_version(
-                    "basecoat-css" if name.startswith("basecoat-") else "alpinejs"
-                )
+                else ALPINE_VERSION
+                if name == "alpine"
+                else read_version("basecoat-css")
             ),
             "integrity": b64sha384(assets_stage / filename),
             "kind": kind,
@@ -287,18 +325,17 @@ def build_and_stage() -> Path:
         repository,
         source,
     ) in LICENSE_SOURCES.items():
-        version_label = (
-            HTMX_VERSION
-            if filename.startswith("htmx")
-            else read_version(
-                "tailwindcss" if filename.startswith("tailwindcss") else "alpinejs"
+        if filename.startswith("htmx"):
+            version_label = HTMX_VERSION
+            extra_source = f"\n  Exact source: {HTMX_SOURCE_URL}"
+        elif filename.startswith("alpine"):
+            version_label = ALPINE_VERSION
+            extra_source = (
+                f"\n  Exact source: {ALPINE_REGISTRY_URL} ({ALPINE_DIST_PATH})"
             )
-        )
-        extra_source = (
-            f"\n  Exact source: {HTMX_SOURCE_URL}"
-            if filename.startswith("htmx")
-            else ""
-        )
+        else:
+            version_label = read_version("tailwindcss")
+            extra_source = ""
         attribution.append(
             f"- {package} {version_label}\n"
             f"  License: {license_name}\n"

@@ -13,9 +13,10 @@ Runtime/build provenance:
   Exact source: https://raw.githubusercontent.com/bigskysoftware/htmx/v4.0.0/dist/htmx.min.js
   Exact license: https://raw.githubusercontent.com/bigskysoftware/htmx/v4.0.0/LICENSE
   License text: licenses/htmx.LICENSE
-- alpinejs 3.17.2
+- Alpine.js 3.17.2
   License: MIT
   Source: https://github.com/alpinejs/alpine
+  Exact source: https://registry.npmjs.org/alpinejs/3.17.2 (package/dist/cdn.min.js)
   Exact license: https://raw.githubusercontent.com/alpinejs/alpine/v3.17.2/LICENSE.md
   License text: licenses/alpine.LICENSE
 - tailwindcss (build-time; incorporated into generated CSS) 4.3.3

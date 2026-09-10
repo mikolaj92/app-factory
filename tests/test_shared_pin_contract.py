@@ -46,3 +46,17 @@ def test_htmx_is_fetched_from_github_not_npm() -> None:
     assert "node_modules/htmx.org" not in script
     assert "github.com/bigskysoftware/htmx" in script
     assert 'HTMX_VERSION = "4.0.0"' in script
+
+
+def test_alpine_is_fetched_without_npm_dependency() -> None:
+    package = json.loads((BUILD_SRC / "package.json").read_text(encoding="utf-8"))
+    lock = json.loads((BUILD_SRC / "package-lock.json").read_text(encoding="utf-8"))
+    script = REFRESH_SCRIPT.read_text(encoding="utf-8")
+    deps = {
+        **package.get("dependencies", {}),
+        **package.get("devDependencies", {}),
+    }
+    assert "alpinejs" not in deps
+    assert "node_modules/alpinejs" not in lock.get("packages", {})
+    assert "node_modules/alpinejs" not in script
+    assert 'ALPINE_VERSION = "3.17.2"' in script
