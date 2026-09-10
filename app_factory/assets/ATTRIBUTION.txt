@@ -19,16 +19,18 @@ Runtime/build provenance:
   Exact source: https://registry.npmjs.org/alpinejs/3.17.2 (package/dist/cdn.min.js)
   Exact license: https://raw.githubusercontent.com/alpinejs/alpine/v3.17.2/LICENSE.md
   License text: licenses/alpine.LICENSE
-- tailwindcss (build-time; incorporated into generated CSS) 4.3.3
+- tailwindcss (@tailwindcss/browser runtime engine) 4.3.3
   License: MIT
   Source: https://github.com/tailwindlabs/tailwindcss
+  Exact source: https://registry.npmjs.org/@tailwindcss/browser/4.3.3 (package/dist/index.global.js)
   Exact license: https://raw.githubusercontent.com/tailwindlabs/tailwindcss/v4.3.3/LICENSE
   License text: licenses/tailwindcss.LICENSE
 
 Runtime files:
-- alpine 3.17.2: alpine.min.js (sha384-lcaMFHdvRVsEXVuhit4fTnbxq6eTLm5HPdNzO7vXNZjr8HOCMouPmv4hSGF3PCJV)
-- basecoat-css 1.0.2: basecoat-factory.min.css (sha384-P4YFFPylqagJ5r8EWUBxEcNAqI816kuoLZU4j0+oWSovE3/3yRmPBPhbhf/eyPXy)
+- basecoat-css 1.0.2: basecoat-factory.min.css (sha384-4Km/J7NtPU54pEY46HxMOCy7l++JQuqahMDMpDM2p0mXueLmIwidF0/72IQJIoR8)
 - basecoat-js-all 1.0.2: basecoat-js.min.js (sha384-rD2ZCuReXV7nIneJcn1lsTn6yOv87YARLQyUsemVAxrYYHdy5hcAW8XZEQxx87Dj)
+- tailwind-browser 4.3.3: tailwind.min.js (sha384-2ql948lIdLcGEE0/qxNiudyTjgauA3RDJERu5xW75kFCvSl5a9odyQYCb6tEjnmB)
 - htmx 4.0.0: htmx.min.js (sha384-BvJpBiO8Kh31EqtJe5DRIeWrHWnCGkwytKs9NKFi86Hhw96dEqdEMzZDeK9iEGTc)
+- alpine 3.17.2: alpine.min.js (sha384-lcaMFHdvRVsEXVuhit4fTnbxq6eTLm5HPdNzO7vXNZjr8HOCMouPmv4hSGF3PCJV)
 - landing-css 1.0.0: landing.css (sha384-0JjSIKbhgQps3TQkmLJA+XycXw3ebbRcVDtRjeGKmbw/YocEesIzFVMMzWLkTWbX)
 - landing-js 1.0.0: landing.js (sha384-wxVCZKr7eE3v9P2EVg3RyzxA+ZFgYRoQH4BwsD798Cj/SNw+MJnczGcLGvz2Z7j1)

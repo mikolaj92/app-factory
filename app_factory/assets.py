@@ -24,6 +24,7 @@ _CORE_NAMES = {
     "htmx",
     "landing-css",
     "landing-js",
+    "tailwind-browser",
 }
 
 

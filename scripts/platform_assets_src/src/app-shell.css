@@ -1,7 +1,8 @@
 /*! App shell — layout for Basecoat sidebar + main.
  *
  * Lives here (factory), not in each app. No local Tailwind/npm in products.
- * UI components: Basecoat. Layout: shipped .app-* primitives + safelist utilities.
+ * UI components: Basecoat. Layout: shipped .app-* primitives.
+ * Arbitrary Tailwind utilities come from the bundled browser engine.
  * Basecoat owns .sidebar / .card / .btn / .table / .table-container / .field …
  */
 

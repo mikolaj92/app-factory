@@ -55,6 +55,7 @@ FORBIDDEN_ASSETS: tuple[str, ...] = (
     "basecoat-js.min.js",
     "htmx.min.js",
     "alpine.min.js",
+    "tailwind.min.js",
     "material-symbols.css",
     "material-symbols-outlined.woff2",
 )

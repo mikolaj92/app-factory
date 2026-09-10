@@ -1,22 +1,3 @@
-/*
-  Factory stylesheet:
-  - Basecoat UI components
-  - Tailwind utilities (from safelist / src/apps)
-  - Shared app shell layout (.app-*)
-
-  Build: npm run build  →  dist/basecoat-factory.min.css
-  Consumers only link dist (jsDelivr). No npm / Tailwind in apps.
-*/
-
-@import "tailwindcss";
-@import "basecoat-css";
-@import "./app-shell.css";
-
-/* Scan safelist (+ optional app templates under src/apps/) */
-@source "./safelist.html";
-@source "./apps/**/*.html";
-
-
 /* app-factory light palette: warm paper, never clinical white. Dark remains Basecoat. */
 html[data-theme="light"] {
   --background: oklch(0.96 0.018 88);

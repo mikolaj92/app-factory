@@ -117,8 +117,9 @@ SHA-384 digests; the runtime verifies it on first access.
 
 | Name | Package / version | Kind |
 |------|-------------------|------|
-| `basecoat-css` | basecoat-css **1.0.2**, built with the app shell safelist | style |
+| `basecoat-css` | basecoat-css **1.0.2** CDN CSS + factory `.app-*` layout | style |
 | `basecoat-js-all` | basecoat-css **1.0.2** | script |
+| `tailwind-browser` | `@tailwindcss/browser` **4.3.3** (npm tarball, not a lock pin) | script |
 | `htmx` | HTMX **4.0.0** (GitHub dist, not npm) | script |
 | `alpine` | Alpine.js **3.17.2** (npm tarball, not a lock pin) | script |
 
@@ -129,6 +130,8 @@ from app_factory import bundled_asset, list_bundled_assets, platform_asset_url
 
 css = bundled_asset("basecoat-css")
 url = platform_asset_url(css.name)  # /static/platform/basecoat-factory.min.css
+tw = bundled_asset("tailwind-browser")
+platform_asset_url(tw.name)  # /static/platform/tailwind.min.js
 ```
 
 Exact sources, licenses, and digests are stored under `app_factory/assets/`.
@@ -178,7 +181,7 @@ come from Basecoat inside the same bundle.
 | **UI components** | Basecoat | `.card`, `.btn`, `.input`, `.field`, `.table` + `.table-container`, `.sidebar`, `.dialog`, … |
 | **Layout primitives** | shipped `.app-*` (keep using these) | `.app-page`, `.app-stack` (+ `--tight`/`--sm`/`--compact`/`--section`), `.app-header`, `.app-cluster`, `.app-card-grid`, `.app-form__field` |
 | **Shell chrome** | factory only | `.app-shell`, `.app-main*`, sidebar brand/foot glue, theme/locale |
-| **Extra utilities** | safelist in factory build | `flex`, `grid`, `gap-*`, `md:grid-cols-*`, … — grow safelist when a host needs a new one |
+| **Extra utilities** | bundled Tailwind browser engine | any Tailwind class on host HTML; no npm, no safelist, no per-app build |
 
 Also shipped for product surfaces without inventing a second design system:
 

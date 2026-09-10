@@ -135,3 +135,22 @@ def test_htmx_nav_keeps_sidebar_and_reinits_alpine(browser_page) -> None:
     page.wait_for_function(
         "() => document.querySelector('[data-alpine-count]')?.textContent === '2'"
     )
+
+
+def test_host_can_use_a_tailwind_class_outside_the_old_safelist(browser_page) -> None:
+    page, base = browser_page
+    page.goto(f"{base}/")
+    page.wait_for_function(
+        "() => Boolean(document.querySelector('script[src*=\"tailwind.min.js\"]'))"
+    )
+    page.evaluate(
+        """() => {
+          const el = document.createElement('div');
+          el.id = 'tw-probe';
+          el.className = 'gap-7';
+          document.body.appendChild(el);
+        }"""
+    )
+    page.wait_for_function(
+        "() => getComputedStyle(document.getElementById('tw-probe')).gap === '1.75rem'"
+    )

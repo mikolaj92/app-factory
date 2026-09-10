@@ -30,11 +30,13 @@ def test_core_assets_are_local_and_manifest_verified():
         "htmx",
         "landing-css",
         "landing-js",
+        "tailwind-browser",
     ]
     assert bundled_asset("alpine").version == "3.17.2"
     assert bundled_asset("basecoat-css").version == "1.0.2"
     assert bundled_asset("basecoat-js-all").version == "1.0.2"
     assert bundled_asset("htmx").version == "4.0.0"
+    assert bundled_asset("tailwind-browser").version == "4.3.3"
     root = files("app_factory").joinpath("assets")
     for asset in assets:
         digest = "sha384-" + base64.b64encode(
@@ -81,6 +83,10 @@ def test_head_partial_uses_only_same_origin_core_assets():
     assert "/static/platform/basecoat-js.min.js" in rendered
     assert "/static/platform/htmx.min.js" in rendered
     assert "/static/platform/alpine.min.js" in rendered
+    assert "/static/platform/tailwind.min.js" in rendered
+    assert 'type="text/tailwindcss"' in rendered
+    assert "@custom-variant dark" in rendered
+    assert "--color-background: var(--background)" in rendered
     assert "htmx:config:request" in rendered
     assert "htmx:after:swap" in rendered
     assert "htmx:response:error" in rendered
@@ -96,6 +102,10 @@ def test_slim_head_partial_omits_htmx_and_alpine():
     assert "https://" not in rendered
     assert "/static/platform/basecoat-factory.min.css" in rendered
     assert "/static/platform/basecoat-js.min.js" in rendered
+    assert "/static/platform/tailwind.min.js" in rendered
+    assert 'type="text/tailwindcss"' in rendered
+    assert "@custom-variant dark" in rendered
+    assert "--color-background: var(--background)" in rendered
     assert "material-symbols" not in rendered
     assert "/static/platform/htmx.min.js" not in rendered
     assert "/static/platform/alpine.min.js" not in rendered
@@ -120,6 +130,7 @@ def test_local_bundled_assets_are_present_via_importlib_resources():
         "basecoat-js.min.js",
         "htmx.min.js",
         "alpine.min.js",
+        "tailwind.min.js",
     ]
     for name in js_files:
         assert assets.joinpath(name).is_file(), f"{name} missing from package assets"
@@ -136,14 +147,6 @@ def test_local_bundled_assets_are_present_via_importlib_resources():
         ".table-container",
         ".sidebar",
         ".dialog",
-        # Factory-shipped Tailwind utilities (safelist)
-        ".mt-4",
-        ".flex",
-        ".grid-cols-3",
-        ".hidden",
-        ".items-center",
-        ".justify-between",
-        ".gap-6",
         # Host-facing layout primitives (keep-list; rnkstr/emitype depend on these)
         ".app-page",
         ".app-stack",
@@ -181,8 +184,9 @@ def test_local_bundled_assets_are_present_via_importlib_resources():
 def test_bundled_css_hosts_need_no_tailwind_or_basecoat_install():
     """Hard guarantee: product hosts consume this package only.
 
-    The shipped CSS must include Basecoat components, the Tailwind safelist,
-    and host-facing .app-* layout primitives. Integrity/size checks stop an
+    The shipped CSS must include Basecoat components and host-facing .app-*
+    layout primitives. Arbitrary Tailwind utilities come from the bundled
+    browser engine, not a factory safelist. Integrity/size checks stop an
     empty or swapped bundle from greening tests.
     """
     root = files("app_factory").joinpath("assets")
@@ -199,11 +203,12 @@ def test_bundled_css_hosts_need_no_tailwind_or_basecoat_install():
     assert css_asset.version == "1.0.2"
 
     # Size floors: a stub/minified-away bundle must fail loudly.
-    assert len(raw) > 100_000, f"CSS too small to be full Basecoat+safelist: {len(raw)}"
+    assert len(raw) > 100_000, f"CSS too small to be full Basecoat: {len(raw)}"
     for name, minimum in (
         ("basecoat-js.min.js", 10_000),
         ("htmx.min.js", 10_000),
         ("alpine.min.js", 10_000),
+        ("tailwind.min.js", 100_000),
     ):
         size = root.joinpath(name).stat().st_size
         assert size > minimum, f"{name} too small ({size} <= {minimum})"
@@ -233,25 +238,6 @@ def test_bundled_css_hosts_need_no_tailwind_or_basecoat_install():
         ".spinner",
         ".avatar",
     ]
-    tailwind = [
-        ".flex",
-        ".grid",
-        ".hidden",
-        ".items-center",
-        ".justify-between",
-        ".gap-2",
-        ".gap-6",
-        ".mt-4",
-        ".w-full",
-        ".min-h-screen",
-        ".space-y-4",
-        ".text-muted-foreground",
-        ".bg-background",
-        ".md\\:grid-cols-2",
-        ".lg\\:grid-cols-3",
-        ".sm\\:flex-row",
-        ".dark\\:hidden",
-    ]
     layout = [
         ".app-page",
         ".app-stack",
@@ -268,7 +254,7 @@ def test_bundled_css_hosts_need_no_tailwind_or_basecoat_install():
         ".app-dropzone",
         ".app-progress",
     ]
-    missing = [sel for sel in (*basecoat, *tailwind, *layout) if sel not in content]
+    missing = [sel for sel in (*basecoat, *layout) if sel not in content]
     assert not missing, f"bundle missing host-facing selectors: {missing}"
 
     forbidden = (
@@ -281,3 +267,15 @@ def test_bundled_css_hosts_need_no_tailwind_or_basecoat_install():
     )
     present = [name for name in forbidden if name in content]
     assert not present, f"removed factory-* aliases still in bundle: {present}"
+
+
+def test_static_css_does_not_ship_a_tailwind_safelist():
+    """Hosts may use any Tailwind class; the factory CSS is not the utility set."""
+    css = files("app_factory").joinpath("assets", "basecoat-factory.min.css")
+    content = css.read_text(encoding="utf-8")
+    leaked = [
+        sel
+        for sel in (".flex{", ".gap-2{", ".mt-4{", ".grid-cols-3{")
+        if sel in content
+    ]
+    assert not leaked, f"static CSS still contains a Tailwind safelist: {leaked}"

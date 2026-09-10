@@ -7,12 +7,13 @@ Run from the repo root:
     python scripts/refresh_platform_assets.py
 
 What it does:
-- Uses scripts/platform_assets_src (package.json + lock) for Basecoat/Tailwind only.
 - Fetches HTMX minified dist from the pinned GitHub tag (no npm).
-- Fetches Alpine minified dist from the pinned npm tarball (no lock pin).
-- Runs `npm ci` from the committed lockfile.
-- Runs the CSS build.
-- Copies the runtime files (Basecoat CSS/JS, landing extras) into a staging directory.
+- Fetches Alpine, Basecoat, and the Tailwind browser engine from pinned npm
+  tarballs (integrity-checked; no package lock and no local install).
+- Concatenates Basecoat's published CDN CSS with factory `.app-*` layout and
+  the warm-paper palette. Arbitrary Tailwind utilities come from the bundled
+  browser engine at runtime — hosts never install npm.
+- Copies landing extras into a staging directory.
 - Fetches real license texts from the exact upstream sources for the pinned versions.
 - Validates that license content is non-empty and looks like a license (no 404/empty).
 - Computes sha384 for all bundled files.
@@ -22,7 +23,7 @@ What it does:
 This is the ONLY way new versions of the bundled files should enter the tree.
 No ad-hoc curl in shell history. No manual copy.
 
-After running, commit the changes to app_factory/assets/* and the lockfile if it changed.
+After running, commit the changes to app_factory/assets/*.
 """
 
 from __future__ import annotations
@@ -35,7 +36,6 @@ import io
 import json
 import os
 import shutil
-import subprocess
 import sys
 import tarfile
 import tempfile
@@ -49,6 +49,8 @@ ASSETS_DST = REPO_ROOT / "app_factory" / "assets"
 BASECOAT_LICENSE_FILENAME = "basecoat-css.LICENSE"
 BASECOAT_VERSION = "1.0.2"
 BASECOAT_REGISTRY_URL = f"https://registry.npmjs.org/basecoat-css/{BASECOAT_VERSION}"
+BASECOAT_CDN_CSS_PATH = "package/dist/basecoat.cdn.min.css"
+BASECOAT_JS_PATH = "package/dist/js/all.min.js"
 BASECOAT_LICENSE_URL = (
     "https://raw.githubusercontent.com/hunvreus/basecoat/{git_head}/LICENSE.md"
 )
@@ -77,17 +79,20 @@ ALPINE_DIST_PATH = "package/dist/cdn.min.js"
 ALPINE_LICENSE_URL = (
     f"https://raw.githubusercontent.com/alpinejs/alpine/v{ALPINE_VERSION}/LICENSE.md"
 )
-CORE_FILES: dict[str, tuple[Path, str, str]] = {
-    "basecoat-css": (
-        BUILD_SRC / "dist" / "basecoat-factory.min.css",
-        "basecoat-factory.min.css",
-        "style",
-    ),
-    "basecoat-js-all": (
-        BUILD_SRC / "node_modules" / "basecoat-css" / "dist" / "js" / "all.min.js",
-        "basecoat-js.min.js",
-        "script",
-    ),
+TAILWIND_BROWSER_VERSION = "4.3.3"
+TAILWIND_BROWSER_FILENAME = "tailwind.min.js"
+TAILWIND_BROWSER_REGISTRY_URL = (
+    f"https://registry.npmjs.org/@tailwindcss/browser/{TAILWIND_BROWSER_VERSION}"
+)
+TAILWIND_BROWSER_DIST_PATH = "package/dist/index.global.js"
+TAILWIND_LICENSE_URL = (
+    "https://raw.githubusercontent.com/tailwindlabs/tailwindcss/"
+    f"v{TAILWIND_BROWSER_VERSION}/LICENSE"
+)
+CORE_FILES: dict[str, tuple[Path | None, str, str]] = {
+    "basecoat-css": (None, "basecoat-factory.min.css", "style"),
+    "basecoat-js-all": (None, "basecoat-js.min.js", "script"),
+    "tailwind-browser": (None, TAILWIND_BROWSER_FILENAME, "script"),
 }
 LANDING_VERSION = "1.0.0"
 LANDING_FILES: dict[str, tuple[Path, str, str]] = {
@@ -118,17 +123,12 @@ LICENSE_SOURCES = {
         ALPINE_LICENSE_URL,
     ),
     "tailwindcss.LICENSE": (
-        "tailwindcss (build-time; incorporated into generated CSS)",
+        "tailwindcss (@tailwindcss/browser runtime engine)",
         "MIT",
         "https://github.com/tailwindlabs/tailwindcss",
-        "https://raw.githubusercontent.com/tailwindlabs/tailwindcss/v4.3.3/LICENSE",
+        TAILWIND_LICENSE_URL,
     ),
 }
-
-
-def run(cmd: list[str], cwd: Path) -> None:
-    print(f"+ {' '.join(cmd)} (cwd={cwd})")
-    subprocess.run(cmd, cwd=cwd, check=True)
 
 
 def b64sha384(path: Path) -> str:
@@ -153,62 +153,118 @@ def validate_license(text: bytes, source: str, *, required: tuple[bytes, ...]) -
         raise RuntimeError(f"invalid or incomplete license content from {source}")
 
 
-def fetch_alpine_cdn() -> bytes:
-    metadata = json.loads(fetch_bytes(ALPINE_REGISTRY_URL))
+def fetch_npm_tarball(
+    registry_url: str, *, package: str
+) -> tuple[bytes, dict[str, object]]:
+    metadata = json.loads(fetch_bytes(registry_url))
     dist = metadata.get("dist") if isinstance(metadata, dict) else None
     tarball = dist.get("tarball") if isinstance(dist, dict) else None
     integrity = dist.get("integrity") if isinstance(dist, dict) else None
     if not isinstance(tarball, str) or not tarball.startswith(
         "https://registry.npmjs.org/"
     ):
-        raise RuntimeError("alpinejs registry metadata has no npm tarball")
+        raise RuntimeError(f"{package} registry metadata has no npm tarball")
     if not isinstance(integrity, str) or not integrity.startswith("sha512-"):
-        raise RuntimeError("alpinejs registry metadata has no sha512 integrity")
+        raise RuntimeError(f"{package} registry metadata has no sha512 integrity")
     archive = fetch_bytes(tarball)
     digest = "sha512-" + base64.b64encode(hashlib.sha512(archive).digest()).decode(
         "ascii"
     )
     if not hmac.compare_digest(digest, integrity):
-        raise RuntimeError("alpinejs tarball integrity mismatch")
+        raise RuntimeError(f"{package} tarball integrity mismatch")
+    return archive, metadata
+
+
+def extract_tarball_file(archive: bytes, member_path: str, *, package: str) -> bytes:
     with tarfile.open(fileobj=io.BytesIO(archive), mode="r:gz") as tar:
-        member = tar.getmember(ALPINE_DIST_PATH)
+        member = tar.getmember(member_path)
         extracted = tar.extractfile(member)
         if extracted is None:
-            raise RuntimeError(f"alpinejs tarball missing {ALPINE_DIST_PATH}")
+            raise RuntimeError(f"{package} tarball missing {member_path}")
         body = extracted.read()
     if not body:
-        raise RuntimeError("alpinejs cdn.min.js is empty")
+        raise RuntimeError(f"{package} {member_path} is empty")
     return body
 
 
+def fetch_alpine_cdn() -> bytes:
+    archive, _metadata = fetch_npm_tarball(ALPINE_REGISTRY_URL, package="alpinejs")
+    return extract_tarball_file(archive, ALPINE_DIST_PATH, package="alpinejs")
+
+
+def fetch_tailwind_browser() -> bytes:
+    archive, _metadata = fetch_npm_tarball(
+        TAILWIND_BROWSER_REGISTRY_URL, package="@tailwindcss/browser"
+    )
+    return extract_tarball_file(
+        archive, TAILWIND_BROWSER_DIST_PATH, package="@tailwindcss/browser"
+    )
+
+
+def fetch_basecoat() -> tuple[bytes, bytes, dict[str, object]]:
+    archive, metadata = fetch_npm_tarball(BASECOAT_REGISTRY_URL, package="basecoat-css")
+    css = extract_tarball_file(archive, BASECOAT_CDN_CSS_PATH, package="basecoat-css")
+    js = extract_tarball_file(archive, BASECOAT_JS_PATH, package="basecoat-css")
+    package_json = json.loads(
+        extract_tarball_file(archive, "package/package.json", package="basecoat-css")
+    )
+    version = package_json.get("version")
+    if version != BASECOAT_VERSION:
+        raise RuntimeError(
+            f"unreviewed basecoat-css version {version!r}; expected {BASECOAT_VERSION}"
+        )
+    if package_json.get("license") != "MIT":
+        raise RuntimeError("basecoat-css package is not declared MIT")
+    return css, js, {**package_json, "registry": metadata}
+
+
+def compose_factory_css(basecoat_cdn_css: bytes) -> bytes:
+    shell = (BUILD_SRC / "src" / "app-shell.css").read_bytes()
+    theme = (BUILD_SRC / "src" / "app-theme.css").read_bytes()
+    parts = (
+        b"/* Basecoat CDN CSS (compiled components + tokens) */\n",
+        basecoat_cdn_css.rstrip() + b"\n\n",
+        b"/* Factory layout primitives */\n",
+        shell.rstrip() + b"\n\n",
+        b"/* Factory warm-paper light palette */\n",
+        theme.rstrip() + b"\n",
+    )
+    return b"".join(parts)
+
+
 def build_and_stage() -> Path:
-    """Run the full build in the pinned sources and return a staging dir with final layout."""
-    if not (BUILD_SRC / "package.json").exists():
-        raise SystemExit(f"Missing {BUILD_SRC / 'package.json'}")
+    """Fetch pinned dist files and return a staging dir with the shipped layout."""
+    if (BUILD_SRC / "package.json").exists() or (
+        BUILD_SRC / "package-lock.json"
+    ).exists():
+        raise SystemExit("maintainer CSS build must not keep an npm lock")
 
-    # 1. npm ci (uses the committed lock)
-    run(["npm", "ci"], cwd=BUILD_SRC)
+    basecoat_css, basecoat_js, package_json = fetch_basecoat()
+    factory_css = compose_factory_css(basecoat_css)
+    alpine_js = fetch_alpine_cdn()
+    tailwind_js = fetch_tailwind_browser()
+    htmx_js = fetch_bytes(HTMX_SOURCE_URL)
 
-    # 2. build CSS
-    run(["npm", "run", "build:css"], cwd=BUILD_SRC)
-
-    # 3. Prepare staging dir with the exact layout we ship in the package
     stage = Path(tempfile.mkdtemp(prefix="app-factory-assets-"))
     assets_stage = stage / "assets"
     assets_stage.mkdir()
 
-    for name, (source, filename, _kind) in BUNDLED_FILES.items():
-        if name == "htmx":
-            (assets_stage / filename).write_bytes(fetch_bytes(HTMX_SOURCE_URL))
+    generated = {
+        "basecoat-css": factory_css,
+        "basecoat-js-all": basecoat_js,
+        "tailwind-browser": tailwind_js,
+        "htmx": htmx_js,
+        "alpine": alpine_js,
+    }
+    for name, (_source, filename, _kind) in BUNDLED_FILES.items():
+        if name in generated:
+            (assets_stage / filename).write_bytes(generated[name])
             continue
-        if name == "alpine":
-            (assets_stage / filename).write_bytes(fetch_alpine_cdn())
-            continue
-        if source is None or not source.is_file():
+        source = LANDING_FILES[name][0]
+        if not source.is_file():
             raise RuntimeError(f"expected asset not found: {source}")
         shutil.copy2(source, assets_stage / filename)
 
-    # 4. Licenses from exact sources + validation
     licenses_dir = assets_stage / "licenses"
     licenses_dir.mkdir()
 
@@ -230,29 +286,14 @@ def build_and_stage() -> Path:
         validate_license(content, source, required=required)
         (licenses_dir / filename).write_bytes(content)
 
-    package_json = json.loads(
-        (BUILD_SRC / "node_modules" / "basecoat-css" / "package.json").read_text(
-            encoding="utf-8"
-        )
+    git_head = (
+        package_json.get("registry", {}).get("gitHead")
+        if isinstance(package_json.get("registry"), dict)
+        else package_json.get("gitHead")
     )
-    version = package_json.get("version")
-    if version != BASECOAT_VERSION:
-        raise RuntimeError(
-            f"unreviewed basecoat-css version {version!r}; expected {BASECOAT_VERSION}"
-        )
-    if package_json.get("license") != "MIT":
-        raise RuntimeError("basecoat-css package is not declared MIT")
-    lock = json.loads((BUILD_SRC / "package-lock.json").read_text(encoding="utf-8"))
-    lock_entry = lock.get("packages", {}).get("node_modules/basecoat-css", {})
-    registry_metadata = json.loads(fetch_bytes(BASECOAT_REGISTRY_URL))
-    registry_integrity = registry_metadata.get("dist", {}).get("integrity")
-    if not isinstance(registry_integrity, str) or registry_integrity != lock_entry.get(
-        "integrity"
-    ):
-        raise RuntimeError(
-            "basecoat-css registry integrity does not match package-lock.json"
-        )
-    git_head = registry_metadata.get("gitHead")
+    if not isinstance(git_head, str) or len(git_head) != 40:
+        registry_metadata = json.loads(fetch_bytes(BASECOAT_REGISTRY_URL))
+        git_head = registry_metadata.get("gitHead")
     if not isinstance(git_head, str) or len(git_head) != 40:
         raise RuntimeError(
             "basecoat-css registry metadata has no authoritative gitHead"
@@ -262,31 +303,21 @@ def build_and_stage() -> Path:
     validate_license(basecoat_license, license_source, required=BASECOAT_REQUIRED_TEXT)
     (licenses_dir / BASECOAT_LICENSE_FILENAME).write_bytes(basecoat_license)
 
-    # 5. Write manifest with versions + sha384 (for release verification)
-    # Read versions from the build package.json or node_modules
-    def read_version(package_name: str) -> str:
-        package = json.loads(
-            (BUILD_SRC / "node_modules" / package_name / "package.json").read_text(
-                encoding="utf-8"
-            )
-        )
-        version = package.get("version")
-        if not isinstance(version, str) or not version:
-            raise RuntimeError(f"invalid installed package version: {package_name}")
-        return version
+    def asset_version(name: str) -> str:
+        if name in LANDING_FILES:
+            return LANDING_VERSION
+        if name == "htmx":
+            return HTMX_VERSION
+        if name == "alpine":
+            return ALPINE_VERSION
+        if name == "tailwind-browser":
+            return TAILWIND_BROWSER_VERSION
+        return BASECOAT_VERSION
 
     manifest = {
         name: {
             "filename": filename,
-            "version": (
-                LANDING_VERSION
-                if name in LANDING_FILES
-                else HTMX_VERSION
-                if name == "htmx"
-                else ALPINE_VERSION
-                if name == "alpine"
-                else read_version("basecoat-css")
-            ),
+            "version": asset_version(name),
             "integrity": b64sha384(assets_stage / filename),
             "kind": kind,
         }
@@ -301,7 +332,9 @@ def build_and_stage() -> Path:
     repository_url = repository.get("url") if isinstance(repository, dict) else None
     if not isinstance(repository_url, str) or not repository_url:
         raise RuntimeError("basecoat-css package has no repository URL")
-    repository_directory = repository.get("directory")
+    repository_directory = (
+        repository.get("directory") if isinstance(repository, dict) else None
+    )
     source = repository_url
     if isinstance(repository_directory, str) and repository_directory:
         source += f" ({repository_directory})"
@@ -312,34 +345,38 @@ def build_and_stage() -> Path:
         "Runtime/build provenance:",
     ]
     attribution.append(
-        f"- basecoat-css {version}\n"
+        f"- basecoat-css {BASECOAT_VERSION}\n"
         f"  License: MIT\n"
         f"  Source: {source}\n"
         f"  Exact source commit: {git_head}\n"
         f"  Exact license: {license_source}\n"
         f"  License text: licenses/{BASECOAT_LICENSE_FILENAME}"
     )
+    extra_sources = {
+        "htmx.LICENSE": f"\n  Exact source: {HTMX_SOURCE_URL}",
+        "alpine.LICENSE": (
+            f"\n  Exact source: {ALPINE_REGISTRY_URL} ({ALPINE_DIST_PATH})"
+        ),
+        "tailwindcss.LICENSE": (
+            f"\n  Exact source: {TAILWIND_BROWSER_REGISTRY_URL}"
+            f" ({TAILWIND_BROWSER_DIST_PATH})"
+        ),
+    }
+    version_labels = {
+        "htmx.LICENSE": HTMX_VERSION,
+        "alpine.LICENSE": ALPINE_VERSION,
+        "tailwindcss.LICENSE": TAILWIND_BROWSER_VERSION,
+    }
     for filename, (
         package,
         license_name,
         repository,
         source,
     ) in LICENSE_SOURCES.items():
-        if filename.startswith("htmx"):
-            version_label = HTMX_VERSION
-            extra_source = f"\n  Exact source: {HTMX_SOURCE_URL}"
-        elif filename.startswith("alpine"):
-            version_label = ALPINE_VERSION
-            extra_source = (
-                f"\n  Exact source: {ALPINE_REGISTRY_URL} ({ALPINE_DIST_PATH})"
-            )
-        else:
-            version_label = read_version("tailwindcss")
-            extra_source = ""
         attribution.append(
-            f"- {package} {version_label}\n"
+            f"- {package} {version_labels[filename]}\n"
             f"  License: {license_name}\n"
-            f"  Source: {repository}{extra_source}\n"
+            f"  Source: {repository}{extra_sources[filename]}\n"
             f"  Exact license: {source}\n"
             f"  License text: licenses/{filename}"
         )
@@ -415,7 +452,7 @@ def main() -> None:
         replace_assets(stage_assets, ASSETS_DST)
     finally:
         shutil.rmtree(stage, ignore_errors=True)
-    print("Done. Review and commit app_factory/assets and any lockfile change.")
+    print("Done. Review and commit app_factory/assets.")
 
 
 if __name__ == "__main__":
