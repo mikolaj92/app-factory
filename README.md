@@ -13,7 +13,7 @@ The goal is one place to ship the resilient same-origin chrome, Jinja head
 partials, and optional CDN pins so product apps do **not** re-implement
 Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.6.23` (thin product host + opt-in run/intake chrome; multi-user BOM is v0.6.23 / my-auth v0.5.4 / my-usermanager v0.6.5)
+**Tag:** `v0.7.0` (same-origin Tailwind engine, no npm lock/CLI; multi-user BOM is v0.7.0 / my-auth v0.5.4 / my-usermanager v0.6.5)
 
 ---
 
@@ -23,7 +23,7 @@ This package is the thin shared layer in a small platform. Together:
 
 | Piece | Role | How consumers get it |
 |-------|------|----------------------|
-| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.6.23` directly; multi-user hosts follow `COMPAT.md` |
+| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.7.0` directly; multi-user hosts follow `COMPAT.md` |
 | **basecoat-factory** | Maintainer-only build source for the generated Basecoat/UI asset bundle | Not a runtime dependency |
 | **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.5.4` |
 | **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.6.5` |
@@ -232,7 +232,7 @@ dependencies = [
 override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.6.23" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.7.0" }
 my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.5.4" }
 my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.6.5" }
 ```
@@ -589,7 +589,8 @@ factory_template_dirs()
 
 | app-factory | basecoat-css | Notes |
 |-------------|---------------|-------|
-| **v0.6.23** | **1.0.2** | Current: `create_product_app`, canonical `RunPort` (`pending`/`label`), shared `template_response` (including history restore), opt-in intake/run views. Same my-auth v0.5.4 / my-usermanager v0.6.5. |
+| **v0.7.0** | **1.0.2** | Current: same-origin Tailwind browser engine instead of a CSS safelist; no npm lock/CLI. Same `create_product_app` / `RunPort` / `template_response` contract as v0.6.23. |
+| **v0.6.23** | **1.0.2** | Thin product host + opt-in run/intake views. Same my-auth v0.5.4 / my-usermanager v0.6.5. Prefer v0.7.0. |
 | **v0.6.22** | **1.0.2** | Request-safe app framework: request-local Jinja context, Origin CSRF, bounded uploads. |
 | **v0.6.16** | **1.0.2** | Additive on v0.6.11: `install_identity_adapters` + focused passkey/usermanager/session helpers; BOM row my-auth v0.4.8 / my-usermanager v0.5.31. No chrome change. |
 | **v0.6.11** | **1.0.2** | Shared browser mechanisms (HTMX redirect, session CSRF, toast boot, pagination). Multi-user BOM stayed on v0.6.10 until matching auth tags; chrome generation with my-auth v0.4.8 / my-usermanager v0.5.7 had no composer. |
