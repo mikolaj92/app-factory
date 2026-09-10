@@ -119,7 +119,7 @@ SHA-384 digests; the runtime verifies it on first access.
 |------|-------------------|------|
 | `basecoat-css` | basecoat-css **1.0.2**, built with the app shell safelist | style |
 | `basecoat-js-all` | basecoat-css **1.0.2** | script |
-| `htmx` | htmx.org **4.0.0** | script |
+| `htmx` | HTMX **4.0.0** (GitHub dist, not npm) | script |
 | `alpine` | alpinejs **3.17.2** | script |
 
 Icons in chrome and shared components are **inline Lucide SVGs** (the Basecoat-recommended set). The factory does not ship an icon font or a live CDN icon kit.

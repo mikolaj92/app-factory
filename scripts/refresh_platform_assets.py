@@ -7,10 +7,11 @@ Run from the repo root:
     python scripts/refresh_platform_assets.py
 
 What it does:
-- Uses scripts/platform_assets_src (package.json + lock) as the single source of truth.
+- Uses scripts/platform_assets_src (package.json + lock) for Basecoat/Alpine/Tailwind.
+- Fetches HTMX minified dist from the pinned GitHub tag (no npm).
 - Runs `npm ci` from the committed lockfile.
 - Runs the CSS build.
-- Copies the runtime files (Basecoat CSS/JS, HTMX, Alpine, landing extras) into a staging directory.
+- Copies the runtime files (Basecoat CSS/JS, Alpine, landing extras) into a staging directory.
 - Fetches real license texts from the exact upstream sources for the pinned versions.
 - Validates that license content is non-empty and looks like a license (no 404/empty).
 - Computes sha384 for all bundled files.
@@ -56,6 +57,15 @@ MIT_REQUIRED_TEXT = (
 )
 BASECOAT_REQUIRED_TEXT = MIT_REQUIRED_TEXT + (b"Copyright (c) 2025 Ronan Berder",)
 
+HTMX_VERSION = "4.0.0"
+HTMX_FILENAME = "htmx.min.js"
+HTMX_SOURCE_URL = (
+    "https://raw.githubusercontent.com/bigskysoftware/htmx/"
+    f"v{HTMX_VERSION}/dist/htmx.min.js"
+)
+HTMX_LICENSE_URL = (
+    f"https://raw.githubusercontent.com/bigskysoftware/htmx/v{HTMX_VERSION}/LICENSE"
+)
 CORE_FILES: dict[str, tuple[Path, str, str]] = {
     "basecoat-css": (
         BUILD_SRC / "dist" / "basecoat-factory.min.css",
@@ -65,11 +75,6 @@ CORE_FILES: dict[str, tuple[Path, str, str]] = {
     "basecoat-js-all": (
         BUILD_SRC / "node_modules" / "basecoat-css" / "dist" / "js" / "all.min.js",
         "basecoat-js.min.js",
-        "script",
-    ),
-    "htmx": (
-        BUILD_SRC / "node_modules" / "htmx.org" / "dist" / "htmx.min.js",
-        "htmx.min.js",
         "script",
     ),
     "alpine": (
@@ -83,17 +88,21 @@ LANDING_FILES: dict[str, tuple[Path, str, str]] = {
     "landing-css": (ASSETS_DST / "landing.css", "landing.css", "style"),
     "landing-js": (ASSETS_DST / "landing.js", "landing.js", "script"),
 }
-BUNDLED_FILES: dict[str, tuple[Path, str, str]] = {
+HTMX_FILES: dict[str, tuple[None, str, str]] = {
+    "htmx": (None, HTMX_FILENAME, "script"),
+}
+BUNDLED_FILES: dict[str, tuple[Path | None, str, str]] = {
     **CORE_FILES,
+    **HTMX_FILES,
     **LANDING_FILES,
 }
 
 LICENSE_SOURCES = {
     "htmx.LICENSE": (
-        "htmx.org",
+        "HTMX",
         "0BSD",
         "https://github.com/bigskysoftware/htmx",
-        "https://raw.githubusercontent.com/bigskysoftware/htmx/v4.0.0/LICENSE",
+        HTMX_LICENSE_URL,
     ),
     "alpine.LICENSE": (
         "alpinejs",
@@ -154,6 +163,9 @@ def build_and_stage() -> Path:
     assets_stage.mkdir()
 
     for source, filename, _kind in BUNDLED_FILES.values():
+        if source is None:
+            (assets_stage / filename).write_bytes(fetch_bytes(HTMX_SOURCE_URL))
+            continue
         if not source.is_file():
             raise RuntimeError(f"expected asset not found: {source}")
         shutil.copy2(source, assets_stage / filename)
@@ -231,12 +243,10 @@ def build_and_stage() -> Path:
             "version": (
                 LANDING_VERSION
                 if name in LANDING_FILES
+                else HTMX_VERSION
+                if name == "htmx"
                 else read_version(
-                    "basecoat-css"
-                    if name.startswith("basecoat-")
-                    else "htmx.org"
-                    if name == "htmx"
-                    else "alpinejs"
+                    "basecoat-css" if name.startswith("basecoat-") else "alpinejs"
                 )
             ),
             "integrity": b64sha384(assets_stage / filename),
@@ -277,17 +287,22 @@ def build_and_stage() -> Path:
         repository,
         source,
     ) in LICENSE_SOURCES.items():
-        package_name = (
-            "tailwindcss"
-            if filename.startswith("tailwindcss")
-            else "htmx.org"
+        version_label = (
+            HTMX_VERSION
             if filename.startswith("htmx")
-            else "alpinejs"
+            else read_version(
+                "tailwindcss" if filename.startswith("tailwindcss") else "alpinejs"
+            )
+        )
+        extra_source = (
+            f"\n  Exact source: {HTMX_SOURCE_URL}"
+            if filename.startswith("htmx")
+            else ""
         )
         attribution.append(
-            f"- {package} {read_version(package_name)}\n"
+            f"- {package} {version_label}\n"
             f"  License: {license_name}\n"
-            f"  Source: {repository}\n"
+            f"  Source: {repository}{extra_source}\n"
             f"  Exact license: {source}\n"
             f"  License text: licenses/{filename}"
         )
