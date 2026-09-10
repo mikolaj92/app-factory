@@ -8,8 +8,8 @@ Run from the repo root:
 
 What it does:
 - Fetches HTMX minified dist from the pinned GitHub tag (no npm).
-- Fetches Alpine, Basecoat, and the Tailwind browser engine from pinned npm
-  tarballs (integrity-checked; no package lock and no local install).
+- Fetches Alpine, Basecoat, and the Tailwind browser engine from pinned
+  registry tarballs (integrity-checked; no package lock and no local install).
 - Concatenates Basecoat's published CDN CSS with factory `.app-*` layout and
   the warm-paper palette. Arbitrary Tailwind utilities come from the bundled
   browser engine at runtime — hosts never install npm.

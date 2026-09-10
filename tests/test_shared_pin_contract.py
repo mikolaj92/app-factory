@@ -38,9 +38,14 @@ def test_maintainer_build_has_no_npm_lock() -> None:
     assert not (BUILD_SRC / "package.json").exists()
     assert not (BUILD_SRC / "package-lock.json").exists()
     script = REFRESH_SCRIPT.read_text(encoding="utf-8")
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    gitignore = (REPO_ROOT / ".gitignore").read_text(encoding="utf-8")
     assert "npm ci" not in script
     assert "npm run" not in script
     assert "node_modules" not in script
+    assert "npm lockfile" not in readme
+    assert "npm ci" not in readme
+    assert "node_modules" not in gitignore
 
 
 def test_htmx_is_fetched_from_github_not_npm() -> None:

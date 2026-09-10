@@ -119,9 +119,9 @@ SHA-384 digests; the runtime verifies it on first access.
 |------|-------------------|------|
 | `basecoat-css` | basecoat-css **1.0.2** CDN CSS + factory `.app-*` layout | style |
 | `basecoat-js-all` | basecoat-css **1.0.2** | script |
-| `tailwind-browser` | `@tailwindcss/browser` **4.3.3** (npm tarball, not a lock pin) | script |
-| `htmx` | HTMX **4.0.0** (GitHub dist, not npm) | script |
-| `alpine` | Alpine.js **3.17.2** (npm tarball, not a lock pin) | script |
+| `tailwind-browser` | `@tailwindcss/browser` **4.3.3** (registry tarball at refresh) | script |
+| `htmx` | HTMX **4.0.0** (GitHub dist) | script |
+| `alpine` | Alpine.js **3.17.2** (registry tarball at refresh) | script |
 
 Icons in chrome and shared components are **inline Lucide SVGs** (the Basecoat-recommended set). The factory does not ship an icon font or a live CDN icon kit.
 
@@ -170,18 +170,18 @@ Client pages opt into the same HTMX/Alpine generation without forking the shell:
 The macro does not name or inspect product formats. Browser `accept` is UX only;
 the consumer must validate bytes and policy on the server.
 
-### Shared presentation contract (Basecoat-first, no npm in hosts)
+### Shared presentation contract (Basecoat-first, no per-app CSS toolchain)
 
 Products link the factory CSS/JS bundle only. They do **not** install Tailwind
-or Basecoat via npm. Layout and chrome come from this package; UI components
-come from Basecoat inside the same bundle.
+or Basecoat. Layout and chrome come from this package; UI components come from
+Basecoat inside the same bundle.
 
 | Layer | Use | Examples |
 |-------|-----|----------|
 | **UI components** | Basecoat | `.card`, `.btn`, `.input`, `.field`, `.table` + `.table-container`, `.sidebar`, `.dialog`, … |
 | **Layout primitives** | shipped `.app-*` (keep using these) | `.app-page`, `.app-stack` (+ `--tight`/`--sm`/`--compact`/`--section`), `.app-header`, `.app-cluster`, `.app-card-grid`, `.app-form__field` |
 | **Shell chrome** | factory only | `.app-shell`, `.app-main*`, sidebar brand/foot glue, theme/locale |
-| **Extra utilities** | bundled Tailwind browser engine | any Tailwind class on host HTML; no npm, no safelist, no per-app build |
+| **Extra utilities** | bundled Tailwind browser engine | any Tailwind class on host HTML; no safelist, no per-app build |
 
 Also shipped for product surfaces without inventing a second design system:
 
@@ -603,8 +603,9 @@ factory_template_dirs()
 | v0.5.37 | 1.0.2 | Basecoat-first contract docs + CSS keep-list |
 
 Bump platform assets only through `uv run python scripts/refresh_platform_assets.py`.
-The script uses the committed npm lockfile, rebuilds CSS, records licenses and
-SHA-384 digests, and replaces `app_factory/assets/` after validation.
+The script fetches pinned tarballs/GitHub dist, concatenates Basecoat CDN CSS
+with factory layout, records licenses and SHA-384 digests, and replaces
+`app_factory/assets/` after validation. Hosts never install npm.
 
 ---
 
