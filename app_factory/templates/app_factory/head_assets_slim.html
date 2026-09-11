@@ -1,8 +1,12 @@
 {# Same-origin Basecoat + Tailwind engine. Icons are inline Lucide SVGs. #}
 <link rel="stylesheet" href="{{ platform_asset_url('basecoat-css') }}">
 <style type="text/tailwindcss">
-@import "tailwindcss/theme";
-@import "tailwindcss/utilities";
+@layer theme {
+  @import "tailwindcss/theme";
+}
+@layer utilities {
+  @import "tailwindcss/utilities";
+}
 @custom-variant dark (&:is(html.dark *));
 @theme {
   --color-background: var(--background);
