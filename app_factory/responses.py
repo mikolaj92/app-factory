@@ -10,7 +10,7 @@ try:
     from fastapi.responses import HTMLResponse, RedirectResponse
     from jinja2 import Environment
 except ImportError as exc:
-    raise ImportError("app_factory.responses requires app-factory[fastapi]") from exc
+    raise ImportError("app_factory.responses requires app-factory[platform]") from exc
 
 
 def wants_htmx_fragment(request: Request) -> bool:

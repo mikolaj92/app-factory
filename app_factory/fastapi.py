@@ -14,7 +14,7 @@ try:
     from fastapi import FastAPI
     from jinja2 import Environment
 except ImportError as exc:
-    raise ImportError("app_factory.fastapi requires app-factory[fastapi]") from exc
+    raise ImportError("app_factory.fastapi requires app-factory[platform]") from exc
 
 
 class AppFactoryUiConflict(ValueError):

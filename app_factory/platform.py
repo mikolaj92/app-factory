@@ -29,7 +29,7 @@ from app_factory.fastapi import AppFactoryUi, install_app_factory_ui
 try:
     from fastapi import FastAPI
 except ImportError as exc:  # pragma: no cover
-    raise ImportError("app_factory.platform requires app-factory[fastapi]") from exc
+    raise ImportError("app_factory.platform requires app-factory[platform]") from exc
 
 
 @dataclass(frozen=True, slots=True)

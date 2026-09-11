@@ -1,11 +1,5 @@
 # app-factory
 
-### Unreleased API migration
-
-`RunArtifact` now requires one display field, `label`. Replace legacy `name=`
-with `label=` in constructors and JSON; `name` is rejected as an extra field.
-`filename` remains independent download metadata, not a second display label.
-
 Shared **frontend chrome** for FastAPI + Jinja2 + HTMX + Alpine applications,
 with locally bundled Basecoat UI assets and optional auth UI composition.
 
@@ -13,7 +7,7 @@ The goal is one place to ship the resilient same-origin chrome, Jinja head
 partials, and optional CDN pins so product apps do **not** re-implement
 Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.7.0` (same-origin Tailwind engine, no npm lock/CLI; multi-user BOM is v0.7.0 / my-auth v0.5.4 / my-usermanager v0.6.5)
+**Tag:** `v0.7.1` (Tailwind virtual imports stay in `@layer`; multi-user BOM is v0.7.1 / my-auth v0.5.6 / my-usermanager v0.6.6)
 
 ---
 
@@ -23,10 +17,10 @@ This package is the thin shared layer in a small platform. Together:
 
 | Piece | Role | How consumers get it |
 |-------|------|----------------------|
-| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.7.0` directly; multi-user hosts follow `COMPAT.md` |
+| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.7.1` directly; multi-user hosts follow `COMPAT.md` |
 | **basecoat-factory** | Maintainer-only build source for the generated Basecoat/UI asset bundle | Not a runtime dependency |
-| **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.5.4` |
-| **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.6.5` |
+| **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.5.6` |
+| **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.6.6` |
 | **FastAPI + Jinja2 + HTMX + Alpine** | Server-rendered app shell | App code; core scripts/CSS served by the app |
 
 ### Dependency rule
@@ -115,7 +109,7 @@ route authorization, domain validation, accepted upload formats, and copy.
 
 ---
 
-## Bundled core assets (`v0.7.0`)
+## Bundled core assets (`v0.7.1`)
 
 The wheel ships all core files. `MANIFEST.json` pins filenames, versions, and
 SHA-384 digests; the runtime verifies it on first access.
@@ -127,6 +121,8 @@ SHA-384 digests; the runtime verifies it on first access.
 | `tailwind-browser` | `@tailwindcss/browser` **4.3.3** (registry tarball at refresh) | script |
 | `htmx` | HTMX **4.0.0** (GitHub dist) | script |
 | `alpine` | Alpine.js **3.17.2** (registry tarball at refresh) | script |
+| `landing-css` | factory landing **1.0.0** (landing page only, not `head_assets.html`) | style |
+| `landing-js` | factory landing **1.0.0** (landing page only, not `head_assets.html`) | script |
 
 Icons in chrome and shared components are **inline Lucide SVGs** (the Basecoat-recommended set). The factory does not ship an icon font or a live CDN icon kit.
 
@@ -237,9 +233,9 @@ dependencies = [
 override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.7.0" }
-my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.5.4" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.6.5" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.7.1" }
+my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.5.6" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.6.6" }
 ```
 
 ```bash
@@ -253,8 +249,7 @@ For a new product, prefer `create_product_app(...)`, one `ProductAppConfig`,
 and a template extending `app_factory/product_shell.html` (see
 [`examples/minimal_host/app.py`](examples/minimal_host/app.py)).
 Do not copy passkey or user-manager installers into a new host; add the identity
-bindings only when the product needs them. The post-migration duplication audit
-and recommended cleanup order are in [`docs/BOILERPLATE_AUDIT.md`](docs/BOILERPLATE_AUDIT.md).
+bindings only when the product needs them.
 
 ---
 
@@ -452,7 +447,7 @@ Constants: `CLIENT_SHELL`, `IDENTITY_PUBLIC_SHELL`, `IDENTITY_AUTHENTICATED_SHEL
 
 ### `head_assets.html` behavior
 
-- Emits URLs for the four bundled core files under the installer-bound prefix.
+- Emits URLs for the five head pins (`basecoat-css`, `basecoat-js-all`, `tailwind-browser`, `htmx`, `alpine`) under the installer-bound prefix. That is not the full `MANIFEST.json` set: `landing-css` and `landing-js` stay on the landing template.
 - Optional single product stylesheet via template variable:
 
   ```jinja
@@ -597,8 +592,9 @@ factory_template_dirs()
 
 | app-factory | basecoat-css | Notes |
 |-------------|---------------|-------|
-| **v0.7.0** | **1.0.2** | Current: same-origin Tailwind browser engine instead of a CSS safelist; no npm lock/CLI. Same `create_product_app` / `RunPort` / `template_response` contract as v0.6.23. |
-| **v0.6.23** | **1.0.2** | Thin product host + opt-in run/intake views. Same my-auth v0.5.4 / my-usermanager v0.6.5. Prefer v0.7.0. |
+| **v0.7.1** | **1.0.2** | Current: Tailwind virtual imports stay in `@layer`; same `create_product_app` / `RunPort` / `template_response` contract as v0.7.0. |
+| **v0.7.0** | **1.0.2** | Same-origin Tailwind browser engine instead of a CSS safelist; no npm lock/CLI. Prefer v0.7.1. |
+| **v0.6.23** | **1.0.2** | Thin product host + opt-in run/intake views. Same my-auth v0.5.4 / my-usermanager v0.6.5. Prefer v0.7.1. |
 | **v0.6.22** | **1.0.2** | Request-safe app framework: request-local Jinja context, Origin CSRF, bounded uploads. |
 | **v0.6.16** | **1.0.2** | Additive on v0.6.11: `install_identity_adapters` + focused passkey/usermanager/session helpers; BOM row my-auth v0.4.8 / my-usermanager v0.5.31. No chrome change. |
 | **v0.6.11** | **1.0.2** | Shared browser mechanisms (HTMX redirect, session CSRF, toast boot, pagination). Multi-user BOM stayed on v0.6.10 until matching auth tags; chrome generation with my-auth v0.4.8 / my-usermanager v0.5.7 had no composer. |

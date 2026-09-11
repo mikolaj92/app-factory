@@ -12,7 +12,7 @@ try:
     from fastapi.responses import HTMLResponse, JSONResponse
     from starlette.middleware.base import BaseHTTPMiddleware
 except ImportError as exc:
-    raise ImportError("app_factory.csrf requires app-factory[fastapi]") from exc
+    raise ImportError("app_factory.csrf requires app-factory[platform]") from exc
 
 
 _SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS", "TRACE"})

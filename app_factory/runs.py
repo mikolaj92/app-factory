@@ -1,6 +1,6 @@
 """Version 1 presentation contract; hosts own execution, storage and policy.
 
-Requires app-factory[fastapi] (Pydantic v2). No workflow engine is imported.
+Requires app-factory[platform] (Pydantic v2). No workflow engine is imported.
 """
 
 from collections.abc import AsyncIterable, Iterable

@@ -142,8 +142,8 @@ def test_checked_in_pins_match_preferred_compat_row() -> None:
         overrides=host["overrides"],
     )
     assert diffs == [], diffs
-    assert bom["app-factory"] == "v0.7.0"
-    assert bom["my-auth"] == "v0.5.4"
-    assert bom["my-usermanager"] == "v0.6.5"
+    assert bom["app-factory"] == "v0.7.1"
+    assert bom["my-auth"] == "v0.5.6"
+    assert bom["my-usermanager"] == "v0.6.6"
     assert host["app-factory-override"] is True
     assert "tag" not in host["app-factory-source"]

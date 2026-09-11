@@ -7,7 +7,7 @@ from dataclasses import dataclass
 try:
     from starlette.datastructures import UploadFile
 except ImportError as exc:
-    raise ImportError("app_factory.uploads requires app-factory[fastapi]") from exc
+    raise ImportError("app_factory.uploads requires app-factory[platform]") from exc
 
 
 @dataclass(frozen=True, slots=True)

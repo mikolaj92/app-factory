@@ -103,6 +103,25 @@ def test_shell_exposes_supported_product_frame_blocks():
     } <= blocks
 
 
+def test_platform_extra_matches_fastapi_and_import_errors_name_it() -> None:
+    extras = tomllib.loads(
+        (Path(__file__).parents[1] / "pyproject.toml").read_text(encoding="utf-8")
+    )["project"]["optional-dependencies"]
+    assert extras["fastapi"] == extras["platform"]
+    sources = {
+        Path("app_factory/platform.py"),
+        Path("app_factory/fastapi.py"),
+        Path("app_factory/csrf.py"),
+        Path("app_factory/uploads.py"),
+        Path("app_factory/responses.py"),
+        Path("app_factory/conformance.py"),
+    }
+    for path in sources:
+        text = (Path(__file__).parents[1] / path).read_text(encoding="utf-8")
+        assert "requires app-factory[platform]" in text, path
+        assert "requires app-factory[fastapi]" not in text, path
+
+
 def test_optional_python_floors_track_current_latest() -> None:
     extras = tomllib.loads(
         (Path(__file__).parents[1] / "pyproject.toml").read_text(encoding="utf-8")

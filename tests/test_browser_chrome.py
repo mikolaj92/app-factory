@@ -18,7 +18,16 @@ import uvicorn
 pytest.importorskip("playwright.sync_api")
 from playwright.sync_api import sync_playwright
 
+from starlette.applications import Starlette
+from starlette.routing import Mount
+
 from example.app import app
+
+# Exercise the same installed app both at its normal origin and behind the
+# reverse-proxy style mount used by consumers. The package's absolute static
+# asset URL remains root-relative while document-relative CSS imports reveal
+# the mount prefix in the failing request path.
+browser_app = Starlette(routes=[Mount("/argus", app), Mount("/", app)])
 
 
 def _free_port() -> int:
@@ -31,7 +40,7 @@ def _free_port() -> int:
 def live_server() -> Iterator[str]:
     port = _free_port()
     config = uvicorn.Config(
-        app,
+        browser_app,
         host="127.0.0.1",
         port=port,
         log_level="warning",
@@ -152,5 +161,72 @@ def test_host_can_use_a_tailwind_class_outside_the_old_safelist(browser_page) ->
         }"""
     )
     page.wait_for_function(
-        "() => getComputedStyle(document.getElementById('tw-probe')).gap === '1.75rem'"
+        "() => getComputedStyle(document.getElementById('tw-probe')).gap === '28px'"
+    )
+
+
+@pytest.mark.parametrize("path", ["/", "/argus/"])
+def test_tailwind_virtual_imports_stay_same_origin_and_no_preflight(
+    browser_page, path: str
+) -> None:
+    page, base = browser_page
+    requests: list[str] = []
+    failed: list[str] = []
+    responses: list[tuple[str, int]] = []
+    console_errors: list[str] = []
+    page.on("request", lambda request: requests.append(request.url))
+    page.on("requestfailed", lambda request: failed.append(request.url))
+    page.on(
+        "response",
+        lambda response: responses.append((response.url, response.status)),
+    )
+    page.on(
+        "console",
+        lambda message: (
+            console_errors.append(message.text) if message.type == "error" else None
+        ),
+    )
+
+    page.goto(f"{base}{path}")
+    page.wait_for_function(
+        "() => Boolean(document.querySelector('script[src*=\"tailwind.min.js\"]'))"
+    )
+    page.wait_for_function(
+        "() => document.querySelectorAll('style:not([type=\"text/tailwindcss\"])').length >= 1"
+    )
+
+    virtual_imports = ("/tailwindcss/theme", "/tailwindcss/utilities")
+    tailwind_asset_url = f"{base}/static/platform/tailwind.min.js"
+    assert tailwind_asset_url in requests
+    assert (tailwind_asset_url, 200) in responses
+    assert not [
+        url for url in requests if any(url_path in url for url_path in virtual_imports)
+    ]
+    assert not [
+        url for url in failed if any(url_path in url for url_path in virtual_imports)
+    ]
+    assert not any("Failed to load resource" in error for error in console_errors)
+
+    generated_css = page.locator(
+        'style:not([type="text/tailwindcss"])'
+    ).first.text_content()
+    assert generated_css is not None
+    assert "@layer base" not in generated_css
+
+    page.evaluate(
+        """() => {
+          const el = document.createElement('div');
+          el.id = 'tailwind-virtual-import-probe';
+          el.className = 'flex gap-7 text-red-500 bg-background';
+          document.body.appendChild(el);
+        }"""
+    )
+    page.wait_for_function(
+        """() => {
+          const style = getComputedStyle(document.getElementById('tailwind-virtual-import-probe'));
+          return style.display === 'flex'
+            && style.gap === '28px'
+            && style.color === 'oklch(0.637 0.237 25.331)'
+            && style.backgroundColor !== 'rgba(0, 0, 0, 0)';
+        }"""
     )

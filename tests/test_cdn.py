@@ -106,9 +106,25 @@ def test_slim_head_partial_omits_htmx_and_alpine():
     assert 'type="text/tailwindcss"' in rendered
     assert "@custom-variant dark" in rendered
     assert "--color-background: var(--background)" in rendered
+    assert "@layer theme {" in rendered
+    assert '@import "tailwindcss/theme";' in rendered
+    assert "@layer utilities {" in rendered
+    assert '@import "tailwindcss/utilities";' in rendered
+    assert material_import_is_wrapped(rendered)
     assert "material-symbols" not in rendered
     assert "/static/platform/htmx.min.js" not in rendered
     assert "/static/platform/alpine.min.js" not in rendered
+
+
+def material_import_is_wrapped(rendered: str) -> bool:
+    theme = rendered.split("@layer theme {", 1)
+    utilities = rendered.split("@layer utilities {", 1)
+    return (
+        len(theme) == 2
+        and "tailwindcss/theme" in theme[1].split("}", 1)[0]
+        and len(utilities) == 2
+        and "tailwindcss/utilities" in utilities[1].split("}", 1)[0]
+    )
 
 
 # --- Local bundled assets contract (package data) ---

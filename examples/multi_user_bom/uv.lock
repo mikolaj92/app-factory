@@ -38,7 +38,7 @@ wheels = [
 
 [[package]]
 name = "app-factory"
-version = "0.7.0"
+version = "0.7.1"
 source = { editable = "../../" }
 dependencies = [
     { name = "jinja2" },
@@ -99,8 +99,8 @@ requires-dist = [
     { name = "app-factory", extras = ["platform"], editable = "../../" },
     { name = "httpx2", specifier = ">=2.12.0" },
     { name = "itsdangerous", specifier = ">=2.2" },
-    { name = "my-auth", extras = ["fastapi-htmx"], git = "https://github.com/mikolaj92/my-auth?tag=v0.5.4" },
-    { name = "my-usermanager", extras = ["fastapi-htmx", "myauth"], git = "https://github.com/mikolaj92/my-usermanager?tag=v0.6.5" },
+    { name = "my-auth", extras = ["fastapi-htmx"], git = "https://github.com/mikolaj92/my-auth?tag=v0.5.6" },
+    { name = "my-usermanager", extras = ["fastapi-htmx", "myauth"], git = "https://github.com/mikolaj92/my-usermanager?tag=v0.6.6" },
     { name = "pytest", specifier = ">=9" },
     { name = "python-multipart", specifier = ">=0.0.32" },
     { name = "ruff", specifier = ">=0.16" },
@@ -504,8 +504,8 @@ wheels = [
 
 [[package]]
 name = "my-auth"
-version = "0.5.4"
-source = { git = "https://github.com/mikolaj92/my-auth?tag=v0.5.4#c05018866e4c8fb166c69598fe8288197c0dd996" }
+version = "0.5.6"
+source = { git = "https://github.com/mikolaj92/my-auth?tag=v0.5.6#e29c35952de30250c9fc26f694015f6c2dd56df4" }
 dependencies = [
     { name = "typing-extensions" },
     { name = "webauthn" },
@@ -520,8 +520,8 @@ fastapi-htmx = [
 
 [[package]]
 name = "my-usermanager"
-version = "0.6.5"
-source = { git = "https://github.com/mikolaj92/my-usermanager?tag=v0.6.5#bad07b230540269276828600aacbb09c45f4c9d8" }
+version = "0.6.6"
+source = { git = "https://github.com/mikolaj92/my-usermanager?tag=v0.6.6#5eaed50e37ef713721d54198cb955e4fd3f7b8a4" }
 
 [package.optional-dependencies]
 fastapi-htmx = [

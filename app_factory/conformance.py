@@ -10,7 +10,7 @@ try:
     from starlette.exceptions import HTTPException
     from starlette.routing import Mount
 except ImportError as exc:  # pragma: no cover
-    raise ImportError("app_factory.conformance requires app-factory[fastapi]") from exc
+    raise ImportError("app_factory.conformance requires app-factory[platform]") from exc
 
 from app_factory.adapters.route_contract import check_identity_routes
 from app_factory.csrf import SameOriginCsrfMiddleware
