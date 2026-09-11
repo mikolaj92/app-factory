@@ -38,6 +38,7 @@ if _fastapi is not None:
         AppFactoryUiConflict,
         install_app_factory_ui,
     )
+    from app_factory.conformance import check_thin_host
     from app_factory.product import (
         ProductAppConfig,
         ProductInstall,
@@ -116,7 +117,7 @@ else:
     RunAuthorization = create_run_router = create_run_view_router = None
     IntakeBuilder = IntakeCsrf = create_intake_router = None
     ProductAppConfig = ProductInstall = None
-    create_product_app = install_product_host = None
+    create_product_app = install_product_host = check_thin_host = None
     AppFactoryUi = AppFactoryUiConflict = SameOriginCsrfMiddleware = None
     SessionCsrfProtection = UploadLimitExceeded = UploadedFile = None
     htmx_redirect = install_app_factory_ui = read_upload_bounded = None
@@ -192,6 +193,7 @@ __all__ = [
     "create_run_view_router",
     "create_product_app",
     "install_product_host",
+    "check_thin_host",
     "SameOriginCsrfMiddleware",
     "SessionCsrfProtection",
     "UploadLimitExceeded",

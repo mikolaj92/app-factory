@@ -69,7 +69,12 @@ Apps should not ship:
 | `app_factory.cdn` | Optional CDN assets, `cdn_asset()`, SRI verification, `extend_manifest()` / `install_manifest()` |
 | `app_factory.jinja` | `configure_jinja_env()` — registers bundled/local and optional CDN helpers plus the template loader |
 | `app_factory.fastapi` | `install_app_factory_ui()` — the sole supported FastAPI mount/Jinja integration |
+| `app_factory.create_product_app` / `install_product_host` | Thin product host from one `ProductAppConfig` (chrome, health, Origin CSRF, HTMX errors) |
+| `app_factory.runs.RunPort` | Host-owned async run adapter; opt-in `create_run_router` / `create_run_view_router` |
+| `app_factory.intake.IntakeSpec` | Declarative single-form contract; `create_intake_router` mounts GET form + POST start |
+| `app_factory.conformance.check_thin_host` | Source + live-app check that the host did not fork chrome or skip the thin-host contract |
 | `app_factory.adapters` | `install_identity_adapters()` plus focused passkey / usermanager / session helpers |
+| `app_factory/templates/app_factory/product_shell.html` | Canonical logged-in product chrome (sidebar + header + main); prefer this for new products |
 | `app_factory/templates/app_factory/shell.html` | Shared five-block full-page shell |
 | `app_factory/templates/app_factory/client_shell.html` | Slim TAP client document (Basecoat + theme/auth; no HTMX/Alpine) |
 | `app_factory/templates/app_factory/head_assets_slim.html` | Same-origin Basecoat/icons only (no HTMX/Alpine) |
@@ -569,9 +574,12 @@ installed = install_identity_adapters(
 ## API sketch
 
 create_product_app(config, routers=..., passkey=..., usermanager=...) -> FastAPI
+install_product_host(app, config, ...) -> ProductInstall
 install_identity_adapters(app, environments, config, passkey, usermanager, current_user) -> IdentityInstall
 install_app_factory_ui(app, environments, static_path, mount_name) -> AppFactoryUi
-create_run_router / create_run_view_router / create_intake_router
+RunPort / create_run_router / create_run_view_router
+IntakeSpec / create_intake_router
+check_thin_host(app, host_root, identity=...) -> HostConformanceReport
 template_response / htmx_redirect
 bundled_asset(name) -> BundledAsset
 list_bundled_assets()
