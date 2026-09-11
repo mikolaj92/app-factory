@@ -40,7 +40,7 @@ def _section(text: str, heading: str) -> str:
 def test_compat_preferred_row_matches_bom_pins() -> None:
     pins = _bom_pins()
     app_factory, auth, um = _preferred_compat_row()
-    assert app_factory == pins["app-factory"] == "v0.7.1"
+    assert app_factory == pins["app-factory"] == "v0.7.2"
     assert auth == pins["my-auth"] == "v0.5.6"
     assert um == pins["my-usermanager"] == "v0.6.6"
 
@@ -70,3 +70,40 @@ def test_host_migration_adopts_preferred_row_not_archive_composer() -> None:
     assert "install_identity_adapters" in section
     assert "install_passkey_ui" in section
     assert 'override-dependencies = ["app-factory[platform]"]' in text
+
+
+def test_compat_invite_default_matches_platform_paths() -> None:
+    from app_factory.platform import PlatformPaths
+
+    text = _section(_compat_text(), "### Identity lifecycle paths")
+    assert PlatformPaths().invite == "/admin/users"
+    assert "| users / invite | `/admin/users` |" in text
+    assert "| users / invite | `/admin/users`, `/admin/users/invite` |" not in text
+
+
+def test_preferred_bom_tags_exist() -> None:
+    import subprocess
+    import tomllib as toml
+
+    pins = _bom_pins()
+    bom = toml.loads(BOM_PATH.read_text(encoding="utf-8"))
+    project = toml.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    assert pins["app-factory"] == f"v{project['project']['version']}"
+    listed = subprocess.run(
+        ["git", "tag", "--list", pins["app-factory"]],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.split()
+    # The releasing commit may not have the tag yet; companions must resolve.
+    if listed:
+        assert pins["app-factory"] in listed
+    for name in ("my-auth", "my-usermanager"):
+        remote = subprocess.run(
+            ["git", "ls-remote", "--tags", bom["sources"][name], pins[name]],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        assert pins[name] in remote.stdout, f"{name} {pins[name]} missing on remote"

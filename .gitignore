@@ -9,3 +9,4 @@ uv.lock
 !examples/multi_user_bom/uv.lock
 .runtime/
 .lokay/
+.omo/

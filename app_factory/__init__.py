@@ -14,6 +14,7 @@ from app_factory.cdn import (
     CDNVerificationError,
     cdn_asset,
     extend_manifest,
+    install_manifest,
     verify_cdn_asset,
     verify_cdn_manifest,
 )
@@ -45,7 +46,11 @@ if _fastapi is not None:
         create_product_app,
         install_product_host,
     )
-    from app_factory.intake_routes import IntakeBuilder, IntakeCsrf, create_intake_router
+    from app_factory.intake_routes import (
+        IntakeBuilder,
+        IntakeCsrf,
+        create_intake_router,
+    )
     from app_factory.run_routes import (
         RunAuthorization,
         create_run_router,
@@ -207,6 +212,7 @@ __all__ = [
     "complete_passkey_hooks",
     "configure_jinja_env",
     "extend_manifest",
+    "install_manifest",
     "factory_template_dirs",
     "get_assets_dir",
     "get_platform_static_app",
@@ -229,4 +235,4 @@ __all__ = [
     "verify_cdn_manifest",
 ]
 
-__version__ = "0.7.1"
+__version__ = "0.7.2"

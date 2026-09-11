@@ -7,7 +7,7 @@ The goal is one place to ship the resilient same-origin chrome, Jinja head
 partials, and optional CDN pins so product apps do **not** re-implement
 Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.7.1` (Tailwind virtual imports stay in `@layer`; multi-user BOM is v0.7.1 / my-auth v0.5.6 / my-usermanager v0.6.6)
+**Tag:** `v0.7.2` (docs/API match request-safe chrome; multi-user BOM is v0.7.2 / my-auth v0.5.6 / my-usermanager v0.6.6)
 
 ---
 
@@ -17,7 +17,7 @@ This package is the thin shared layer in a small platform. Together:
 
 | Piece | Role | How consumers get it |
 |-------|------|----------------------|
-| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.7.1` directly; multi-user hosts follow `COMPAT.md` |
+| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.7.2` directly; multi-user hosts follow `COMPAT.md` |
 | **basecoat-factory** | Maintainer-only build source for the generated Basecoat/UI asset bundle | Not a runtime dependency |
 | **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.5.6` |
 | **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.6.6` |
@@ -96,8 +96,9 @@ Apps should not ship:
   into each cookie-session host. Pass trusted origins and webhook exemptions
   explicitly; the current request origin is accepted automatically.
 - Use `template_response(...)` for an explicit page/fragment pair. Dynamic
-  platform values come from `request.state.app_factory_platform_context`; they
-  are never written into shared Jinja globals.
+  request values come from `request.state.app_factory_platform_context`.
+  `install_platform()` still seeds request-agnostic chrome defaults into Jinja
+  globals through `apply_platform_context`.
 - Set `toast_enabled = true` in shell context to install the Basecoat toaster and
   shared `htmx:error` / `htmx:response:error` bridge. Override
   `network_error_message` and `toast_region_label` as host copy.
@@ -109,7 +110,7 @@ route authorization, domain validation, accepted upload formats, and copy.
 
 ---
 
-## Bundled core assets (`v0.7.1`)
+## Bundled core assets (`v0.7.2`)
 
 The wheel ships all core files. `MANIFEST.json` pins filenames, versions, and
 SHA-384 digests; the runtime verifies it on first access.
@@ -149,8 +150,8 @@ available from the transport.
 
 The backend companions `read_upload_bounded(...)` and `read_uploads_bounded(...)`
 read `UploadFile` objects in chunks and enforce per-file, aggregate, and file-count
-limits. They deliberately
-does not validate file formats, archives, malware, or product policy.
+limits. They deliberately do not validate file formats, archives, malware, or
+product policy.
 
 Client pages opt into the same HTMX/Alpine generation without forking the shell:
 
@@ -192,8 +193,8 @@ Also shipped for product surfaces without inventing a second design system:
 
 Do **not** add new `.app-*` components for things Basecoat already has.
 Product-specific statuses and actions stay in product HTML with Basecoat
-variants or semantic `data-*` attributes. Importing app-factory never performs
-network I/O.
+variants or semantic `data-*` attributes. Importing app-factory does not fetch
+the network. Explicit `verify_cdn_asset()` may fetch a pinned jsDelivr URL.
 
 ### Optional CDN extras
 
@@ -233,7 +234,7 @@ dependencies = [
 override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.7.1" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.7.2" }
 my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.5.6" }
 my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.6.6" }
 ```
@@ -592,9 +593,10 @@ factory_template_dirs()
 
 | app-factory | basecoat-css | Notes |
 |-------------|---------------|-------|
-| **v0.7.1** | **1.0.2** | Current: Tailwind virtual imports stay in `@layer`; same `create_product_app` / `RunPort` / `template_response` contract as v0.7.0. |
-| **v0.7.0** | **1.0.2** | Same-origin Tailwind browser engine instead of a CSS safelist; no npm lock/CLI. Prefer v0.7.1. |
-| **v0.6.23** | **1.0.2** | Thin product host + opt-in run/intake views. Same my-auth v0.5.4 / my-usermanager v0.6.5. Prefer v0.7.1. |
+| **v0.7.2** | **1.0.2** | Current: invite default `/admin/users`; `install_manifest` exported; preferred BOM tags exist in git. Same Tailwind `@layer` contract as v0.7.1. |
+| **v0.7.1** | **1.0.2** | Tailwind virtual imports stay in `@layer`; same `create_product_app` / `RunPort` / `template_response` contract as v0.7.0. Prefer v0.7.2. |
+| **v0.7.0** | **1.0.2** | Same-origin Tailwind browser engine instead of a CSS safelist; no npm lock/CLI. Prefer v0.7.2. |
+| **v0.6.23** | **1.0.2** | Thin product host + opt-in run/intake views. Same my-auth v0.5.4 / my-usermanager v0.6.5. Prefer v0.7.2. |
 | **v0.6.22** | **1.0.2** | Request-safe app framework: request-local Jinja context, Origin CSRF, bounded uploads. |
 | **v0.6.16** | **1.0.2** | Additive on v0.6.11: `install_identity_adapters` + focused passkey/usermanager/session helpers; BOM row my-auth v0.4.8 / my-usermanager v0.5.31. No chrome change. |
 | **v0.6.11** | **1.0.2** | Shared browser mechanisms (HTMX redirect, session CSRF, toast boot, pagination). Multi-user BOM stayed on v0.6.10 until matching auth tags; chrome generation with my-auth v0.4.8 / my-usermanager v0.5.7 had no composer. |

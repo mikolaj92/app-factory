@@ -181,6 +181,8 @@ def test_readme_export_table_covers_product_host_api() -> None:
         assert symbol in sketch, symbol
         assert symbol in public_names, symbol
     assert "product_shell.html" in exports
+    assert "install_manifest" in public_names
+    assert "install_manifest" in sketch
 
 
 def test_bom_app_factory_pin_matches_project_version() -> None:

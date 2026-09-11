@@ -41,6 +41,9 @@ def test_readme_lists_every_manifest_pin() -> None:
     assert "four bundled core files" not in readme
     assert "docs/BOILERPLATE_AUDIT.md" not in readme
     assert "### Unreleased API migration" not in readme
+    assert "are never written into shared Jinja globals" not in readme
+    assert "They deliberately\ndoes not validate" not in readme
+    assert "Importing app-factory never performs\nnetwork I/O." not in readme
 
 
 def test_maintainer_build_has_no_npm_lock() -> None:
