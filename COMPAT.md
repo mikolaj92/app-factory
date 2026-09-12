@@ -7,14 +7,15 @@ Reference host: [`examples/multi_user_bom/`](examples/multi_user_bom/).
 
 | app-factory | my-auth | my-usermanager | Contract |
 |-------------|---------|----------------|----------|
-| **v0.7.2** | **v0.5.6** | **v0.6.6** | **Current**: docs and public API match the request-safe chrome. Invite default is `/admin/users`; `install_manifest` is exported; preferred BOM tags exist in git. Same Tailwind `@layer` contract as v0.7.1 |
-| **v0.7.1** | **v0.5.6** | **v0.6.6** | Wrap Tailwind virtual imports in `@layer` so Chromium does not request `/tailwindcss/theme` or `/tailwindcss/utilities`. Companion tags absorb Unreleased OP/RP work. Prefer v0.7.2 |
-| **v0.7.0** | **v0.5.4** | **v0.6.5** | Same-origin Tailwind browser engine instead of a CSS safelist; no npm lock/CLI; hosts may use any Tailwind class. Prefer v0.7.2 |
-| **v0.6.23** | **v0.5.4** | **v0.6.5** | Request-safe chrome plus thin `create_product_app`, canonical `RunPort` (`pending`/`label`), shared `template_response` (history restore is a full page), and opt-in intake/run HTML. Authentication has no first-account bootstrap or enrollment policy; hosts own registration exposure and initial grants. Prefer v0.7.2 |
-| **v0.6.22** | **v0.5.4** | **v0.6.5** | Request-safe app framework: identity composition, request-local Jinja context, Origin CSRF, bounded uploads. Prefer v0.7.2 |
+| **v0.7.3** | **v0.5.6** | **v0.6.7** | **Current**: companion my-usermanager ships `install_local_identity`, durable OIDC flow storage, and unlink-aware account controls. Chrome is unchanged from v0.7.2 |
+| **v0.7.2** | **v0.5.6** | **v0.6.6** | Docs and public API match the request-safe chrome. Invite default is `/admin/users`; `install_manifest` is exported; preferred BOM tags exist in git. Same Tailwind `@layer` contract as v0.7.1. Prefer v0.7.3 |
+| **v0.7.1** | **v0.5.6** | **v0.6.6** | Wrap Tailwind virtual imports in `@layer` so Chromium does not request `/tailwindcss/theme` or `/tailwindcss/utilities`. Companion tags absorb Unreleased OP/RP work. Prefer v0.7.3 |
+| **v0.7.0** | **v0.5.4** | **v0.6.5** | Same-origin Tailwind browser engine instead of a CSS safelist; no npm lock/CLI; hosts may use any Tailwind class. Prefer v0.7.3 |
+| **v0.6.23** | **v0.5.4** | **v0.6.5** | Request-safe chrome plus thin `create_product_app`, canonical `RunPort` (`pending`/`label`), shared `template_response` (history restore is a full page), and opt-in intake/run HTML. Authentication has no first-account bootstrap or enrollment policy; hosts own registration exposure and initial grants. Prefer v0.7.3 |
+| **v0.6.22** | **v0.5.4** | **v0.6.5** | Request-safe app framework: identity composition, request-local Jinja context, Origin CSRF, bounded uploads. Prefer v0.7.3 |
 | **v0.6.16** | **v0.4.8** | **v0.5.31** | **Identity-adapter ownership cleanup** (same `install_identity_adapters` composer; UM uses canonical authenticated shell + platform session, split UI route groups, and split SQLite schema/store owners behind a stable facade). Hosts bump the full immutable row together |
 | **v0.6.13** | **v0.4.8** | **v0.5.9** | **Identity-adapter composition** (`install_identity_adapters` + focused passkey/usermanager/session helpers). Hosts supply paths, persistence, page context, and product policy hooks only — do not copy installer/render/session glue. Chrome generation v0.6.11/v0.4.8/v0.5.7 had no composition API; bump app-factory (and UM to v0.5.9 if still on v0.5.7). Keep my-auth 0.4.x (do not mix 0.5.x); hosts pin one immutable generation |
-| **v0.6.11** | **v0.4.8** | **v0.5.7** | **Chrome generation** (shared browser mechanisms + nested auth pins on app-factory v0.6.11). No generic installer composition — hosts still fork `install_passkey_ui` / `install_usermanager_ui` glue. Prefer the v0.7.2 / v0.5.6 / v0.6.6 row |
+| **v0.6.11** | **v0.4.8** | **v0.5.7** | **Chrome generation** (shared browser mechanisms + nested auth pins on app-factory v0.6.11). No generic installer composition — hosts still fork `install_passkey_ui` / `install_usermanager_ui` glue. Prefer the v0.7.3 / v0.5.6 / v0.6.7 row |
 | **v0.6.10** | **v0.4.5** | **v0.5.6** | **Identity-lifecycle plus shared HTMX/Alpine `file_upload` / `file_upload_field` and opt-in TAP `client_interactive`** (auth tags unchanged from v0.6.7; hosts configure `accept` / `max_bytes` / labels; no product format in the kit); keep my-auth 0.4.x (do not mix 0.5.x); hosts pin one immutable generation (see capability matrix) |
 | **v0.6.7** | **v0.4.5** | **v0.5.6** | **Identity-lifecycle plus nested chrome aligned with TAP `client_shell`** (my-auth v0.4.5 and my-usermanager v0.5.6 nest app-factory v0.6.6; `SQLiteAuthDatabase.initialize()` stamps enrollment DDL on already-current schemas — hosts drop the second `ensure_sqlite_schema(conn)`); keep my-auth 0.4.x (do not mix 0.5.x); hosts pin one immutable generation (see capability matrix) |
 | **v0.6.6** | **v0.4.2** | **v0.5.4** | **Identity-lifecycle plus slim TAP `client_shell` (no HTMX/Alpine) and `PlatformPaths.invite` default `/admin/users`** (additive on v0.6.5: enrollment capability DDL + nested my-auth pin in my-usermanager); keep my-auth 0.4.x (do not mix 0.5.x); hosts pin one immutable generation (see capability matrix) |
@@ -68,16 +69,16 @@ dependencies = [
 override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.7.2" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.7.3" }
 my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.5.6" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.6.6" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.6.7" }
 ```
 
 Do **not** float `my-usermanager` on `branch = "main"` for production hosts.
 Do **not** re-copy theme boot, shell boot, or platform foot templates into hosts.
 Do **not** mix BOM generations. Current hosts pin my-auth **v0.5.6** with this row; older rows that say “keep my-auth 0.4.x” apply only to those historical generations.
 
-### Identity lifecycle capability matrix (BOM v0.7.2)
+### Identity lifecycle capability matrix (BOM v0.7.3)
 
 | Capability | Owner | Default surface | Visibility |
 |------------|-------|-----------------|------------|
@@ -97,11 +98,11 @@ Do **not** mix BOM generations. Current hosts pin my-auth **v0.5.6** with this r
 
 ### Supported upgrade order
 
-Apply one generation at a time, in this order, until the preferred BOM row (`v0.7.2` / `v0.5.6` / `v0.6.6`):
+Apply one generation at a time, in this order, until the preferred BOM row (`v0.7.3` / `v0.5.6` / `v0.6.7`):
 
-1. **app-factory** — paths (`PlatformPaths`), identity shells, then composition (`v0.6.0` → `v0.7.2`).
+1. **app-factory** — paths (`PlatformPaths`), identity shells, then composition (`v0.6.0` → `v0.7.3`).
 2. **my-auth** — subject-bound enrollment / recovery plus packaged ceremony shells (`v0.5.6`); `ensure_sqlite_schema` stamps `passkey_enrollment_capabilities`; keep `PasskeyPaths` aligned with `PlatformPaths`.
-3. **my-usermanager** — account lifecycle + packaged invite admin + invitation DDL in `SQLiteAuthDatabase.initialize()` (`v0.6.6`); nested sources my-auth v0.5.6 (do not override my-auth); `initialize()` also stamps enrollment DDL on current auth schemas; set `base_template` to `app_factory/identity_authenticated_shell.html` (the composer does this).
+3. **my-usermanager** — account lifecycle + packaged invite admin + invitation DDL in `SQLiteAuthDatabase.initialize()` (`v0.6.7`); nested sources my-auth v0.5.6 (do not override my-auth); `initialize()` also stamps enrollment DDL on current auth schemas; default hosts call `install_local_identity`; set `base_template` to `app_factory/identity_authenticated_shell.html` (the composer does this).
 4. **Host** — pin all three tags from the same BOM row, add `override-dependencies = ["app-factory[platform]"]` only (do not override my-auth), migrate templates (below), replace installer forks with `install_identity_adapters`, delete host-owned recovery/enrollment/invite chrome, drop `my_auth_overrides`, host `create_invitation_tables`, dummy `SQLiteEnrollmentCapabilityStore(db)` after `initialize()`, and the second host `ensure_sqlite_schema(conn)` call.
 
 Rollback is the reverse order. Never run production with packages from different matrix rows.
@@ -118,7 +119,7 @@ Inventory of the five named hosts (what was copied vs what stays):
 | **BOM cookie host** (`examples/multi_user_bom/app.py`) | In-memory stores + raw session cookie | Demo store + cookie get/set |
 | **BOM portal host** (`examples/multi_user_bom/rooted_app.py`) | Signed `SessionMiddleware` + `/portal` root | Session principal + `SessionCsrfProtection` |
 
-The chrome generation **v0.6.11 / v0.4.8 / v0.5.7** is not enough: those tags ship shells and nested pins but not this composer. Adopt **v0.7.2 / v0.5.6 / v0.6.6**.
+The chrome generation **v0.6.11 / v0.4.8 / v0.5.7** is not enough: those tags ship shells and nested pins but not this composer. Adopt **v0.7.3 / v0.5.6 / v0.6.7**.
 
 Delete from hosts:
 
