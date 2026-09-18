@@ -179,6 +179,8 @@ def test_admin_users_and_account_use_authenticated_identity_shell(
     assert "Morgan Member" in users.text or "member" in users.text
     assert "data-platform-identity-navigation" in users.text
     assert "Invite user" in users.text
+    assert "/usermanager/ui/static/usermanager-ui.css" in users.text
+    assert "/usermanager/ui/static/usermanager-ui.css" in account.text
 
 
 def test_ruff_and_typing_surface_for_composition_hosts() -> None:

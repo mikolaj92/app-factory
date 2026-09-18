@@ -113,6 +113,42 @@ def test_identity_authenticated_shell_reuses_product_chrome_and_identity_nav() -
     assert "Passkeys" in html
     assert "data-platform-theme-locale" in html
     assert "data-sidebar-toggle" in html
+    assert "usermanager-ui.css" not in html
+
+
+def test_identity_authenticated_shell_loads_usermanager_css_when_static_url_path_is_set() -> None:
+    app_api = FastAPI()
+    env = _factory_env(
+        {
+            "account.html": (
+                "{% extends 'app_factory/identity_authenticated_shell.html' %}"
+                "{% block content %}<section class='um-shell'>Account</section>{% endblock %}"
+            )
+        }
+    )
+    config = PlatformConfig(
+        enable_account=True,
+        enable_credentials=True,
+        enable_admin_users=True,
+        paths=PlatformPaths(),
+    )
+    install_platform(app_api, environments=[env], config=config)
+    apply_platform_context(
+        env,
+        config,
+        user=PlatformUser("Ada", is_admin=True),
+        current_path="/account",
+    )
+
+    html = env.get_template("account.html").render(
+        page_title="Account",
+        static_url_path="/usermanager/ui/static",
+    )
+    assert "data-platform-identity-authenticated" in html
+    assert "/usermanager/ui/static/usermanager-ui.css" in html
+
+    omitted = env.get_template("account.html").render(page_title="Account")
+    assert "usermanager-ui.css" not in omitted
 
 
 def test_identity_public_state_accepts_host_copy_without_enumeration() -> None:

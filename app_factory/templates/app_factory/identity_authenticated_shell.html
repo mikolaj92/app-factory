@@ -2,8 +2,17 @@
 
 {# Canonical authenticated frame for account, credentials, users, and invite.
    Point UserManagerUiConfig.base_template (or my-auth credential pages) here so
-   hosts reuse product chrome + PlatformPaths identity nav without template forks. #}
+   hosts reuse product chrome + PlatformPaths identity nav without template forks.
+   When my-usermanager sets static_url_path, load um-* layout CSS here so the
+   composer default does not skip the kit wrapper that used to own that link. #}
 
 {% block body_class %}{{ super() }} app-identity-authenticated{% endblock %}
 
 {% block body_attrs %}{{ super() }} data-platform-identity-authenticated{% endblock %}
+
+{% block head_extra %}
+{{ super() }}
+{% if static_url_path %}
+<link rel="stylesheet" href="{{ static_url_path }}/usermanager-ui.css">
+{% endif %}
+{% endblock %}
