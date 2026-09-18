@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
-"""
-Deterministic maintainer script to refresh the local bundled platform assets.
+"""Copy pinned published dist into app_factory/assets/. Nothing is compiled here.
 
 Run from the repo root:
 
     python scripts/refresh_platform_assets.py
 
 What it does:
-- Fetches HTMX minified dist from the pinned GitHub tag (no npm).
+- Fetches HTMX minified dist from the pinned GitHub tag.
 - Fetches Alpine, Basecoat, and the Tailwind browser engine from pinned
-  registry tarballs (integrity-checked; no package lock and no local install).
-- Concatenates Basecoat's published CDN CSS with factory `.app-*` layout and
+  registry tarballs (integrity-checked HTTP GET; no local install).
+- Concatenates Basecoat's published stylesheet with factory `.app-*` layout and
   the warm-paper palette. Arbitrary Tailwind utilities come from the bundled
-  browser engine at runtime — hosts never install npm.
+  browser engine at runtime.
 - Copies landing extras into a staging directory.
 - Fetches real license texts from the exact upstream sources for the pinned versions.
 - Validates that license content is non-empty and looks like a license (no 404/empty).
@@ -21,7 +20,7 @@ What it does:
 - Replaces app_factory/assets with rollback protection.
 
 This is the ONLY way new versions of the bundled files should enter the tree.
-No ad-hoc curl in shell history. No manual copy.
+No ad-hoc curl in shell history. No manual copy. No Node toolchain.
 
 After running, commit the changes to app_factory/assets/*.
 """
@@ -222,7 +221,7 @@ def compose_factory_css(basecoat_cdn_css: bytes) -> bytes:
     shell = (BUILD_SRC / "src" / "app-shell.css").read_bytes()
     theme = (BUILD_SRC / "src" / "app-theme.css").read_bytes()
     parts = (
-        b"/* Basecoat CDN CSS (compiled components + tokens) */\n",
+        b"/* Basecoat published stylesheet (components + tokens) */\n",
         basecoat_cdn_css.rstrip() + b"\n\n",
         b"/* Factory layout primitives */\n",
         shell.rstrip() + b"\n\n",
@@ -237,7 +236,7 @@ def build_and_stage() -> Path:
     if (BUILD_SRC / "package.json").exists() or (
         BUILD_SRC / "package-lock.json"
     ).exists():
-        raise SystemExit("maintainer CSS build must not keep an npm lock")
+        raise SystemExit("do not keep a Node lockfile next to committed chrome")
 
     basecoat_css, basecoat_js, package_json = fetch_basecoat()
     factory_css = compose_factory_css(basecoat_css)

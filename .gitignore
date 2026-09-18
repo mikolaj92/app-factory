@@ -1,5 +1,6 @@
 .venv/
 examples/**/.venv/
+node_modules/
 __pycache__/
 *.egg-info/
 dist/

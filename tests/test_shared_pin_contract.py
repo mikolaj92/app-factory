@@ -46,18 +46,43 @@ def test_readme_lists_every_manifest_pin() -> None:
     assert "Importing app-factory never performs\nnetwork I/O." not in readme
 
 
-def test_maintainer_build_has_no_npm_lock() -> None:
+def test_docs_ship_committed_dist_without_an_npm_or_node_toolchain() -> None:
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    agents = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    compat = (REPO_ROOT / "COMPAT.md").read_text(encoding="utf-8")
+    gitignore = (REPO_ROOT / ".gitignore").read_text(encoding="utf-8")
+    script = REFRESH_SCRIPT.read_text(encoding="utf-8")
+    forbidden = (
+        "npm ci",
+        "npm run",
+        "npm lock",
+        "never install npm",
+        "Hosts never install npm",
+        "Maintainer-only build source",
+        "generated Basecoat/UI asset bundle",
+        "build-source project",
+        "generated asset source",
+        "no npm lock/CLI",
+        "hard pytest no-npm contract",
+        "hard in-bundle no-npm contract",
+        "Basecoat CDN CSS",
+        "maintainer CSS build",
+    )
+    for name, text in (
+        ("README.md", readme),
+        ("AGENTS.md", agents),
+        ("COMPAT.md", compat),
+        ("refresh_platform_assets.py", script),
+    ):
+        for needle in forbidden:
+            assert needle not in text, f"{name} still says {needle!r}"
+    assert "app_factory/assets/" in readme
+    assert "committed" in readme.lower() or "ships all core files" in readme
+    assert "node_modules/" in gitignore
     assert not (BUILD_SRC / "package.json").exists()
     assert not (BUILD_SRC / "package-lock.json").exists()
-    script = REFRESH_SCRIPT.read_text(encoding="utf-8")
-    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
-    gitignore = (REPO_ROOT / ".gitignore").read_text(encoding="utf-8")
     assert "npm ci" not in script
     assert "npm run" not in script
-    assert "node_modules" not in script
-    assert "npm lockfile" not in readme
-    assert "npm ci" not in readme
-    assert "node_modules" not in gitignore
 
 
 def test_htmx_is_fetched_from_github_not_npm() -> None:
