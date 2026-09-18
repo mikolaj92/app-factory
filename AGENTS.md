@@ -29,3 +29,5 @@ app-factory.
 - **No** re-implementing auth ceremony (that lives in my-auth / my-usermanager).
 - **No** host-style domain models or product routes.
 - **No** new `.app-*` components for things Basecoat already provides.
+- **No** Node toolchain. Chrome is committed dist in `app_factory/assets/`.
+  Do not add `package.json`, a lockfile, `node_modules`, or a compile step.

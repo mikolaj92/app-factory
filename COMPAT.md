@@ -11,7 +11,7 @@ Reference host: [`examples/multi_user_bom/`](examples/multi_user_bom/).
 | **v0.7.3** | **v0.5.6** | **v0.6.7** | Companion my-usermanager ships `install_local_identity`, durable OIDC flow storage, and unlink-aware account controls. Chrome unchanged from v0.7.2 except it omitted `usermanager-ui.css`. Prefer v0.7.4 |
 | **v0.7.2** | **v0.5.6** | **v0.6.6** | Docs and public API match the request-safe chrome. Invite default is `/admin/users`; `install_manifest` is exported; preferred BOM tags exist in git. Same Tailwind `@layer` contract as v0.7.1. Prefer v0.7.4 |
 | **v0.7.1** | **v0.5.6** | **v0.6.6** | Wrap Tailwind virtual imports in `@layer` so Chromium does not request `/tailwindcss/theme` or `/tailwindcss/utilities`. Companion tags absorb Unreleased OP/RP work. Prefer v0.7.4 |
-| **v0.7.0** | **v0.5.4** | **v0.6.5** | Same-origin Tailwind browser engine instead of a CSS safelist; no npm lock/CLI; hosts may use any Tailwind class. Prefer v0.7.4 |
+| **v0.7.0** | **v0.5.4** | **v0.6.5** | Same-origin Tailwind browser engine instead of a CSS safelist; hosts may use any Tailwind class. Prefer v0.7.4 |
 | **v0.6.23** | **v0.5.4** | **v0.6.5** | Request-safe chrome plus thin `create_product_app`, canonical `RunPort` (`pending`/`label`), shared `template_response` (history restore is a full page), and opt-in intake/run HTML. Authentication has no first-account bootstrap or enrollment policy; hosts own registration exposure and initial grants. Prefer v0.7.4 |
 | **v0.6.22** | **v0.5.4** | **v0.6.5** | Request-safe app framework: identity composition, request-local Jinja context, Origin CSRF, bounded uploads. Prefer v0.7.4 |
 | **v0.6.16** | **v0.4.8** | **v0.5.31** | **Identity-adapter ownership cleanup** (same `install_identity_adapters` composer; UM uses canonical authenticated shell + platform session, split UI route groups, and split SQLite schema/store owners behind a stable facade). Hosts bump the full immutable row together |
@@ -31,8 +31,8 @@ Reference host: [`examples/multi_user_bom/`](examples/multi_user_bom/).
 | **v0.5.22** | **v0.3.24** | **v0.4.5** | Theme-aware public landing frame with bundled progressive-reveal assets; signed-in identity/avatar remains in the product sidebar foot |
 | **v0.5.21** | **v0.3.24** | **v0.4.5** | Signed-in identity/avatar in the product sidebar foot; theme/locale remain in the header |
 | **v0.5.20** | **v0.3.24** | **v0.4.5** | Basecoat product header with mobile sidebar trigger; passkey phone/QR entry and registration link |
-| v0.5.39 | v0.3.23 | v0.4.5 | Material Symbols Outlined v364 bundled under same-origin `/static/platform`; profile validation failures return HTTP 400; hard in-bundle no-npm contract |
-| v0.5.38 | v0.3.23 | v0.4.5 | Profile validation failures return HTTP 400; hard in-bundle no-npm contract (Basecoat + Tailwind safelist + layout keep-list + MANIFEST integrity/size) |
+| v0.5.39 | v0.3.23 | v0.4.5 | Material Symbols Outlined v364 bundled under same-origin `/static/platform`; profile validation failures return HTTP 400; chrome is committed dist |
+| v0.5.38 | v0.3.23 | v0.4.5 | Profile validation failures return HTTP 400; chrome is committed dist (Basecoat + Tailwind safelist + layout keep-list + MANIFEST integrity/size) |
 | v0.5.37 | v0.3.23 | v0.4.3 | Basecoat-first contract docs; CSS keep-list; chrome spacing + LAN storybook; drop dead `factory-*` aliases |
 | v0.5.36 | v0.3.23 | v0.4.3 | Session card layout (#10) |
 | v0.5.35 | v0.3.23 | v0.4.3 | interim pin (see git history) |

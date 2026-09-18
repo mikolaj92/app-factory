@@ -18,7 +18,7 @@ This package is the thin shared layer in a small platform. Together:
 | Piece | Role | How consumers get it |
 |-------|------|----------------------|
 | **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.7.4` directly; multi-user hosts follow `COMPAT.md` |
-| **basecoat-factory** | Maintainer-only build source for the generated Basecoat/UI asset bundle | Not a runtime dependency |
+| **basecoat-factory** | Historical palette/layout notes; not a runtime or host dependency | Not used at runtime |
 | **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.5.6` |
 | **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.6.7` |
 | **FastAPI + Jinja2 + HTMX + Alpine** | Server-rendered app shell | App code; core scripts/CSS served by the app |
@@ -117,7 +117,7 @@ SHA-384 digests; the runtime verifies it on first access.
 
 | Name | Package / version | Kind |
 |------|-------------------|------|
-| `basecoat-css` | basecoat-css **1.0.2** CDN CSS + factory `.app-*` layout | style |
+| `basecoat-css` | basecoat-css **1.0.2** published dist + factory `.app-*` layout | style |
 | `basecoat-js-all` | basecoat-css **1.0.2** | script |
 | `tailwind-browser` | `@tailwindcss/browser` **4.3.3** (registry tarball at refresh) | script |
 | `htmx` | HTMX **4.0.0** (GitHub dist) | script |
@@ -183,7 +183,7 @@ Basecoat inside the same bundle.
 | **UI components** | Basecoat | `.card`, `.btn`, `.input`, `.field`, `.table` + `.table-container`, `.sidebar`, `.dialog`, … |
 | **Layout primitives** | shipped `.app-*` (keep using these) | `.app-page`, `.app-stack` (+ `--tight`/`--sm`/`--compact`/`--section`), `.app-header`, `.app-cluster`, `.app-card-grid`, `.app-form__field` |
 | **Shell chrome** | factory only | `.app-shell`, `.app-main*`, sidebar brand/foot glue, theme/locale |
-| **Extra utilities** | bundled Tailwind browser engine | any Tailwind class on host HTML; no safelist, no per-app build |
+| **Extra utilities** | bundled Tailwind browser engine | any Tailwind class on host HTML; no safelist, no host CSS toolchain |
 
 Also shipped for product surfaces without inventing a second design system:
 
@@ -500,8 +500,8 @@ Configure **before** the include (or in `head_extra` when extending `shell.html`
 only include `head_assets` should also include `shell_boot` once and delete any
 local copy of the sidebar/basecoat IIFE.
 
-Shell layout classes (`.app-shell`, page chrome, etc.) are compiled into the
-app-factory asset bundle; applications do not install the build-source project.
+Shell layout classes (`.app-shell`, page chrome, etc.) ship in the committed
+bundle under `app_factory/assets/`; hosts do not vendor chrome.
 
 ---
 
@@ -597,7 +597,7 @@ factory_template_dirs()
 | **v0.7.3** | **1.0.2** | Companion my-usermanager `v0.6.7` (`install_local_identity`, durable OIDC flows, unlink-aware account UI). Chrome omitted `usermanager-ui.css`. Prefer v0.7.4. |
 | **v0.7.2** | **1.0.2** | Invite default `/admin/users`; `install_manifest` exported; preferred BOM tags exist in git. Same Tailwind `@layer` contract as v0.7.1. Prefer v0.7.4. |
 | **v0.7.1** | **1.0.2** | Tailwind virtual imports stay in `@layer`; same `create_product_app` / `RunPort` / `template_response` contract as v0.7.0. Prefer v0.7.4. |
-| **v0.7.0** | **1.0.2** | Same-origin Tailwind browser engine instead of a CSS safelist; no npm lock/CLI. Prefer v0.7.4. |
+| **v0.7.0** | **1.0.2** | Same-origin Tailwind browser engine instead of a CSS safelist. Prefer v0.7.4. |
 | **v0.6.23** | **1.0.2** | Thin product host + opt-in run/intake views. Same my-auth v0.5.4 / my-usermanager v0.6.5. Prefer v0.7.4. |
 | **v0.6.22** | **1.0.2** | Request-safe app framework: request-local Jinja context, Origin CSRF, bounded uploads. |
 | **v0.6.16** | **1.0.2** | Additive on v0.6.11: `install_identity_adapters` + focused passkey/usermanager/session helpers; BOM row my-auth v0.4.8 / my-usermanager v0.5.31. No chrome change. |
@@ -608,13 +608,15 @@ factory_template_dirs()
 | **v0.6.4** | **1.0.2** | Multi-user platform BOM + packaged ceremony shells (my-auth v0.4.1) + invitation DDL in SQLiteAuthDatabase (my-usermanager v0.5.2) |
 | **v0.6.3** | **1.0.2** | Multi-user platform BOM + packaged invite admin (my-usermanager v0.5.3, my-auth v0.4.0) |
 | **v0.6.2** | **1.0.2** | Multi-user platform BOM + identity lifecycle shells/paths |
-| v0.5.39 | 1.0.2 | Full Basecoat + HTMX + Alpine + app shell + Material Symbols Outlined v364; hard pytest no-npm contract |
+| v0.5.39 | 1.0.2 | Full Basecoat + HTMX + Alpine + app shell + Material Symbols Outlined v364; chrome is committed dist |
 | v0.5.37 | 1.0.2 | Basecoat-first contract docs + CSS keep-list |
 
-Bump platform assets only through `uv run python scripts/refresh_platform_assets.py`.
-The script fetches pinned tarballs/GitHub dist, concatenates Basecoat CDN CSS
-with factory layout, records licenses and SHA-384 digests, and replaces
-`app_factory/assets/` after validation. Hosts never install npm.
+Chrome is committed dist in `app_factory/assets/`. There is no Node toolchain
+in this repo: no `package.json`, no lockfile, no compile step for hosts.
+Bump those files only through `uv run python scripts/refresh_platform_assets.py`,
+which copies pinned published dist (GitHub / registry tarball) plus factory
+layout CSS, records licenses and SHA-384 digests, and replaces `app_factory/assets/`
+after validation.
 
 ---
 
@@ -655,6 +657,6 @@ uv run pytest tests/test_browser_chrome.py
 
 ## Related
 
-- [basecoat-factory](https://github.com/mikolaj92/basecoat-factory) — maintainer-only generated asset source  
+- [basecoat-factory](https://github.com/mikolaj92/basecoat-factory) — historical palette/layout notes, not a host dependency  
 - [my-auth](https://github.com/mikolaj92/my-auth) — passkeys + fastapi-htmx UI  
 - [my-usermanager](https://github.com/mikolaj92/my-usermanager) — users, grants, session principal  

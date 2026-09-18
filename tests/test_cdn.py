@@ -128,10 +128,9 @@ def material_import_is_wrapped(rendered: str) -> bool:
 
 
 # --- Local bundled assets contract (package data) ---
-# These tests run against the final assets inside the installed package
-# (app_factory/assets/...), not the build sources.
-# They verify that the deterministic maintainer script produced something
-# that actually ships and contains the required selectors.
+# These tests run against the committed assets inside the installed package
+# (app_factory/assets/...). They verify the shipped files contain the required
+# selectors.
 
 
 def test_local_bundled_assets_are_present_via_importlib_resources():
