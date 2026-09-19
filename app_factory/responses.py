@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from typing import Any
+from urllib.parse import quote, urlsplit
 
 try:
     from fastapi import Request
@@ -62,3 +63,49 @@ def htmx_redirect(
     if request.headers.get("HX-Request", "").lower() == "true":
         response.headers["HX-Redirect"] = url
     return response
+
+
+def same_origin_return_path(value: str | None) -> str | None:
+    """Accept only a same-origin path (my-auth login ``?next=`` rule)."""
+    if (
+        not isinstance(value, str)
+        or not value.startswith("/")
+        or value.startswith("//")
+        or "\\" in value
+        or " " in value
+    ):
+        return None
+    parts = urlsplit(value)
+    if parts.scheme or parts.netloc or parts.fragment:
+        return None
+    return value
+
+
+def login_redirect(
+    request: Request,
+    login_path: str = "/login",
+    *,
+    status_code: int = 303,
+) -> RedirectResponse:
+    """303 to login with ``?next=`` and ``HX-Redirect`` for HTMX swaps."""
+    if not login_path.startswith("/") or login_path.startswith("//"):
+        raise ValueError("login_path must be an absolute same-origin path")
+    login_parts = urlsplit(login_path)
+    if login_parts.scheme or login_parts.netloc or login_parts.fragment:
+        raise ValueError("login_path must be an absolute same-origin path")
+    login_only = login_parts.path or "/login"
+    current = request.url.path
+    if request.url.query:
+        current = f"{current}?{request.url.query}"
+    if current == login_only or current.startswith(f"{login_only}?"):
+        return htmx_redirect(request, login_path, status_code=status_code)
+    next_path = same_origin_return_path(current)
+    if next_path is None:
+        return htmx_redirect(request, login_path, status_code=status_code)
+    encoded = quote(next_path, safe="/")
+    separator = "&" if login_parts.query else "?"
+    return htmx_redirect(
+        request,
+        f"{login_path}{separator}next={encoded}",
+        status_code=status_code,
+    )

@@ -65,6 +65,28 @@ def test_platform_mount_serves_basecoat_js_and_omits_icon_fonts():
     assert client.get("/static/platform/material-symbols.css").status_code == 404
 
 
+def test_shell_links_same_origin_favicon() -> None:
+    environment = _environment()
+    _ = install_app_factory_ui(FastAPI(), environments=[environment])
+    html = environment.get_template("page.html").render(app_name="Test")
+    assert 'rel="icon"' in html
+    assert 'href="/favicon.ico"' in html
+    assert "cdn.jsdelivr.net" not in html
+    assert "unpkg.com" not in html
+
+
+def test_install_serves_browser_favicon_request() -> None:
+    app = FastAPI()
+    install_app_factory_ui(app, environments=[])
+    client = TestClient(app)
+    response = client.get("/favicon.ico")
+    assert response.status_code == 200
+    assert "svg" in response.headers["content-type"]
+    assert b"<svg" in response.content
+    assert install_app_factory_ui(app, environments=[]).static_path == "/static/platform"
+    assert client.get("/favicon.ico").status_code == 200
+
+
 def test_install_is_idempotent_configures_new_environments_and_rejects_conflicts():
     app = FastAPI()
     first_environment = _environment()
