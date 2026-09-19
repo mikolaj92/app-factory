@@ -7,7 +7,7 @@ The goal is one place to ship the resilient same-origin chrome, Jinja head
 partials, and optional CDN pins so product apps do **not** re-implement
 Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.7.5` (public-origin CSRF helper; multi-user BOM is v0.7.5 / my-auth v0.5.6 / my-usermanager v0.6.7)
+**Tag:** `v0.7.6` (favicon + `login_redirect`; multi-user BOM is v0.7.6 / my-auth v0.5.6 / my-usermanager v0.6.7)
 
 ---
 
@@ -17,7 +17,7 @@ This package is the thin shared layer in a small platform. Together:
 
 | Piece | Role | How consumers get it |
 |-------|------|----------------------|
-| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.7.5` directly; multi-user hosts follow `COMPAT.md` |
+| **app-factory** (this repo) | Bundled chrome, one FastAPI mount, and the shared Jinja shell | `git` tag `v0.7.6` directly; multi-user hosts follow `COMPAT.md` |
 | **basecoat-factory** | Historical palette/layout notes; not a runtime or host dependency | Not used at runtime |
 | **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.5.6` |
 | **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.6.7` |
@@ -56,6 +56,7 @@ Apps should not ship:
 |---------------|---------|
 | `app_factory.assets` | Verified bundled core assets, URL helper, and lazy Starlette static app |
 | `app_factory.responses.htmx_redirect` | Native 303 plus `HX-Redirect` for HTMX full-page navigation |
+| `app_factory.responses.login_redirect` | 303 to login with same-origin `?next=` and `HX-Redirect` for HTMX swaps |
 | `app_factory.responses.template_response` | Explicit full-page/HTMX-fragment renderer with request-local platform context |
 | `app_factory.csrf.SameOriginCsrfMiddleware` | Origin/Referer protection for unsafe cookie-session requests |
 | `app_factory.csrf.SessionCsrfProtection` | Signed-session CSRF adapter for host forms and my-usermanager |
@@ -113,7 +114,7 @@ route authorization, domain validation, accepted upload formats, and copy.
 
 ---
 
-## Bundled core assets (`v0.7.5`)
+## Bundled core assets (`v0.7.6`)
 
 The wheel ships all core files. `MANIFEST.json` pins filenames, versions, and
 SHA-384 digests; the runtime verifies it on first access.
@@ -237,7 +238,7 @@ dependencies = [
 override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.7.5" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.7.6" }
 my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.5.6" }
 my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.6.7" }
 ```
@@ -597,13 +598,14 @@ factory_template_dirs()
 
 | app-factory | basecoat-css | Notes |
 |-------------|---------------|-------|
-| **v0.7.5** | **1.0.2** | Current: `assert_public_origin_csrf` probes public Origin vs a different backend HTTP base URL. Same companions as v0.7.4. |
-| **v0.7.4** | **1.0.2** | `identity_authenticated_shell` loads `usermanager-ui.css` when `static_url_path` is set. Prefer v0.7.5. |
-| **v0.7.3** | **1.0.2** | Companion my-usermanager `v0.6.7` (`install_local_identity`, durable OIDC flows, unlink-aware account UI). Chrome omitted `usermanager-ui.css`. Prefer v0.7.5. |
-| **v0.7.2** | **1.0.2** | Invite default `/admin/users`; `install_manifest` exported; preferred BOM tags exist in git. Same Tailwind `@layer` contract as v0.7.1. Prefer v0.7.5. |
-| **v0.7.1** | **1.0.2** | Tailwind virtual imports stay in `@layer`; same `create_product_app` / `RunPort` / `template_response` contract as v0.7.0. Prefer v0.7.5. |
-| **v0.7.0** | **1.0.2** | Same-origin Tailwind browser engine instead of a CSS safelist. Prefer v0.7.5. |
-| **v0.6.23** | **1.0.2** | Thin product host + opt-in run/intake views. Same my-auth v0.5.4 / my-usermanager v0.6.5. Prefer v0.7.5. |
+| **v0.7.6** | **1.0.2** | Current: same-origin `/favicon.ico` plus `login_redirect` (`?next=` and `HX-Redirect`). Same companions as v0.7.5. |
+| **v0.7.5** | **1.0.2** | `assert_public_origin_csrf` probes public Origin vs a different backend HTTP base URL. Same companions as v0.7.4. Prefer v0.7.6. |
+| **v0.7.4** | **1.0.2** | `identity_authenticated_shell` loads `usermanager-ui.css` when `static_url_path` is set. Prefer v0.7.6. |
+| **v0.7.3** | **1.0.2** | Companion my-usermanager `v0.6.7` (`install_local_identity`, durable OIDC flows, unlink-aware account UI). Chrome omitted `usermanager-ui.css`. Prefer v0.7.6. |
+| **v0.7.2** | **1.0.2** | Invite default `/admin/users`; `install_manifest` exported; preferred BOM tags exist in git. Same Tailwind `@layer` contract as v0.7.1. Prefer v0.7.6. |
+| **v0.7.1** | **1.0.2** | Tailwind virtual imports stay in `@layer`; same `create_product_app` / `RunPort` / `template_response` contract as v0.7.0. Prefer v0.7.6. |
+| **v0.7.0** | **1.0.2** | Same-origin Tailwind browser engine instead of a CSS safelist. Prefer v0.7.6. |
+| **v0.6.23** | **1.0.2** | Thin product host + opt-in run/intake views. Same my-auth v0.5.4 / my-usermanager v0.6.5. Prefer v0.7.6. |
 | **v0.6.22** | **1.0.2** | Request-safe app framework: request-local Jinja context, Origin CSRF, bounded uploads. |
 | **v0.6.16** | **1.0.2** | Additive on v0.6.11: `install_identity_adapters` + focused passkey/usermanager/session helpers; BOM row my-auth v0.4.8 / my-usermanager v0.5.31. No chrome change. |
 | **v0.6.11** | **1.0.2** | Shared browser mechanisms (HTMX redirect, session CSRF, toast boot, pagination). Multi-user BOM stayed on v0.6.10 until matching auth tags; chrome generation with my-auth v0.4.8 / my-usermanager v0.5.7 had no composer. |

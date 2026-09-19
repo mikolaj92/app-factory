@@ -71,7 +71,7 @@ if _fastapi is not None:
         RunResult,
         RunStatus,
     )
-    from app_factory.responses import htmx_redirect, template_response
+    from app_factory.responses import htmx_redirect, login_redirect, template_response
     from app_factory.uploads import (
         UploadLimitExceeded,
         UploadedFile,
@@ -126,7 +126,7 @@ else:
     assert_public_origin_csrf = None
     AppFactoryUi = AppFactoryUiConflict = SameOriginCsrfMiddleware = None
     SessionCsrfProtection = UploadLimitExceeded = UploadedFile = None
-    htmx_redirect = install_app_factory_ui = read_upload_bounded = None
+    htmx_redirect = login_redirect = install_app_factory_ui = read_upload_bounded = None
     read_uploads_bounded = template_response = None
     CLIENT_SHELL = None
     IDENTITY_ADMIN_SURFACES = IDENTITY_AUTHENTICATED_SURFACES = None
@@ -219,6 +219,7 @@ __all__ = [
     "get_assets_dir",
     "get_platform_static_app",
     "htmx_redirect",
+    "login_redirect",
     "template_response",
     "install_app_factory_ui",
     "install_identity_adapters",
@@ -237,4 +238,4 @@ __all__ = [
     "verify_cdn_manifest",
 ]
 
-__version__ = "0.7.5"
+__version__ = "0.7.6"

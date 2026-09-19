@@ -41,6 +41,62 @@ def test_htmx_redirect_rejects_empty_url() -> None:
         htmx_redirect(_request({}), "")
 
 
+def test_login_redirect_adds_next_and_hx_redirect() -> None:
+    from app_factory import login_redirect
+
+    app = FastAPI()
+
+    @app.get("/account")
+    def account(request: Request):
+        return login_redirect(request)
+
+    @app.get("/login")
+    def login(request: Request):
+        return login_redirect(request)
+
+    client = TestClient(app)
+    native = client.get("/account", follow_redirects=False)
+    htmx = client.get(
+        "/account", headers={"HX-Request": "true"}, follow_redirects=False
+    )
+    assert native.status_code == htmx.status_code == 303
+    assert native.headers["location"] == "/login?next=/account"
+    assert htmx.headers["HX-Redirect"] == "/login?next=/account"
+    already = client.get("/login", follow_redirects=False)
+    assert already.headers["location"] == "/login"
+    assert "next=" not in already.headers["location"]
+
+
+def test_same_origin_return_path_rejects_open_redirects() -> None:
+    from app_factory.responses import same_origin_return_path
+
+    assert same_origin_return_path("/account") == "/account"
+    assert same_origin_return_path("/projects/new?app=msds") == "/projects/new?app=msds"
+    assert same_origin_return_path("//evil.example") is None
+    assert same_origin_return_path("https://evil.example") is None
+    assert same_origin_return_path("/ok#frag") is None
+    assert same_origin_return_path("/ok path") is None
+
+
+def test_login_redirect_keeps_query_and_rejects_open_redirects() -> None:
+    from app_factory import login_redirect
+
+    app = FastAPI()
+
+    @app.get("/projects/new")
+    def gated(request: Request):
+        return login_redirect(request, login_path="/login?lang=en")
+
+    client = TestClient(app)
+    response = client.get(
+        "/projects/new?app=msds", follow_redirects=False
+    )
+    assert response.status_code == 303
+    assert response.headers["location"] == (
+        "/login?lang=en&next=/projects/new%3Fapp%3Dmsds"
+    )
+
+
 def test_session_csrf_mints_reuses_and_validates_token() -> None:
     csrf = SessionCsrfProtection(session_key="test_csrf")
     request = _request({"session": {}})

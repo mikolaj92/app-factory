@@ -7,14 +7,17 @@ from dataclasses import dataclass
 from functools import partial
 from typing import cast
 
-from app_factory.assets import get_platform_static_app, platform_asset_url
+from app_factory.assets import get_assets_dir, get_platform_static_app, platform_asset_url
 from app_factory.jinja import configure_jinja_env
 
 try:
     from fastapi import FastAPI
+    from fastapi.responses import FileResponse
     from jinja2 import Environment
 except ImportError as exc:
     raise ImportError("app_factory.fastapi requires app-factory[platform]") from exc
+
+_FAVICON_NAME = "favicon.svg"
 
 
 class AppFactoryUiConflict(ValueError):
@@ -55,6 +58,12 @@ def install_app_factory_ui(
         )
 
     if installed is None:
+        favicon = get_assets_dir() / _FAVICON_NAME
+
+        @app.get("/favicon.ico", include_in_schema=False)
+        def platform_favicon() -> FileResponse:
+            return FileResponse(favicon, media_type="image/svg+xml")
+
         app.mount(static_path, get_platform_static_app(), name=mount_name)
         app.state.app_factory_ui = requested
 
