@@ -14,6 +14,7 @@ from starlette.routing import Mount
 from app_factory import (
     ProductAppConfig,
     SameOriginCsrfMiddleware,
+    assert_public_origin_csrf,
     create_product_app,
     get_platform_static_app,
 )
@@ -189,3 +190,55 @@ def test_forbidden_installer_markers_are_stable() -> None:
     )
     mounts = [route for route in _load_minimal().routes if isinstance(route, Mount)]
     assert any(route.path == report.static_path for route in mounts)
+
+
+PUBLIC_ORIGIN = "https://rudy.patryk.it"
+BACKEND_BASE = "http://127.0.0.1:8300"
+
+
+def _mutation_app(*, trusted_origins: tuple[str, ...] = ()) -> FastAPI:
+    router = APIRouter()
+
+    @router.post("/logout")
+    def logout() -> dict[str, bool]:
+        return {"ok": True}
+
+    return create_product_app(
+        ProductAppConfig(
+            template_directory=MINIMAL / "templates",
+            csrf_trusted_origins=trusted_origins,
+        ),
+        routers=(router,),
+    )
+
+
+def test_public_origin_csrf_rejects_tautological_same_host_probe() -> None:
+    app = _mutation_app(trusted_origins=(PUBLIC_ORIGIN,))
+    with pytest.raises(HostConformanceError, match="tautolog"):
+        assert_public_origin_csrf(
+            app,
+            public_origin=PUBLIC_ORIGIN,
+            mutation_path="/logout",
+            backend_base_url=PUBLIC_ORIGIN,
+        )
+
+
+def test_public_origin_csrf_fails_when_trusted_origins_are_empty() -> None:
+    app = _mutation_app()
+    with pytest.raises(HostConformanceError, match="public origin"):
+        assert_public_origin_csrf(
+            app,
+            public_origin=PUBLIC_ORIGIN,
+            mutation_path="/logout",
+            backend_base_url=BACKEND_BASE,
+        )
+
+
+def test_public_origin_csrf_accepts_trusted_public_origin_behind_http_backend() -> None:
+    app = _mutation_app(trusted_origins=(PUBLIC_ORIGIN,))
+    assert_public_origin_csrf(
+        app,
+        public_origin=PUBLIC_ORIGIN,
+        mutation_path="/logout",
+        backend_base_url=BACKEND_BASE,
+    )
