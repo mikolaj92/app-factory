@@ -13,13 +13,14 @@ except ImportError as exc:  # pragma: no cover
     raise ImportError("app_factory.conformance requires app-factory[platform]") from exc
 
 from app_factory.adapters.route_contract import check_identity_routes
-from app_factory.csrf import SameOriginCsrfMiddleware
+from app_factory.csrf import SameOriginCsrfMiddleware, _origin_of
 from app_factory.product_errors import product_http_error, product_server_error
 
 __all__ = [
     "FORBIDDEN_IDENTITY_INSTALLERS",
     "HostConformanceError",
     "HostConformanceReport",
+    "assert_public_origin_csrf",
     "assert_thin_host",
     "check_thin_host",
     "check_thin_host_sources",
@@ -181,6 +182,54 @@ def check_thin_host(
         origin_csrf=origin_csrf,
         htmx_errors=htmx_errors,
     )
+
+
+def assert_public_origin_csrf(
+    app: FastAPI,
+    *,
+    public_origin: str,
+    mutation_path: str,
+    backend_base_url: str,
+    foreign_origin: str = "https://evil.example",
+) -> None:
+    """Fail unless public Origin is accepted when the backend origin differs.
+
+    Browsers behind TLS termination send ``https://host`` while uvicorn sees
+    ``http://127.0.0.1``. A probe that uses the same origin for both is a
+    tautology and must not pass.
+    """
+    public = _origin_of(public_origin)
+    backend = _origin_of(backend_base_url)
+    foreign = _origin_of(foreign_origin)
+    if not public or not backend or not foreign:
+        raise HostConformanceError("public, backend, and foreign origins must be absolute")
+    if public == backend:
+        raise HostConformanceError(
+            "public origin CSRF probe is tautological; backend_base_url must differ"
+        )
+    if not mutation_path.startswith("/"):
+        raise HostConformanceError("mutation_path must be an absolute path")
+
+    from fastapi.testclient import TestClient
+
+    problems: list[str] = []
+    with TestClient(app, base_url=backend_base_url) as client:
+        accepted = client.post(mutation_path, headers={"Origin": public})
+        if accepted.status_code == 403 and "CSRF validation failed" in accepted.text:
+            problems.append(
+                f"public origin {public} was rejected behind {backend}"
+            )
+        blocked = client.post(mutation_path, headers={"Origin": foreign})
+        if blocked.status_code != 403 or "CSRF validation failed" not in blocked.text:
+            problems.append(f"foreign origin {foreign} was not rejected as CSRF")
+        fragment = client.post(
+            mutation_path,
+            headers={"Origin": foreign, "HX-Request": "true"},
+        )
+        if fragment.status_code != 403 or 'role="alert"' not in fragment.text:
+            problems.append("HTMX CSRF boundary missing for foreign origin")
+    if problems:
+        raise HostConformanceError("; ".join(problems))
 
 
 def assert_thin_host(
