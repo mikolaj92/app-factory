@@ -7,6 +7,9 @@ from collections.abc import Iterable
 from typing import cast
 from urllib.parse import urlsplit
 
+from app_factory.contract import http_contract
+from app_factory.jinja import render_kit_template
+
 try:
     from fastapi import Request
     from fastapi.responses import HTMLResponse, JSONResponse
@@ -63,16 +66,20 @@ class SameOriginCsrfMiddleware(BaseHTTPMiddleware):
         if supplied is None and self.allow_missing_origin:
             return await call_next(request)
         if supplied is None or supplied not in self.trusted_origins | {request_origin}:
-            if request.headers.get("HX-Request", "").lower() == "true":
+            contract = http_contract()
+            csrf = contract["origin_csrf"]
+            request_header = str(contract["htmx_redirect"]["request_header"])
+            if request.headers.get(request_header, "").lower() == "true":
                 return HTMLResponse(
-                    '<div class="alert" data-variant="destructive" role="alert">'
-                    "Request blocked: invalid origin. Please reload the page and "
-                    "try again.</div>",
-                    status_code=403,
+                    render_kit_template(str(csrf["htmx_template"])),
+                    status_code=int(csrf["htmx_status"]),
                 )
             return JSONResponse(
-                {"error": "CSRF validation failed", "detail": "Invalid or missing Origin."},
-                status_code=403,
+                {
+                    "error": csrf["json_error"],
+                    "detail": csrf["json_detail"],
+                },
+                status_code=int(csrf["json_status"]),
             )
         return await call_next(request)
 

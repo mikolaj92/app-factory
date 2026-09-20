@@ -238,4 +238,4 @@ __all__ = [
     "verify_cdn_manifest",
 ]
 
-__version__ = "0.7.6"
+__version__ = "0.7.7"

@@ -1,7 +1,5 @@
 """Transport-only error defaults for product hosts; no domain error policy."""
 
-from html import escape
-
 from fastapi import Request
 from fastapi.exception_handlers import (
     http_exception_handler,
@@ -11,13 +9,18 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse
 from starlette.exceptions import HTTPException
 
+from app_factory.contract import http_contract
+from app_factory.jinja import render_kit_template
+
 
 def _error_fragment(request: Request, status: int, detail: str, headers=None):
-    if request.headers.get("HX-Request", "").lower() != "true":
+    contract = http_contract()
+    request_header = str(contract["htmx_redirect"]["request_header"])
+    if request.headers.get(request_header, "").lower() != "true":
         return None
+    template = str(contract["htmx_error"]["template"])
     return HTMLResponse(
-        '<div class="alert" data-variant="destructive" role="alert">'
-        f"{escape(detail)}</div>",
+        render_kit_template(template, detail=detail),
         status_code=status,
         headers=headers,
     )

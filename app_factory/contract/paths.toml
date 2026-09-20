@@ -1,0 +1,12 @@
+# Identity-lifecycle URL table. Language bindings read this file.
+
+[paths]
+login = "/login"
+logout = "/logout"
+register = "/register"
+recovery = "/recover"
+account = "/account"
+admin_users = "/admin/users"
+activation = "/activate"
+credentials = "/account/passkeys"
+invite = "/admin/users"

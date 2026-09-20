@@ -24,6 +24,7 @@ from typing import Any
 
 from jinja2 import Environment
 
+from app_factory.contract import identity_paths
 from app_factory.fastapi import AppFactoryUi, install_app_factory_ui
 
 try:
@@ -108,6 +109,8 @@ IDENTITY_SURFACES: tuple[str, ...] = (
 )
 
 # Stable Jinja names for shared identity-lifecycle chrome composition.
+_IDENTITY_PATHS = identity_paths()
+
 IDENTITY_PUBLIC_SHELL = "app_factory/identity_public_shell.html"
 IDENTITY_AUTHENTICATED_SHELL = "app_factory/identity_authenticated_shell.html"
 IDENTITY_PUBLIC_STATE = "app_factory/identity_public_state.html"
@@ -148,17 +151,17 @@ class PlatformPaths:
     prefix (e.g. ``/argus``); :meth:`resolved` prefixes every surface once.
     """
 
-    login: str = "/login"
-    logout: str = "/logout"
-    register: str = "/register"
-    recovery: str = "/recover"
-    account: str = "/account"
-    admin_users: str = "/admin/users"
+    login: str = _IDENTITY_PATHS["login"]
+    logout: str = _IDENTITY_PATHS["logout"]
+    register: str = _IDENTITY_PATHS["register"]
+    recovery: str = _IDENTITY_PATHS["recovery"]
+    account: str = _IDENTITY_PATHS["account"]
+    admin_users: str = _IDENTITY_PATHS["admin_users"]
     # Appended after the original positional fields for compatibility.
-    activation: str = "/activate"
-    credentials: str = "/account/passkeys"
+    activation: str = _IDENTITY_PATHS["activation"]
+    credentials: str = _IDENTITY_PATHS["credentials"]
     # GET form lives on the users list (UM v0.5.1+); POST stays /admin/users/invite.
-    invite: str = "/admin/users"
+    invite: str = _IDENTITY_PATHS["invite"]
     root: str = ""
 
     def href(self, surface: str) -> str:
