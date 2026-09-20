@@ -1,0 +1,36 @@
+# HTTP chrome contract. Language bindings implement these rules.
+
+[htmx_redirect]
+status = 303
+header = "HX-Redirect"
+request_header = "HX-Request"
+
+[login_redirect]
+login_path = "/login"
+status = 303
+
+[login_redirect.next]
+# Same-origin path only. Reject open redirects.
+accept = ["/account", "/projects/new?app=msds"]
+reject = ["//evil.example", "https://evil.example", "/ok#frag", "/ok path"]
+
+[origin_csrf]
+json_status = 403
+json_error = "CSRF validation failed"
+json_detail = "Invalid or missing Origin."
+htmx_status = 403
+htmx_template = "app_factory/csrf_origin_denied.html"
+
+[htmx_error]
+template = "app_factory/htmx_error_fragment.html"
+
+[jinja]
+tags = [
+  "block", "elif", "else", "endblock", "endfor", "endif", "endmacro",
+  "endwith", "extends", "for", "from", "if", "include", "macro", "set", "with",
+]
+filters = [
+  "capitalize", "default", "join", "length", "list", "max", "min", "replace",
+  "safe", "selectattr", "string", "tojson", "urlencode",
+]
+tests = ["defined", "mapping", "none"]

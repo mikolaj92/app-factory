@@ -2,10 +2,10 @@
 
 ## Scope
 
-Shared **UI chrome / shell** for FastAPI + Jinja2 + HTMX + Alpine apps:
-bundled same-origin assets, head/theme/shell boots, and small composable
-Jinja partials (`product_shell`, platform nav/auth/session/theme, identity
-frames). See `README.md` and `COMPAT.md`.
+Shared **UI chrome / shell** as files (templates, assets, `contract/`).
+FastAPI + Jinja2 is one binding. Bundled same-origin assets, head/theme/shell
+boots, and small composable Jinja partials (`product_shell`, platform
+nav/auth/session/theme, identity frames). See `README.md` and `COMPAT.md`.
 
 ## Design law
 

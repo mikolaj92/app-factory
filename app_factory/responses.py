@@ -6,6 +6,8 @@ from collections.abc import Mapping
 from typing import Any
 from urllib.parse import quote, urlsplit
 
+from app_factory.contract import http_contract
+
 try:
     from fastapi import Request
     from fastapi.responses import HTMLResponse, RedirectResponse
@@ -16,7 +18,8 @@ except ImportError as exc:
 
 def wants_htmx_fragment(request: Request) -> bool:
     """True for HTMX swaps; false for native navigation and history restore."""
-    if request.headers.get("HX-Request", "").lower() != "true":
+    header = str(http_contract()["htmx_redirect"]["request_header"])
+    if request.headers.get(header, "").lower() != "true":
         return False
     return request.headers.get("HX-History-Restore-Request", "").lower() != "true"
 
@@ -54,14 +57,17 @@ def htmx_redirect(
     request: Request,
     url: str,
     *,
-    status_code: int = 303,
+    status_code: int | None = None,
 ) -> RedirectResponse:
     """Return a native redirect and instruct HTMX to navigate the full page."""
+    spec = http_contract()["htmx_redirect"]
     if not url:
         raise ValueError("url is required")
+    if status_code is None:
+        status_code = int(spec["status"])
     response = RedirectResponse(url=url, status_code=status_code)
-    if request.headers.get("HX-Request", "").lower() == "true":
-        response.headers["HX-Redirect"] = url
+    if request.headers.get(str(spec["request_header"]), "").lower() == "true":
+        response.headers[str(spec["header"])] = url
     return response
 
 
@@ -83,11 +89,16 @@ def same_origin_return_path(value: str | None) -> str | None:
 
 def login_redirect(
     request: Request,
-    login_path: str = "/login",
+    login_path: str | None = None,
     *,
-    status_code: int = 303,
+    status_code: int | None = None,
 ) -> RedirectResponse:
     """303 to login with ``?next=`` and ``HX-Redirect`` for HTMX swaps."""
+    spec = http_contract()["login_redirect"]
+    if login_path is None:
+        login_path = str(spec["login_path"])
+    if status_code is None:
+        status_code = int(spec["status"])
     if not login_path.startswith("/") or login_path.startswith("//"):
         raise ValueError("login_path must be an absolute same-origin path")
     login_parts = urlsplit(login_path)

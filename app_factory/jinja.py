@@ -10,6 +10,7 @@ from jinja2 import (
     Environment,
     FileSystemLoader,
     PackageLoader,
+    select_autoescape,
 )
 
 from app_factory.assets import bundled_asset, list_bundled_assets, platform_asset_url
@@ -53,3 +54,16 @@ def configure_jinja_env(
             else:
                 env.loader = ChoiceLoader(loaders)
     return env
+
+
+_kit_env: Environment | None = None
+
+
+def render_kit_template(name: str, **values: object) -> str:
+    """Render a package template without a host Jinja environment."""
+    global _kit_env
+    if _kit_env is None:
+        _kit_env = configure_jinja_env(
+            Environment(autoescape=select_autoescape(default=True))
+        )
+    return _kit_env.get_template(name).render(**values)
