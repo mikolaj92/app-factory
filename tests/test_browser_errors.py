@@ -15,7 +15,9 @@ def test_htmx_mutation_errors_are_visible_without_swapping_raw_html(
     page, base = browser_page
     env = configure_jinja_env(Environment(autoescape=True))
     html = (
-        '<html><head><script src="/static/platform/htmx.min.js"></script></head><body>'
+        "<html><head><meta name='htmx-config' content='"
+        '{"noSwap":[204,304,"4xx","5xx"]}'
+        "'><script src='/static/platform/htmx.min.js'></script></head><body>"
         + env.get_template("app_factory/toast_boot.html").render()
         + f'<form hx-{method}="/error" hx-target="#result"><button>Submit</button></form>'
         '<div id="result">Original</div></body></html>'

@@ -9,7 +9,7 @@ import base64
 import hashlib
 import hmac
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from typing import Literal, Protocol, cast
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
@@ -167,7 +167,7 @@ def verify_cdn_asset(
         or asset.version != approved.version
         or asset.url != approved.url
         or asset.kind != approved.kind
-    ) and (approved is None or asset.url != approved.url):
+    ):
         raise CDNVerificationError(f"unexpected requested CDN URL: {asset.url}")
 
     response = (
@@ -213,6 +213,3 @@ def verify_cdn_manifest(
         verify_cdn_asset(asset, fetcher=fetcher, timeout=timeout)
 
 
-def asset_with_local_url(asset: CDNAsset, url: str) -> CDNAsset:
-    """Copy an asset pointing at a same-origin/vendor URL (no SRI required)."""
-    return replace(asset, url=url, integrity="", crossorigin="anonymous")

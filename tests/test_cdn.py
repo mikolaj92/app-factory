@@ -11,11 +11,15 @@ import pytest
 from jinja2 import Environment
 
 from app_factory.assets import bundled_asset, list_bundled_assets
+from dataclasses import replace
+
 from app_factory.cdn import (
     CDN_ASSET_MANIFEST,
+    CDNVerificationError,
     cdn_asset,
     extend_manifest,
     install_manifest,
+    verify_cdn_asset,
 )
 from app_factory.jinja import configure_jinja_env
 
@@ -294,3 +298,49 @@ def test_static_css_does_not_ship_a_tailwind_safelist():
         if sel in content
     ]
     assert not leaked, f"static CSS still contains a Tailwind safelist: {leaked}"
+
+
+class FakeCDNResponse:
+    def __init__(self, body: bytes, url: str, status: int = 200) -> None:
+        self.body = body
+        self.url = url
+        self.status = status
+
+    def read(self) -> bytes:
+        return self.body
+
+    def geturl(self) -> str:
+        return self.url
+
+    def getcode(self) -> int:
+        return self.status
+
+    def close(self) -> None:
+        return None
+
+
+def test_verify_cdn_asset_rejects_a_pin_mismatch_before_fetching() -> None:
+    pinned = cdn_asset("chartjs")
+    body = b"chart-bytes"
+    digest = "sha384-" + base64.b64encode(hashlib.sha384(body).digest()).decode("ascii")
+    fetched: list[str] = []
+
+    def fetcher(url: str) -> FakeCDNResponse:
+        fetched.append(url)
+        return FakeCDNResponse(body, url)
+
+    verify_cdn_asset(replace(pinned, integrity=digest), fetcher=fetcher)
+    assert fetched == [pinned.url]
+
+    for tampered in (
+        replace(pinned, version="0.0.0", integrity=digest),
+        replace(pinned, kind="style", integrity=digest),
+    ):
+        with pytest.raises(CDNVerificationError):
+            verify_cdn_asset(tampered, fetcher=fetcher)
+    assert fetched == [pinned.url]
+
+    with pytest.raises(CDNVerificationError):
+        verify_cdn_asset(
+            replace(pinned, integrity="sha384-" + "A" * 64), fetcher=fetcher
+        )
