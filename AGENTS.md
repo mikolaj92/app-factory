@@ -29,5 +29,8 @@ app-factory.
 - **No** re-implementing auth ceremony (that lives in my-auth / my-usermanager).
 - **No** host-style domain models or product routes.
 - **No** new `.app-*` components for things Basecoat already provides.
+- Prefer bundled Lism layout primitives for new content/form layouts. Do not
+  handwrite repeated flex/grid patterns or import Lism's reset, palette, or UI.
+  Keep existing `.app-*` layout classes compatible for older consumers.
 - **No** Node toolchain. Chrome is committed dist in `app_factory/assets/`.
   Do not add `package.json`, a lockfile, `node_modules`, or a compile step.

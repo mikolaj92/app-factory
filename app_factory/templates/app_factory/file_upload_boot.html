@@ -58,7 +58,7 @@
       if (list) {
         list.replaceChildren(...files.map((file, index) => {
           const item = document.createElement('li');
-          item.className = 'app-cluster app-cluster--between text-sm';
+          item.className = 'l--cluster app-cluster--between text-sm';
           const label = document.createElement('span');
           label.className = 'min-w-0 break-words';
           label.textContent = `${file.name} · ${formatBytes(file.size)}`;

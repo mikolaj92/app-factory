@@ -44,7 +44,7 @@
       {% set groups = menu | selectattr('__class__.__name__', 'eq', 'MenuGroup') | list %}
 
       {% if flat %}
-      <ul class="app-stack app-stack--tight" role="list" data-platform-flat-menu>
+      <ul class="l--stack app-stack--tight" role="list" data-platform-flat-menu>
         {% for item in flat %}
         {% include "app_factory/_platform_nav_item.html" %}
         {% endfor %}

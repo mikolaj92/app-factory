@@ -88,10 +88,17 @@ TAILWIND_LICENSE_URL = (
     "https://raw.githubusercontent.com/tailwindlabs/tailwindcss/"
     f"v{TAILWIND_BROWSER_VERSION}/LICENSE"
 )
+LISM_VERSION = "1.0.1"
+LISM_FILENAME = "lism-layout.css"
+LISM_REGISTRY_URL = f"https://registry.npmjs.org/lism-css/{LISM_VERSION}"
+LISM_DIST_PATH = "package/dist/css/primitives/layout.css"
+LISM_LICENSE_PATH = "package/LICENSE"
+
 CORE_FILES: dict[str, tuple[Path | None, str, str]] = {
     "basecoat-css": (None, "basecoat-factory.min.css", "style"),
     "basecoat-js-all": (None, "basecoat-js.min.js", "script"),
     "tailwind-browser": (None, TAILWIND_BROWSER_FILENAME, "script"),
+    "lism-layout": (None, LISM_FILENAME, "style"),
 }
 LANDING_VERSION = "1.0.0"
 LANDING_FILES: dict[str, tuple[Path, str, str]] = {
@@ -200,6 +207,27 @@ def fetch_tailwind_browser() -> bytes:
     )
 
 
+def fetch_lism_layout() -> tuple[bytes, bytes]:
+    """Use published layout dist only; never import Lism's reset or palette."""
+    archive, _metadata = fetch_npm_tarball(LISM_REGISTRY_URL, package="lism-css")
+    package_json = json.loads(
+        extract_tarball_file(archive, "package/package.json", package="lism-css")
+    )
+    if (
+        package_json.get("version") != LISM_VERSION
+        or package_json.get("license") != "MIT"
+    ):
+        raise RuntimeError("unreviewed lism-css version or license")
+    css = extract_tarball_file(archive, LISM_DIST_PATH, package="lism-css")
+    license_text = extract_tarball_file(archive, LISM_LICENSE_PATH, package="lism-css")
+    validate_license(license_text, LISM_LICENSE_PATH, required=MIT_REQUIRED_TEXT)
+    defaults = (BUILD_SRC / "src" / "lism-defaults.css").read_bytes()
+    # Explicit layout classes override components; Tailwind utilities can tune them.
+    # Unlayered product styles and legacy .app-* remain stronger.
+    wrapped = b"@layer theme, base, components, layout, utilities;\n@layer layout {\n"
+    return wrapped + css + b"\n" + defaults + b"\n}\n", license_text
+
+
 def fetch_basecoat() -> tuple[bytes, bytes, dict[str, object]]:
     archive, metadata = fetch_npm_tarball(BASECOAT_REGISTRY_URL, package="basecoat-css")
     css = extract_tarball_file(archive, BASECOAT_CDN_CSS_PATH, package="basecoat-css")
@@ -243,6 +271,7 @@ def build_and_stage() -> Path:
     alpine_js = fetch_alpine_cdn()
     tailwind_js = fetch_tailwind_browser()
     htmx_js = fetch_bytes(HTMX_SOURCE_URL)
+    lism_css, lism_license = fetch_lism_layout()
 
     stage = Path(tempfile.mkdtemp(prefix="app-factory-assets-"))
     assets_stage = stage / "assets"
@@ -254,6 +283,7 @@ def build_and_stage() -> Path:
         "tailwind-browser": tailwind_js,
         "htmx": htmx_js,
         "alpine": alpine_js,
+        "lism-layout": lism_css,
     }
     for name, (_source, filename, _kind) in BUNDLED_FILES.items():
         if name in generated:
@@ -264,8 +294,12 @@ def build_and_stage() -> Path:
             raise RuntimeError(f"expected asset not found: {source}")
         shutil.copy2(source, assets_stage / filename)
 
+    # Preserve the bundled favicon served by install_app_factory_ui.
+    shutil.copy2(ASSETS_DST / "favicon.svg", assets_stage / "favicon.svg")
+
     licenses_dir = assets_stage / "licenses"
     licenses_dir.mkdir()
+    (licenses_dir / "lism-css.LICENSE").write_bytes(lism_license)
 
     for filename, (
         _package,
@@ -311,6 +345,8 @@ def build_and_stage() -> Path:
             return ALPINE_VERSION
         if name == "tailwind-browser":
             return TAILWIND_BROWSER_VERSION
+        if name == "lism-layout":
+            return LISM_VERSION
         return BASECOAT_VERSION
 
     manifest = {
@@ -379,6 +415,14 @@ def build_and_stage() -> Path:
             f"  Exact license: {source}\n"
             f"  License text: licenses/{filename}"
         )
+    attribution.append(
+        f"- lism-css {LISM_VERSION} (layout primitives only)\n"
+        f"  License: MIT\n"
+        f"  Source: https://github.com/lism-css/core\n"
+        f"  Exact source: {LISM_REGISTRY_URL} ({LISM_DIST_PATH})\n"
+        f"  Exact license: {LISM_REGISTRY_URL} ({LISM_LICENSE_PATH})\n"
+        f"  License text: licenses/lism-css.LICENSE"
+    )
     attribution.extend(("", "Runtime files:"))
     attribution.extend(
         f"- {name} {item['version']}: {item['filename']} ({item['integrity']})"

@@ -34,6 +34,7 @@ def test_core_assets_are_local_and_manifest_verified():
         "htmx",
         "landing-css",
         "landing-js",
+        "lism-layout",
         "tailwind-browser",
     ]
     assert bundled_asset("alpine").version == "3.17.2"

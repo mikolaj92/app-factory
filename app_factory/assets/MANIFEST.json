@@ -7,7 +7,7 @@
   },
   "basecoat-css": {
     "filename": "basecoat-factory.min.css",
-    "integrity": "sha384-4Km/J7NtPU54pEY46HxMOCy7l++JQuqahMDMpDM2p0mXueLmIwidF0/72IQJIoR8",
+    "integrity": "sha384-meAwYqjAGwEY+Tp54c1hW6cR0Tx2+3AgPRcswtcfxNdB4yw+syojE7kKlmMZsdDN",
     "kind": "style",
     "version": "1.0.2"
   },
@@ -34,6 +34,12 @@
     "integrity": "sha384-wxVCZKr7eE3v9P2EVg3RyzxA+ZFgYRoQH4BwsD798Cj/SNw+MJnczGcLGvz2Z7j1",
     "kind": "script",
     "version": "1.0.0"
+  },
+  "lism-layout": {
+    "filename": "lism-layout.css",
+    "integrity": "sha384-Q5+z5cc56XKmc5Yf/5lrJSb9lH7Cwlw3jrlubchsJEmtjB0zB2Q/XuTIaW2eJ6+F",
+    "kind": "style",
+    "version": "1.0.1"
   },
   "tailwind-browser": {
     "filename": "tailwind.min.js",

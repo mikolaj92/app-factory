@@ -15,7 +15,7 @@
 {% block content %}
 <section class="app-page">
   <header class="app-header">
-    <div class="app-stack app-stack--tight">
+    <div class="l--stack app-stack--tight">
       <p class="text-sm text-muted-foreground mono">local storybook</p>
       <h1 class="text-2xl font-semibold tracking-tight">Chrome catalog</h1>
       <p class="text-sm text-muted-foreground max-w-prose">
@@ -26,7 +26,7 @@
     </div>
   </header>
 
-  <div class="app-card-grid">
+  <div class="l--autoColumns" data-layout-cards>
     {% for story in stories %}
     <a class="card hover:bg-muted/40 transition-colors" href="{{ story.href }}" data-no-htmx="true">
       <header>
@@ -46,18 +46,18 @@
         Unrelated form/link used to prove chrome handlers stay isolated.
       </p>
     </header>
-    <section class="app-stack">
+    <section class="l--stack">
       <a class="btn self-start" data-variant="outline" data-size="sm" href="/stories/components" data-demo-host-link>
         Host link (native navigation)
       </a>
       <form
-        class="app-stack app-stack--tight max-w-md"
+        class="l--stack app-stack--tight max-w-md"
         hx-post="/stories/demo-form"
         hx-target="#demo-form-result"
         hx-swap="innerHTML"
         data-demo-host-form
       >
-        <label class="app-stack app-stack--tight" for="demo-message">
+        <label class="l--stack app-stack--tight" for="demo-message">
           <span class="text-sm font-medium">Host form message</span>
           <input id="demo-message" class="input" name="message" placeholder="Type and submit" />
         </label>
