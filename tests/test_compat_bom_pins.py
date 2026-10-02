@@ -41,8 +41,8 @@ def test_compat_preferred_row_matches_bom_pins() -> None:
     pins = _bom_pins()
     app_factory, auth, um = _preferred_compat_row()
     assert app_factory == pins["app-factory"] == "v0.7.9"
-    assert auth == pins["my-auth"] == "v0.5.6"
-    assert um == pins["my-usermanager"] == "v0.6.7"
+    assert auth == pins["my-auth"] == "v0.5.7"
+    assert um == pins["my-usermanager"] == "v0.6.10"
 
 
 def test_upgrade_order_targets_preferred_row_not_archive_ban() -> None:

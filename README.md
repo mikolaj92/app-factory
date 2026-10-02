@@ -8,7 +8,7 @@ files.
 The goal is one place to ship same-origin chrome so product apps do **not**
 re-implement Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.7.9` (bundled Lism layout primitives alongside Basecoat and Tailwind; multi-user BOM is v0.7.9 / my-auth v0.5.6 / my-usermanager v0.6.7)
+**Tag:** `v0.7.9` (bundled Lism layout primitives alongside Basecoat and Tailwind; multi-user BOM is v0.7.9 / my-auth v0.5.7 / my-usermanager v0.6.10)
 
 ---
 
@@ -20,8 +20,8 @@ This package is the thin shared layer in a small platform. Together:
 |-------|------|----------------------|
 | **app-factory** (this repo) | Chrome files + HTTP contract; FastAPI binding is optional | `git` tag `v0.7.9` directly; multi-user hosts follow `COMPAT.md` |
 | **basecoat-factory** | Historical palette/layout notes; not a runtime or host dependency | Not used at runtime |
-| **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.5.6` |
-| **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.6.7` |
+| **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.5.7` |
+| **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.6.10` |
 | **FastAPI + Jinja2 + HTMX + Alpine** | Server-rendered app shell | App code; core scripts/CSS served by the app |
 
 ### Dependency rule
@@ -262,8 +262,8 @@ override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
 app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.7.9" }
-my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.5.6" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.6.7" }
+my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.5.7" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.6.10" }
 ```
 
 ```bash
