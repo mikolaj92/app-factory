@@ -1,0 +1,20 @@
+/* Layout-only bridge: no Lism reset, typography, palette, or UI components.
+ * Supply the three tokens referenced by the published layout primitives.
+ * --layout-gap lets hosts set spacing in their own stylesheet without a build.
+ */
+:root {
+  --flow--base: 1.5rem;
+  --flow--s: 1rem;
+  --sz--xs: 25rem;
+}
+
+.l--stack,
+.l--autoColumns,
+.l--withSide,
+.l--switchColumns {
+  gap: var(--layout-gap, 1.5rem);
+}
+
+.l--cluster {
+  gap: var(--layout-gap, 0.75rem);
+}

@@ -90,6 +90,47 @@ def browser_page(live_server: str):
             browser.close()
 
 
+def test_catalog_columns_follow_container_width_before_and_after_htmx(
+    browser_page,
+) -> None:
+    page, base = browser_page
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    page.goto(f"{base}/")
+
+    def measure(width):
+        return page.locator("[data-layout-cards]").evaluate(
+            """(grid, width) => {
+              grid.style.width = `${width}px`;
+              const style = getComputedStyle(grid);
+              return {
+                columns: style.gridTemplateColumns.split(' ').length,
+                gap: style.gap,
+                width: grid.clientWidth,
+                content: grid.scrollWidth,
+                viewport: innerWidth,
+              };
+            }""",
+            width,
+        )
+
+    wide = measure(720)
+    narrow = measure(300)
+    assert wide["columns"] == 2
+    assert narrow["columns"] == 1
+    assert wide["viewport"] == narrow["viewport"] == 1440
+    assert wide["gap"] == narrow["gap"] == "24px"
+    assert narrow["content"] <= narrow["width"]
+
+    page.locator('#sidebar a[data-nav-key="htmx"]').click()
+    page.locator("[data-panel-label]").wait_for()
+    page.locator('#sidebar a[data-nav-key="catalog"]').click()
+    page.locator("[data-layout-cards]").wait_for()
+    assert measure(720)["columns"] == 2
+    assert measure(300)["columns"] == 1
+    page.get_by_role("button", name="Toggle theme").click()
+    assert measure(300)["columns"] == 1
+
+
 def test_theme_toggle_does_not_submit_host_form(browser_page) -> None:
     page, base = browser_page
     posts: list[str] = []
@@ -156,12 +197,16 @@ def test_host_can_use_a_tailwind_class_outside_the_old_safelist(browser_page) ->
         """() => {
           const el = document.createElement('div');
           el.id = 'tw-probe';
-          el.className = 'gap-7';
+          el.className = 'l--stack gap-7';
           document.body.appendChild(el);
         }"""
     )
     page.wait_for_function(
-        "() => getComputedStyle(document.getElementById('tw-probe')).gap === '28px'"
+        """() => {
+          const style = getComputedStyle(document.getElementById('tw-probe'));
+          return style.display === 'flex' && style.flexDirection === 'column'
+            && style.gap === '28px';
+        }"""
     )
 
 

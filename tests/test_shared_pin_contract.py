@@ -27,6 +27,7 @@ def test_core_names_are_stable():
         "htmx",
         "landing-css",
         "landing-js",
+        "lism-layout",
         "tailwind-browser",
     ]
     assert bundled_asset("alpine").version == "3.17.2"

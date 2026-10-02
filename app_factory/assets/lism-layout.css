@@ -1,0 +1,25 @@
+@layer theme, base, components, layout, utilities;
+@layer layout {
+.l--flow{display:flow-root}.l--flow>*+*{--flow:var(--flow--base);--mbs:var(--flow);margin-block-start:var(--mbs)}.l--flow>:where(img,video,iframe){display:block}.-flow\:s>*{--flow:var(--flow--s)}.-flow\:>*{--flow:inherit}.l--flow>:where(h1,h2,h3,h4){--mbs:calc(var(--flow)*1.5 + 0.5em);margin-block-start:var(--mbs)}.is--skipFlow+*,.l--flow>:first-child{--mbs:0px}.l--flex{display:flex}.l--flex>*{min-width:0}.l--cluster{align-items:center;display:flex;flex-wrap:wrap}.l--stack{display:flex;flex-direction:column}.l--grid{display:grid}.l--grid>*{min-width:0}.l--center{display:grid;grid-template-columns:minmax(0,auto);place-content:center;place-items:center}.l--autoColumns{--cols:20rem;--autoMode:auto-fill;display:grid;grid-template-columns:repeat(var(--autoMode),minmax(min(var(--cols),100%),1fr))}.l--columns{--cols:2;display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr))}.l--withSide{--sideW:auto;--mainW:max(20rem,50%);display:flex;flex-wrap:wrap}.l--withSide>.is--side{flex-basis:var(--sideW);flex-grow:1;min-width:0}.l--withSide>:not(.is--side){flex-basis:min(100%,var(--mainW));flex-grow:9999999;min-width:0}.l--switchColumns{--breakSize:var(--sz--xs);display:flex;flex-wrap:wrap}.l--switchColumns>*{flex-basis:calc((var(--breakSize) - 100%)*9999);flex-grow:1}.l--tileGrid{display:grid;grid-template:repeat(var(--rows,1),minmax(0,1fr))/repeat(var(--cols,1),minmax(0,1fr))}.l--frame{overflow:hidden}.l--frame>:where(img,video,iframe){display:block;height:100%;object-fit:cover;width:100%}
+/* Layout-only bridge: no Lism reset, typography, palette, or UI components.
+ * Supply the three tokens referenced by the published layout primitives.
+ * --layout-gap lets hosts set spacing in their own stylesheet without a build.
+ */
+:root {
+  --flow--base: 1.5rem;
+  --flow--s: 1rem;
+  --sz--xs: 25rem;
+}
+
+.l--stack,
+.l--autoColumns,
+.l--withSide,
+.l--switchColumns {
+  gap: var(--layout-gap, 1.5rem);
+}
+
+.l--cluster {
+  gap: var(--layout-gap, 0.75rem);
+}
+
+}

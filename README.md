@@ -8,7 +8,7 @@ files.
 The goal is one place to ship same-origin chrome so product apps do **not**
 re-implement Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.7.8` (chrome contract in files; multi-user BOM is v0.7.8 / my-auth v0.5.6 / my-usermanager v0.6.7)
+**Tag:** `v0.7.9` (bundled Lism layout primitives alongside Basecoat and Tailwind; multi-user BOM is v0.7.9 / my-auth v0.5.6 / my-usermanager v0.6.7)
 
 ---
 
@@ -18,7 +18,7 @@ This package is the thin shared layer in a small platform. Together:
 
 | Piece | Role | How consumers get it |
 |-------|------|----------------------|
-| **app-factory** (this repo) | Chrome files + HTTP contract; FastAPI binding is optional | `git` tag `v0.7.8` directly; multi-user hosts follow `COMPAT.md` |
+| **app-factory** (this repo) | Chrome files + HTTP contract; FastAPI binding is optional | `git` tag `v0.7.9` directly; multi-user hosts follow `COMPAT.md` |
 | **basecoat-factory** | Historical palette/layout notes; not a runtime or host dependency | Not used at runtime |
 | **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.5.6` |
 | **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.6.7` |
@@ -118,7 +118,7 @@ route authorization, domain validation, accepted upload formats, and copy.
 
 ---
 
-## Bundled core assets (`v0.7.8`)
+## Bundled core assets (`v0.7.9`)
 
 The wheel ships all core files. `MANIFEST.json` pins filenames, versions, and
 SHA-384 digests; the runtime verifies it on first access.
@@ -127,6 +127,7 @@ SHA-384 digests; the runtime verifies it on first access.
 |------|-------------------|------|
 | `basecoat-css` | basecoat-css **1.0.2** published dist + factory `.app-*` layout | style |
 | `basecoat-js-all` | basecoat-css **1.0.2** | script |
+| `lism-layout` | lism-css **1.0.1** published layout primitives only + factory spacing/token bridge (no reset or palette) | style |
 | `tailwind-browser` | `@tailwindcss/browser` **4.3.3** (registry tarball at refresh) | script |
 | `htmx` | HTMX **4.0.0** (GitHub dist) | script |
 | `alpine` | Alpine.js **3.17.2** (registry tarball at refresh) | script |
@@ -189,9 +190,27 @@ Basecoat inside the same bundle.
 | Layer | Use | Examples |
 |-------|-----|----------|
 | **UI components** | Basecoat | `.card`, `.btn`, `.input`, `.field`, `.table` + `.table-container`, `.sidebar`, `.dialog`, … |
-| **Layout primitives** | shipped `.app-*` (keep using these) | `.app-page`, `.app-stack` (+ `--tight`/`--sm`/`--compact`/`--section`), `.app-header`, `.app-cluster`, `.app-card-grid`, `.app-form__field` |
+| **Layout primitives** | published Lism layout-only CSS | `.l--stack`, `.l--cluster`, `.l--center`, `.l--autoColumns`, `.l--withSide`, `.l--switchColumns` |
+| **Legacy layout** | existing `.app-*` kept for compatibility | `.app-page`, `.app-stack`, `.app-header`, `.app-cluster`, `.app-card-grid`, `.app-form__field` |
 | **Shell chrome** | factory only | `.app-shell`, `.app-main*`, sidebar brand/foot glue, theme/locale |
 | **Extra utilities** | bundled Tailwind browser engine | any Tailwind class on host HTML; no safelist, no host CSS toolchain |
+
+New layouts use Lism primitives instead of handwritten flex/grid rules. Basecoat
+still owns component anatomy and padding; Tailwind utilities remain available.
+One container has one layout owner: do not combine `.l--autoColumns` with
+`.app-card-grid`. Set `--cols`, `--sideW`, `--mainW`, `--breakSize`, or
+`--layout-gap` in a product stylesheet (HTML/CSS stay separate). Layout defaults
+supply only the three tokens needed by the published primitives; no Lism reset,
+color palette, typography, React, or runtime JavaScript is included.
+The default stack/grid gap is 1.5rem; cluster gap is 0.75rem. Existing
+`app-stack--tight/sm/compact/section` spacing modifiers can tune `.l--stack`.
+`autoColumns` defaults to 20rem minimum columns and follows available width,
+not the viewport. `withSide` requires one direct `.is--side` child.
+
+Lism is served before Basecoat to establish cascade order:
+`theme → base → components → layout → utilities`. Component internals remain
+Basecoat-owned; explicitly selected layout primitives override component layout,
+Tailwind utilities can tune them, and unlayered host styles retain precedence.
 
 Also shipped for product surfaces without inventing a second design system:
 
@@ -242,7 +261,7 @@ dependencies = [
 override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.7.8" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.7.9" }
 my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.5.6" }
 my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.6.7" }
 ```
@@ -456,7 +475,7 @@ Constants: `CLIENT_SHELL`, `IDENTITY_PUBLIC_SHELL`, `IDENTITY_AUTHENTICATED_SHEL
 
 ### `head_assets.html` behavior
 
-- Emits URLs for the five head pins (`basecoat-css`, `basecoat-js-all`, `tailwind-browser`, `htmx`, `alpine`) under the installer-bound prefix. That is not the full `MANIFEST.json` set: `landing-css` and `landing-js` stay on the landing template.
+- Emits URLs for the six head pins (`lism-layout`, `basecoat-css`, `basecoat-js-all`, `tailwind-browser`, `htmx`, `alpine`) under the installer-bound prefix. That is not the full `MANIFEST.json` set: `landing-css` and `landing-js` stay on the landing template.
 - Optional single product stylesheet via template variable:
 
   ```jinja
@@ -602,7 +621,8 @@ factory_template_dirs()
 
 | app-factory | basecoat-css | Notes |
 |-------------|---------------|-------|
-| **v0.7.8** | **1.0.2** | Current: `verify_cdn_asset` rejects a version or kind that differs from the approved pin even when the URL matches. Same companions as v0.7.7. |
+| **v0.7.9** | **1.0.2** | Current: pinned Lism 1.0.1 layout-only CSS; shared views and catalog adopt adaptive layouts. Basecoat components, arbitrary Tailwind utilities, and legacy `.app-*` remain compatible. |
+| **v0.7.8** | **1.0.2** | `verify_cdn_asset` rejects a version or kind that differs from the approved pin even when the URL matches. Same companions as v0.7.7. |
 | **v0.7.7** | **1.0.2** | Chrome contract in files (`contract/paths.toml`, `contract/http.toml`, templates). FastAPI is one binding. Same companions as v0.7.6. Prefer v0.7.8. |
 | **v0.7.6** | **1.0.2** | Same-origin `/favicon.ico` plus `login_redirect` (`?next=` and `HX-Redirect`). Same companions as v0.7.5. Prefer v0.7.8. |
 | **v0.7.5** | **1.0.2** | `assert_public_origin_csrf` probes public Origin vs a different backend HTTP base URL. Same companions as v0.7.4. Prefer v0.7.8. |

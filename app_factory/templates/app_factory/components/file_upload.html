@@ -17,7 +17,7 @@
   describedby=""
 ) -%}
 <div
-  class="app-stack app-stack--sm"
+  class="l--stack app-stack--sm"
   data-app-file-upload-field
   data-max-bytes="{{ max_bytes if max_bytes is not none else '' }}"
   data-accept="{{ accept }}"
@@ -56,7 +56,7 @@
     >
   </label>
   {% if help_text %}<p class="text-sm text-muted-foreground" id="{{ id }}-help">{{ help_text }}</p>{% endif %}
-  <ul class="app-stack app-stack--tight" data-app-file-list aria-live="polite"></ul>
+  <ul class="l--stack app-stack--tight" data-app-file-list aria-live="polite"></ul>
 </div>
 {%- endmacro %}
 
@@ -87,7 +87,7 @@
   method="post"
   action="{{ action }}"
   enctype="multipart/form-data"
-  class="app-stack app-stack--sm"
+  class="l--stack app-stack--sm"
   data-app-file-upload
   hx-post="{{ action }}"
   hx-encoding="multipart/form-data"
@@ -112,7 +112,7 @@
     confirm_label=confirm_label,
     describedby=describedby
   ) }}
-  <div class="app-stack app-stack--tight" data-app-file-progress hidden>
+  <div class="l--stack app-stack--tight" data-app-file-progress hidden>
     <progress class="app-progress w-full" max="100" value="0" data-app-file-progress-bar></progress>
     <span class="text-sm text-muted-foreground" data-app-file-progress-label>0%</span>
   </div>

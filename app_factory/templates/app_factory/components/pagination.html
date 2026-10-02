@@ -43,7 +43,7 @@
 {% set start_page = [1, current_page - window]|max %}
 {% set end_page = [total_pages, current_page + window]|min %}
 <nav aria-label="{{ aria_label }}">
-  <ul class="app-cluster app-cluster--center">
+  <ul class="l--cluster">
     <li>{% if current_page > 1 %}{{ link(current_page - 1, previous_label, "prev") }}{% else %}<button class="btn" data-variant="ghost" type="button" disabled>{{ previous_label }}</button>{% endif %}</li>
     {% if start_page > 1 %}
     <li>{{ link(1, "1") }}</li>
