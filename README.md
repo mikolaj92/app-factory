@@ -475,7 +475,7 @@ Constants: `CLIENT_SHELL`, `IDENTITY_PUBLIC_SHELL`, `IDENTITY_AUTHENTICATED_SHEL
 
 ### `head_assets.html` behavior
 
-- Emits URLs for the five head pins (`basecoat-css`, `basecoat-js-all`, `tailwind-browser`, `htmx`, `alpine`) under the installer-bound prefix. That is not the full `MANIFEST.json` set: `landing-css` and `landing-js` stay on the landing template.
+- Emits URLs for the six head pins (`lism-layout`, `basecoat-css`, `basecoat-js-all`, `tailwind-browser`, `htmx`, `alpine`) under the installer-bound prefix. That is not the full `MANIFEST.json` set: `landing-css` and `landing-js` stay on the landing template.
 - Optional single product stylesheet via template variable:
 
   ```jinja
