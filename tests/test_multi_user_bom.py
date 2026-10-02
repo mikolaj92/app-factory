@@ -23,8 +23,8 @@ def test_bom_pins_are_immutable_tags() -> None:
     project = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     assert pins == {
         "app-factory": f"v{project['project']['version']}",
-        "my-auth": "v0.5.6",
-        "my-usermanager": "v0.6.7",
+        "my-auth": "v0.5.7",
+        "my-usermanager": "v0.6.10",
     }
     for name, tag in pins.items():
         assert tag.startswith("v"), name
