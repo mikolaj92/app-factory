@@ -1,5 +1,51 @@
 # HTTP stack validation
 
+## Current follow-up: KEEP (host write boundary)
+
+Repository `mikolaj92/app-factory`, PR `135`, branch `lokay/99`.
+Starting SHA: `6ad20055813c7220c3810454fc5b26034c7d80bd`, clean tree.
+PR base independently confirmed through the public API:
+`7387a8112746edf1c25def581cb14d06f6d64f88`.
+The final SHA is the commit introducing this section.
+
+Active process: PID 25106, `~/.lokay/host/.venv/bin/lokay start`,
+using `~/.lokay/host/.venv/bin/python3`.
+Host checkout SHA: `64f37bfec76f138693ca259b4cc10e09f5394038`.
+Read-only inspection of its default `repos.yaml` finds app-factory configured
+with `test: [uv, run, pytest]`, no setup override. `config.py:load_repos`
+selects this argv; `start.py` returns it from preparation and calls
+`local_ci(sha, [tests], worktree)`. `setup.py:prepare_dependencies` discovers
+both locks, while `check.py:local_ci` executes only the configured root command.
+Its marker parsing requires a successful summary in each marker segment.
+No host test directory exists at `~/.lokay/host/tests`.
+The exact implementation paths are listed in the historical handoff below.
+
+The explicit write restriction prohibits modifying that host or another
+checkout. No host regression, configuration change, process replacement or
+state mutation was performed. Another workflow change would not repair this
+selector, so the existing two-project workflow is retained unchanged.
+Local gate: **1/2 last recorded; final-SHA gate unverified**, not 2/2.
+
+Small concrete production change: `scripts/refresh_platform_assets.py` now
+checks every resolved version of each HTTP package in both universal locks.
+Previously a dictionary silently overwrote earlier versions. An inline probe
+with FastAPI 0.9 followed by 1.0 and PyPI stable 1.0 reproduced exit 0 (RED).
+After the fix it returns exit 1 (GREEN). Reverse ordering also returns 1;
+current-only and duplicate-current entries return 0; missing FastAPI returns 1.
+All five probes passed. No new test files or test functions were introduced.
+Actual manifests and lock pins did not need changes. Independent live PyPI
+still reports FastAPI 0.143.0, Starlette 1.8.0, Uvicorn 0.54.0, HTTPX2 2.13.1.
+
+Public API confirms `pytest` success only for the starting SHA. Required check
+configuration returned HTTP 401 without authentication. No tokens were read
+or written. Final-SHA required CI: **0 verified / unknown total**.
+This commit is not pushed here; no historical success is attributed to it.
+Final-SHA local commands record repo, PR, SHA, actual cwd, argv, exit and logs
+under `.cache/validation/`. Manual suites are not host-gate acceptance.
+Main integration, publication and deployment remain separately unverified.
+
+Older sections below describe their own revisions, not this final SHA.
+
 Scope: `app-factory`, branch `lokay/99`, starting commit `7387a81`.
 The starting checkout was clean and equal to the available `origin/main`.
 This record belongs to the commit that adds it (`git log -1 -- bom/http-stack-validation.md`).

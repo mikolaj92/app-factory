@@ -518,15 +518,21 @@ def check_http_releases() -> int:
     rows = []
     for relative in ("uv.lock", "examples/multi_user_bom/uv.lock"):
         lock = tomllib.loads((REPO_ROOT / relative).read_text(encoding="utf-8"))
-        resolved = {item["name"]: item["version"] for item in lock["package"]}
+        # Universal locks can resolve multiple versions under different markers.
+        # Check every resolution; a later current entry must not hide an old one.
         for name in packages:
-            current = resolved.get(name)
+            versions = sorted({
+                item["version"] for item in lock["package"] if item["name"] == name
+            }, key=Version)
+            current = ", ".join(versions) if versions else None
             rows.append({
                 "lock": relative,
                 "package": name,
                 "locked": current,
                 "latest_stable": str(latest[name]),
-                "status": "current" if current is not None and Version(current) == latest[name] else "outdated",
+                "status": "current" if versions and all(
+                    Version(version) == latest[name] for version in versions
+                ) else "outdated",
             })
     outdated = sum(row["status"] == "outdated" for row in rows)
     print(json.dumps({"packages": rows, "outdated": outdated}, indent=2))
