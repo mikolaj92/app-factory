@@ -9,6 +9,7 @@ Each invocation checks its lock and has a bounded execution time.
 from __future__ import annotations
 
 import os
+import signal
 import subprocess
 from pathlib import Path
 
@@ -24,9 +25,23 @@ def main() -> int:
         argv = ["uv", "run", "--locked", "--all-extras", "pytest", "-q"]
         print(f"LOKAY_TEST_CWD={project}", flush=True)
         try:
-            result = subprocess.run(
-                argv, cwd=project, env=env, check=False, timeout=PROJECT_TIMEOUT,
+            process = subprocess.Popen(
+                argv, cwd=project, env=env, start_new_session=os.name == "posix",
             )
+            try:
+                returncode = process.wait(timeout=PROJECT_TIMEOUT)
+            except BaseException:
+                # uv launches pytest, which can launch browser/server children.
+                # Kill the entire session before starting the other project.
+                if os.name == "posix":
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                else:
+                    process.kill()
+                process.wait()
+                raise
         except subprocess.TimeoutExpired:
             print(f"Tests timed out in {project} after {PROJECT_TIMEOUT}s", flush=True)
             failed = True
@@ -34,7 +49,7 @@ def main() -> int:
             print(f"Cannot run tests in {project}: {exc}", flush=True)
             failed = True
         else:
-            failed |= result.returncode != 0
+            failed |= returncode != 0
     return int(failed)
 
 
