@@ -67,9 +67,9 @@ explicit restriction against new tests. Existing transport and adapter tests ran
 The only checked-in CI job is `Tests / pytest`. It now checks both locks,
 reports stable-release backlog using the existing refresh script, runs the
 complete browser-enabled suite, lint, the BOM suite and package build.
-Remote branch protection requirements were not read because authenticated
-GitHub access is outside this execution. Final-SHA remote CI: **0 verified / 1
-configured job**, not a failure verdict and not proof of branch requirements.
+Branch protection requirements require authentication (public API returned 401).
+No credentials were accessed. Remote CI for the follow-up starting SHA is
+recorded below; it is not evidence for the new final SHA.
 
 Integration: locally verified in the reference host only.
 Publication: not performed; no newly released artifact was installed.
@@ -78,3 +78,63 @@ consumer was accessible within the permitted write scope.
 Deployment: not performed; no service restart or deployed smoke is claimed.
 Main integration: not performed; the production change is committed on the
 requested current branch.
+
+## PR #135 follow-up (2026-10-13 UTC)
+
+Repository: `mikolaj92/app-factory`; PR: `135`; branch: `lokay/99`.
+Starting SHA: `14ca1320554a629e3dbe5559dc57077ae978eab8`, clean tree.
+Available `origin/main`: `7387a8112746edf1c25def581cb14d06f6d64f88`.
+The follow-up final SHA is the commit containing this section; determine it with
+`git log -1 --format=%H -- bom/http-stack-validation.md`.
+
+Production file changed: `scripts/refresh_platform_assets.py`.
+The report incorrectly accepted `2.0rc1` as current when PyPI's latest stable
+release was `1.0`. An inline mocked command reproduced exit 0 (RED).
+Exact version equality now rejects prerelease, development, yanked and unknown
+newer locked versions. The same command then returned exit 1 (GREEN).
+No new test files or functions were added, and existing assertions were retained.
+
+The inline checks also confirmed current/stale reports (0/8 outdated), exclusion
+of prerelease/dev/yanked releases, invalid JSON and metadata rejection, and
+HTTP 503, network and timeout failures. Source failures raise an exception and
+therefore cannot produce a successful CLI exit.
+
+Independent live PyPI check: FastAPI 0.143.0, Starlette 1.8.0,
+Uvicorn 0.54.0, HTTPX2 2.13.1; both locks current (8/8, exit 0).
+Both locks passed `uv lock --check`; both frozen all-extras installations passed.
+Separate root fastapi/platform/dev/browser and CI dev+browser installations
+passed (5/5). Both environments use Python 3.14.3 in this follow-up.
+The locked BOM tree contains HTTPX2/HTTPcore2, no legacy HTTP client or OpenAI.
+No manifest or lock change was necessary.
+
+| Actual cwd (under `/Users/mini-m4-0/Developer/app-factory/main-wt-99`) | Command | Starting-SHA result | Exit |
+| --- | --- | --- | --- |
+| `.` | `uv run --locked pytest -q` | 327 passed / 0 failed / 0 skipped | 0 |
+| `examples/multi_user_bom` | `uv run --locked pytest -q` | 15 passed / 0 failed / 0 skipped | 0 |
+
+Root Chromium installation, Ruff, release report and wheel/sdist build passed.
+An inline transport probe passed responses, HTTP errors, injected timeout and
+connection exceptions, explicit client close, asynchronous ASGITransport and
+async close. Starlette TestClient's context ends the app lifespan but does not
+set `is_closed`; explicit `close()` does. This is upstream behavior, not a
+factory transport fallback. No product transport change was justified.
+
+Public GitHub API confirmed PR #135's starting SHA and `pytest` success:
+`https://github.com/mikolaj92/app-factory/actions/runs/38470384756/job/115547611601`.
+That is **1/1 discovered checks for the starting SHA only**. Required checks
+remain unknown because branch protection returned 401. Final-SHA remote CI is
+not verified; this follow-up has not been pushed. No historical CI result closes
+that boundary. Workflow commands propagate failures normally; no additional
+workflow validation defect was demonstrated.
+
+Final-SHA commands are rerun after the commit, with cwd, SHA, command, exit and
+suite counts recorded in `.cache/validation/` locally. This ignored scratch
+location is not a replacement for the committed evidence above.
+No local gate implementation or `tested_cwds` collector exists in this repo.
+Consequently, rerunning the external gate or clearing its two diagnostics is
+not measurable here. Both actual test working directories are recorded above;
+collector acceptance remains a separate evidence gap, not a product failure.
+
+Main integration, publication, released-artifact consumer installation and
+service deployment remain **not performed**. Nothing in this local validation
+proves those actions.

@@ -526,7 +526,7 @@ def check_http_releases() -> int:
                 "package": name,
                 "locked": current,
                 "latest_stable": str(latest[name]),
-                "status": "current" if current is not None and Version(current) >= latest[name] else "outdated",
+                "status": "current" if current is not None and Version(current) == latest[name] else "outdated",
             })
     outdated = sum(row["status"] == "outdated" for row in rows)
     print(json.dumps({"packages": rows, "outdated": outdated}, indent=2))
