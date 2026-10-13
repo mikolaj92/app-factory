@@ -6,8 +6,7 @@ __pycache__/
 dist/
 .pytest_cache/
 .ruff_cache/
-uv.lock
-!examples/multi_user_bom/uv.lock
+.cache/
 .runtime/
 .lokay/
 .omo/

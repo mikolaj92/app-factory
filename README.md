@@ -665,6 +665,13 @@ uv run uvicorn example.app:app --host 0.0.0.0 --port 8765 --app-dir .
 # launchd unit: gui/$(id -u)/dev.app-factory.storybook
 # plist: example/dev.app-factory.storybook.plist (repo $HOME/Developer/app-factory, or APP_FACTORY_ROOT)
 
+# Check stable HTTP releases against both committed locks (nonzero on backlog)
+uv run --extra dev python scripts/refresh_platform_assets.py --check-http-releases
+
+# Upgrade HTTP packages, then validate both projects before committing
+uv lock --upgrade-package fastapi --upgrade-package starlette --upgrade-package uvicorn --upgrade-package httpx2
+uv lock --project examples/multi_user_bom --upgrade-package fastapi --upgrade-package starlette --upgrade-package uvicorn --upgrade-package httpx2
+
 # Regenerate bundled platform assets
 uv run python scripts/refresh_platform_assets.py
 ```
@@ -683,7 +690,7 @@ Optional browser isolation (issue #9) skips unless Playwright is installed:
 ```bash
 uv sync --extra browser
 uv run playwright install chromium
-uv run pytest tests/test_browser_chrome.py
+uv run pytest tests/test_browser_chrome.py tests/test_browser_runs.py
 ```
 
 ---

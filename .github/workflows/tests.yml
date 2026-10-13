@@ -19,6 +19,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: uv sync --extra dev --extra browser
-      - run: uv run playwright install --with-deps chromium
-      - run: uv run pytest -q
+      - run: uv lock --check
+      - run: uv lock --check --project examples/multi_user_bom
+      - run: uv sync --locked --extra dev --extra browser
+      - run: uv run --locked python scripts/refresh_platform_assets.py --check-http-releases
+      - run: uv run --locked playwright install --with-deps chromium
+      - run: uv run --locked pytest -q
+      - run: uv run --locked ruff check .
+      - run: uv run --locked pytest -q
+        working-directory: examples/multi_user_bom
+      - run: uv build

@@ -27,6 +27,7 @@ After running, commit the changes to app_factory/assets/*.
 
 from __future__ import annotations
 
+import argparse
 import base64
 import ctypes
 import hashlib
@@ -38,6 +39,7 @@ import shutil
 import sys
 import tarfile
 import tempfile
+import tomllib
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import urlopen
@@ -482,7 +484,50 @@ def replace_assets(source: Path, destination: Path) -> None:
     print(f"Replaced {destination} with new assets.")
 
 
+def check_http_releases() -> int:
+    """Report stable PyPI releases against resolved locks, not manifest floors."""
+    from packaging.version import Version
+
+    packages = ("fastapi", "starlette", "uvicorn", "httpx2")
+    latest = {}
+    for name in packages:
+        metadata = json.loads(fetch_bytes(f"https://pypi.org/pypi/{name}/json"))
+        versions = [
+            Version(version)
+            for version, files in metadata["releases"].items()
+            if not Version(version).is_prerelease
+            and not Version(version).is_devrelease
+            and any(not file.get("yanked", False) for file in files)
+        ]
+        latest[name] = max(versions)
+
+    rows = []
+    for relative in ("uv.lock", "examples/multi_user_bom/uv.lock"):
+        lock = tomllib.loads((REPO_ROOT / relative).read_text(encoding="utf-8"))
+        resolved = {item["name"]: item["version"] for item in lock["package"]}
+        for name in packages:
+            current = resolved.get(name)
+            rows.append({
+                "lock": relative,
+                "package": name,
+                "locked": current,
+                "latest_stable": str(latest[name]),
+                "status": "current" if current is not None and Version(current) >= latest[name] else "outdated",
+            })
+    outdated = sum(row["status"] == "outdated" for row in rows)
+    print(json.dumps({"packages": rows, "outdated": outdated}, indent=2))
+    return int(outdated > 0)
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--check-http-releases", action="store_true",
+        help="report stable PyPI HTTP releases against both locks; do not refresh assets",
+    )
+    args = parser.parse_args()
+    if args.check_http_releases:
+        raise SystemExit(check_http_releases())
     print("=== Refreshing local bundled platform assets ===")
     stage = build_and_stage()
     try:
