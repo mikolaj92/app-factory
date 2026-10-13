@@ -73,7 +73,7 @@ def live_server() -> Iterator[str]:
         thread.join(timeout=5)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def browser_page(live_server: str):
     with sync_playwright() as p:
         try:
