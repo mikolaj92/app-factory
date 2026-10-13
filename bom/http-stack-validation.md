@@ -138,3 +138,88 @@ collector acceptance remains a separate evidence gap, not a product failure.
 Main integration, publication, released-artifact consumer installation and
 service deployment remain **not performed**. Nothing in this local validation
 proves those actions.
+
+## Validation handoff: separate setup and tests
+
+Repository `mikolaj92/app-factory`, PR `135`, branch `lokay/99`.
+Starting SHA: `6abc649834f8eea963a602b30e1be0af5c6185e1`, clean tree.
+SSH `git ls-remote` confirmed `origin/main` remains
+`7387a8112746edf1c25def581cb14d06f6d64f88`; no fetch or branch change was needed.
+The final SHA is the commit introducing this section.
+
+### Confirmed external gate defect (KEEP)
+
+Read-only evidence: `/Users/mini-m4-0/.lokay/runs/mikolaj92__app-factory/99/state.json`
+records setup in both directories, but only `uv run pytest` at the root.
+It records `326 passed / 0 failed / 1 skipped`, `tested_cwds` containing only
+root, and both missing-BOM-test diagnostics. This is **1/2**, not 2/2.
+The BOM suite was not executed by that gate; its proof was not merely lost.
+
+Owner: Lokay host. Exact implementation paths:
+
+- `/Users/mini-m4-0/.lokay/host/src/lokay/config.py:load_repos` reads one repo test argv.
+- `/Users/mini-m4-0/.lokay/host/src/lokay/setup.py:prepare_dependencies` installs nested projects.
+- `/Users/mini-m4-0/.lokay/host/src/lokay/start.py:1032` passes only that argv to `local_ci` at root.
+- `/Users/mini-m4-0/.lokay/host/src/lokay/check.py:local_ci` records successful test cwd,
+  or actual `LOKAY_TEST_CWD=` markers; setup is not counted.
+- `/Users/mini-m4-0/.lokay/host/src/lokay/start.py:1039–1050` checks changed nested manifests against those cwd values.
+
+These files are outside the permitted write scope. They were not changed.
+No repo-side manifest edit can repair the host's command selection. The gate
+has not been rerun or cleared here. Required host regressions remain blocked
+by the write boundary; no synthetic cwd was added to its state.
+
+### Concrete repository change
+
+`.github/workflows/tests.yml` now has explicit, separately named lock, setup
+and test steps for both projects. BOM setup uses its actual working directory;
+previously it was implicit in `uv run`. Root setup now validates all public
+extras, rather than dev/browser only. Errors still stop the job. README now
+includes the full two-project commands and all three browser files.
+No tests, manifests, pins or locks needed changes.
+
+The review at `examples/multi_user_bom/pyproject.toml:7–18` supplied no concrete
+input or expected failure. Independent lock check, frozen install and all
+15 BOM tests pass. The manifest keeps released auth/UM tags and the editable
+factory override; no reproducible dependency or validation defect was found.
+
+An inherited `UV_PROJECT_ENVIRONMENT` pointed both manual commands at the
+root environment. Reproduction: BOM sync removed root Playwright; root
+`uv run --locked playwright ...` then exited 2. Per-project absolute values
+restored separate environments. This is a harness environment condition,
+not justification for changing the BOM dependencies. Manual validation used
+`UV_PROJECT_ENVIRONMENT=<actual cwd>/.venv`, `UV_CACHE_DIR=<root>/.cache/uv`
+and `PLAYWRIGHT_BROWSERS_PATH=<root>/.cache/ms-playwright`.
+All generated validation files and browsers stay in this checkout.
+
+### Fresh local results (working tree before commit)
+
+| Actual cwd | Check | Passed / failed / skipped | Exit |
+| --- | --- | --- | --- |
+| root | `uv lock --check` | lock valid | 0 |
+| BOM | `uv lock --check` | lock valid | 0 |
+| root | `uv sync --frozen --all-extras` | installed | 0 |
+| BOM | `uv sync --frozen --all-extras` | installed | 0 |
+| root | `uv run --locked playwright install --with-deps chromium` | installed | 0 |
+| root | `uv run --locked pytest -q` | 327 / 0 / 0 | 0 |
+| BOM | `uv run --locked pytest -q` | 15 / 0 / 0 | 0 |
+| root | `uv run --locked ruff check .` | passed | 0 |
+| root | `uv run --locked python scripts/refresh_platform_assets.py --check-http-releases` | 8 current / 0 outdated | 0 |
+| root | `uv build` | wheel + sdist built | 0 |
+
+PyPI independently confirms FastAPI 0.143.0, Starlette 1.8.0, Uvicorn 0.54.0,
+HTTPX2 2.13.1. Own-code import search found HTTPX2 only, no aliases, legacy
+fallbacks or OpenAI. Historical upstream optional-extra boundaries still apply.
+Final-SHA validation is stored separately under `.cache/validation/` with
+repo, PR, SHA, cwd, argv, exit and log; it is manual evidence, not Lokay acceptance.
+
+### Remote and release boundaries
+
+Unauthenticated public API confirms one successful discovered check on the
+**starting SHA only**:
+<https://github.com/mikolaj92/app-factory/actions/runs/38472797378/job/115555915374>.
+Branch protection returned HTTP 401, so required-check total is unknown.
+No GitHub token was read or written. This new commit has not been pushed;
+final-SHA required CI is **unverified (0 verified / unknown total)**.
+Local gate: **1/2 recorded, KEEP**. Manual suites: **2/2**. Locks: **2/2**.
+Main integration, publication and deployment: **not performed**, separately.

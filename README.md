@@ -684,13 +684,32 @@ Use it as the default place to visual-check chrome changes before tagging.
 The `examples/multi_user_bom/` package is the pinned multi-user BOM consumer
 (app-factory + my-auth + my-usermanager). Prefer it when checking identity
 lifecycle composition and package resolution (`uv lock` + pytest there).
+Installation is not test execution. Validate the two projects separately:
+
+```bash
+# Repository root: full suite, including browsers, and all public extras
+uv lock --check
+uv sync --frozen --all-extras
+uv run --locked playwright install --with-deps chromium
+uv run --locked pytest -q
+uv run --locked ruff check .
+uv run --locked python scripts/refresh_platform_assets.py --check-http-releases
+uv build
+
+# Separate project: use its own cwd, environment, lock and full suite
+(cd examples/multi_user_bom && uv lock --check && uv sync --frozen --all-extras && uv run --locked pytest -q)
+```
+
+A local runner must record both actual test working directories. Root tests
+alone do not validate the BOM suite. Manual results, runner acceptance and
+remote CI for the final commit are three separate evidence requirements.
 
 Optional browser isolation (issue #9) skips unless Playwright is installed:
 
 ```bash
 uv sync --extra browser
 uv run playwright install chromium
-uv run pytest tests/test_browser_chrome.py tests/test_browser_runs.py
+uv run pytest tests/test_browser_chrome.py tests/test_browser_errors.py tests/test_browser_runs.py
 ```
 
 ---
