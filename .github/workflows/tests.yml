@@ -34,10 +34,7 @@ jobs:
         working-directory: examples/multi_user_bom
       - run: uv run --locked python scripts/refresh_platform_assets.py --check-http-releases
       - run: uv run --locked playwright install --with-deps chromium
-      - name: Test root project
-        run: uv run --locked pytest -q
+      - name: Test both projects
+        run: python scripts/test_projects.py
       - run: uv run --locked ruff check .
-      - name: Test BOM project
-        run: uv run --locked pytest -q
-        working-directory: examples/multi_user_bom
       - run: uv build

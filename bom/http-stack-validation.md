@@ -1,6 +1,70 @@
 # HTTP stack validation
 
-## Current follow-up: KEEP (host write boundary)
+## Two-project command follow-up: KEEP (host configuration boundary)
+
+Repository `mikolaj92/app-factory`, PR `135`, branch `lokay/99`.
+Starting SHA: `165e92843e9a9dc05d698d316cc322c4799f2371`, clean tree.
+Final SHA: the commit introducing this section.
+
+Production change: `scripts/test_projects.py` runs both full suites using
+separate cwd and absolute `.venv` paths, overriding an inherited root
+environment. Frozen all-extras execution preserves the checked locks and
+browser dependencies. Both invocations execute even when the first fails;
+any nonzero pytest exit (including no tests or setup failure), or missing
+executable, fails the command. The outer host retains its timeout.
+Each `LOKAY_TEST_CWD=` marker precedes an actual invocation; it is not a
+fabricated passing summary. CI now uses this command after existing lock,
+setup and browser steps. No unit test files or functions were added.
+
+Working-tree validation, actual root
+`/Users/mini-m4-0/Developer/app-factory/main-wt-99`:
+
+| cwd | argv | passed / failed / skipped | exit |
+| --- | --- | --- | --- |
+| root | `uv lock --check` | passed | 0 |
+| `examples/multi_user_bom` | `uv lock --check` | passed | 0 |
+| both, separately | `uv sync --frozen --all-extras` | passed | 0 |
+| root | `uv run --locked playwright install --with-deps chromium` | passed | 0 |
+| root → BOM | `python3 scripts/test_projects.py` | 327/0/0 → 15/0/0 | 0 |
+| root | `uv run --locked ruff check .` | passed | 0 |
+| root | `uv run --locked python scripts/refresh_platform_assets.py --check-http-releases` | 8 current / 0 outdated | 0 |
+| root | `uv build` | sdist + wheel passed | 0 |
+
+Six inline probes verified both cwd/env values, both successful suites,
+root failure, BOM failure, pytest exits 5 and 2, and missing executable.
+They validate the runner only, not a host regression or timeout collector.
+Final-SHA results are separately recorded in `.cache/validation/`.
+
+Read-only inspection finds running Lokay PID 31616 invoking
+`/Users/mini-m4-0/.lokay/host/.venv/bin/lokay start`.
+That host checkout is `64f37bfec76f138693ca259b4cc10e09f5394038`.
+Its default `/Users/mini-m4-0/.lokay/host/repos.yaml` still selects
+`[uv, run, pytest]` for app-factory. `src/lokay/config.py:load_repos` also
+allows `LOKAY2_REPOS_FILE`; the live process override was not independently
+established. No claim is made that CI wiring changes the active gate.
+`src/lokay/start.py:1032` passes one argv to `check.py:local_ci`, whose
+marker segments require separate passing summaries. Completeness remains
+checked at `start.py:1039–1050`; `setup.py` does not count as test execution.
+`host_guard.py:guard` restores edits outside the permitted worktree.
+
+Next action owner: Lokay host maintainer. Establish the live configuration
+source, then change its app-factory test argv to
+`["python3", "scripts/test_projects.py"]` and rerun the real final-SHA gate.
+Use the existing host scenario mechanism (`scenarios/ci_not_run.sh`,
+`scenarios/check.sh`), after inspection, for marker/completeness regressions;
+these paths are candidates, not claimed completed regressions.
+No host files, saved results, or another checkout were edited here.
+Gate remains **KEEP: last recorded 1/2; final-SHA unverified**.
+Missing-BOM diagnostics are not cleared by these manual tests.
+
+Public unauthenticated API confirms PR base
+`7387a8112746edf1c25def581cb14d06f6d64f88` and one successful `pytest`
+check on the starting SHA only. Branch protection returns HTTP 401.
+No tokens were read or written. Final-SHA required CI is **0 verified /
+unknown total**, not passed. Integration, release and deployment remain
+separate and unverified. This change does not close PR #135.
+
+## Previous follow-up: KEEP (host write boundary)
 
 Repository `mikolaj92/app-factory`, PR `135`, branch `lokay/99`.
 Starting SHA: `6ad20055813c7220c3810454fc5b26034c7d80bd`, clean tree.

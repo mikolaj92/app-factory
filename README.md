@@ -700,9 +700,16 @@ uv build
 (cd examples/multi_user_bom && uv lock --check && uv sync --frozen --all-extras && uv run --locked pytest -q)
 ```
 
-A local runner must record both actual test working directories. Root tests
-alone do not validate the BOM suite. Manual results, runner acceptance and
-remote CI for the final commit are three separate evidence requirements.
+After setup, `python scripts/test_projects.py` runs both full suites. CI uses
+this same command. It overrides inherited `UV_PROJECT_ENVIRONMENT` per project,
+uses frozen locks and returns nonzero if either invocation fails. Each cwd
+marker precedes a real pytest invocation; a marker alone proves nothing.
+
+For Lokay, the host owner must set the active app-factory test argv to
+`["python3", "scripts/test_projects.py"]`. Adding this script does not change
+host configuration or prove gate acceptance. Root tests alone do not validate
+the BOM suite. Manual results, runner acceptance and remote CI for the final
+commit are three separate evidence requirements.
 
 Optional browser isolation (issue #9) skips unless Playwright is installed:
 
