@@ -702,8 +702,11 @@ uv build
 
 After setup, `python scripts/test_projects.py` runs both full suites. CI uses
 this same command. It overrides inherited `UV_PROJECT_ENVIRONMENT` per project,
-uses frozen locks and returns nonzero if either invocation fails. Each cwd
-marker precedes a real pytest invocation; a marker alone proves nothing.
+checks locked manifests and returns nonzero if either invocation fails.
+Each suite has a 240-second timeout, leaving time within Lokay's 600-second
+command budget. A timeout or launch error does not prevent the other suite
+from running. Each cwd marker precedes a real pytest invocation; a marker
+alone proves nothing.
 
 For Lokay, the host owner must set the active app-factory test argv to
 `["python3", "scripts/test_projects.py"]`. Adding this script does not change
