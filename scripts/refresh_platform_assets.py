@@ -491,15 +491,29 @@ def check_http_releases() -> int:
     packages = ("fastapi", "starlette", "uvicorn", "httpx2")
     latest = {}
     for name in packages:
-        metadata = json.loads(fetch_bytes(f"https://pypi.org/pypi/{name}/json"))
-        versions = [
-            Version(version)
-            for version, files in metadata["releases"].items()
-            if not Version(version).is_prerelease
-            and not Version(version).is_devrelease
-            and any(not file.get("yanked", False) for file in files)
-        ]
-        latest[name] = max(versions)
+        try:
+            metadata = json.loads(fetch_bytes(f"https://pypi.org/pypi/{name}/json"))
+            releases = metadata.get("releases") if isinstance(metadata, dict) else None
+            if not isinstance(releases, dict) or not releases:
+                raise ValueError("expected a nonempty releases mapping")
+            versions = []
+            for version, files in releases.items():
+                parsed = Version(version)
+                if not isinstance(files, list) or any(
+                    not isinstance(file, dict)
+                    or not isinstance(file.get("yanked", False), bool)
+                    for file in files
+                ):
+                    raise ValueError(f"invalid release files for {version}")
+                if not parsed.is_prerelease and not parsed.is_devrelease and any(
+                    not file.get("yanked", False) for file in files
+                ):
+                    versions.append(parsed)
+            if not versions:
+                raise ValueError("no non-yanked stable release")
+            latest[name] = max(versions)
+        except (OSError, ValueError, RuntimeError) as exc:
+            raise RuntimeError(f"{name}: release check failed: {exc}") from exc
 
     rows = []
     for relative in ("uv.lock", "examples/multi_user_bom/uv.lock"):
