@@ -47,6 +47,12 @@ def main() -> int:
                         os.killpg(process.pid, signal.SIGKILL)
                     except ProcessLookupError:
                         pass
+                    except OSError:
+                        # If group signalling fails, still stop and reap uv.
+                        try:
+                            process.kill()
+                        except ProcessLookupError:
+                            pass
                 else:
                     process.kill()
                 process.wait()
