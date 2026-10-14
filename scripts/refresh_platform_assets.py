@@ -502,12 +502,12 @@ def check_http_releases() -> int:
                 parsed = Version(version)
                 if not isinstance(files, list) or any(
                     not isinstance(file, dict)
-                    or not isinstance(file.get("yanked", False), bool)
+                    or not isinstance(file.get("yanked"), bool)
                     for file in files
                 ):
                     raise ValueError(f"invalid release files for {version}")
                 if not parsed.is_prerelease and not parsed.is_devrelease and any(
-                    not file.get("yanked", False) for file in files
+                    not file["yanked"] for file in files
                 ):
                     versions.append(parsed)
             if not versions:
