@@ -5,6 +5,7 @@ __pycache__/
 *.egg-info/
 dist/
 .pytest_cache/
+.playwright/
 .ruff_cache/
 .cache/
 .runtime/

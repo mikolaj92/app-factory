@@ -711,7 +711,11 @@ and returns nonzero if either invocation fails.
 Each suite has a 240-second timeout, leaving time within Lokay's 600-second
 command budget. A timeout or launch error does not prevent the other suite
 from running. Each cwd marker precedes a real pytest invocation; a marker
-alone proves nothing.
+alone proves nothing. After each invocation, `LOKAY_TEST_EXIT_CODE` records its
+exit code and cwd (124 for timeout, 127 for launch failure). These status lines
+do not replace pytest summaries. For checkout-local Chromium downloads, set
+`PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright"` during installation and execution;
+the downloaded browser directory is ignored by Git.
 
 For Lokay, the host owner must set the active app-factory test argv to
 `["uv", "run", "--locked", "python", "scripts/run_projects.py"]`.

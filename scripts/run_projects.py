@@ -53,12 +53,14 @@ def main() -> int:
                 raise
         except subprocess.TimeoutExpired:
             print(f"Tests timed out in {project} after {PROJECT_TIMEOUT}s", flush=True)
-            failed = True
+            returncode = 124
         except OSError as exc:
             print(f"Cannot run tests in {project}: {exc}", flush=True)
-            failed = True
-        else:
-            failed |= returncode != 0
+            returncode = 127
+        # Report actual child status; 124/127 identify timeout/launch failures.
+        # This complements, never replaces, the real pytest summary above.
+        print(f"LOKAY_TEST_EXIT_CODE={returncode} cwd={project}", flush=True)
+        failed |= returncode != 0
     return int(failed)
 
 
