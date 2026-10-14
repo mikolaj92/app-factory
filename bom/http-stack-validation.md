@@ -1,5 +1,50 @@
 # HTTP stack validation
 
+## Production runner repair from debd990
+
+Repository: `mikolaj92/app-factory`, PR #135, branch `lokay/99`.
+Baseline: `debd990d566dd61987a2881568aad0e77ab4d5aa`.
+Repair revision: the commit introducing this section.
+Verdict: **KEEP** until the host gate and required remote checks accept that SHA.
+
+The baseline has no `scripts/test_projects.py`, although CI invokes it.
+The visible baseline `pytest` check fails. The existing implementation from
+`7c3d6d0` is now the sole runner, `scripts/run_projects.py`. Its production
+filename avoids the reported `test_*.py` classification. Workflow and README
+use the new path. Historical commands below describe earlier revisions only.
+No test files, test functions, dependency pins or assertions changed.
+
+Validation in `/Users/mini-m4-0/Developer/app-factory/main-wt-99`:
+
+| Check | Result | Exit |
+| --- | --- | --- |
+| Runner with an intentionally different inherited environment | root 327 passed, 0 failed, 0 skipped; BOM 15 passed, 0 failed, 0 skipped | 0 |
+| Lock checks and frozen all-extras installation | projects 2/2 | 0 each |
+| Chromium installation with `--with-deps` | installed on macOS | 0 |
+| Ruff | passed | 0 |
+| Live stable-release check | current 8/8, outdated 0 | 0 |
+| `uv build` | sdist and wheel built | 0 |
+
+Both absolute cwd markers precede actual pytest summaries. The BOM cwd is
+`/Users/mini-m4-0/Developer/app-factory/main-wt-99/examples/multi_user_bom`.
+Each suite uses its own absolute `.venv`. Cache and browser installation stay
+inside this checkout. The restored runner retains process-group termination
+on POSIX, the 240-second timeout and nonzero failure propagation.
+
+Local runner: projects **2/2**, locks **2/2**, omitted projects **0**.
+These manual results do not establish host `tested_cwds` or selector acceptance.
+Owner `mikolaj92`, tracking app-factory #99 / PR #135: select
+`["uv", "run", "--locked", "python", "scripts/run_projects.py"]` in the
+active host configuration and rerun the normal gate for the repair SHA.
+Acceptance requires two recorded cwd paths and no missing-project findings.
+A separate host task number remains unassigned; no host files were changed.
+Active host classification, normal host build and selector remain unverified.
+
+The public branch-protection endpoint returned HTTP 401 without authentication.
+Required-check names and final-SHA remote CI therefore remain unverified.
+No credentials were read, no push was performed, and no release or deployment
+is claimed. The local package build is not the external Lokay build stage.
+
 ## Host-gate handoff and bounded runner
 
 Verdict: **KEEP**, `mikolaj92/app-factory`, PR #135, branch `lokay/99`.
@@ -31,7 +76,8 @@ PR #135; a separate Lokay issue/PR number has **not been assigned**.
 No host-maintenance command was verified. Handoff is recorded here, not
 claimed as applied or delivered through an unverified maintenance mode.
 The owner must identify the effective configuration (including any override),
-change its app-factory test argv to `["python3", "scripts/test_projects.py"]`,
+change its app-factory test argv to
+`["uv", "run", "--locked", "python", "scripts/run_projects.py"]`,
 and ensure the next process loads that configuration. If a host code change
 is needed, assign a Lokay task before editing it. Host and other checkouts
 are outside this execution's permitted write scope.
