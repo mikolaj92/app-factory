@@ -701,9 +701,14 @@ uv build
 ```
 
 After setup, `uv run --locked python scripts/run_projects.py` runs both full suites. CI uses
-this same command. It overrides inherited `UV_PROJECT_ENVIRONMENT` per project
+this same command and uploads its combined output as `project-tests-<SHA>`,
+including on failure. The log contains both pytest summaries, cwd markers and
+exit codes. The pipeline preserves runner failures; uploading a log does not
+prove either suite passed or that Lokay registered both projects.
+It overrides inherited `UV_PROJECT_ENVIRONMENT` per project
 and removes inherited `UV_WORKING_DIR` and `UV_PROJECT`, including for nested
-`uv` commands. It also removes `UV_NO_SYNC` and `UV_FROZEN` so callers cannot
+`uv` commands. It removes `UV_NO_PROJECT` so project discovery cannot be bypassed.
+It also removes `UV_NO_SYNC` and `UV_FROZEN` so callers cannot
 skip lock validation or conflict with `--locked`. It removes `PYTEST_ADDOPTS`
 so inherited selection or collection-only options cannot bypass full execution.
 It checks locked manifests

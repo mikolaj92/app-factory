@@ -35,6 +35,16 @@ jobs:
       - run: uv run --locked python scripts/refresh_platform_assets.py --check-http-releases
       - run: uv run --locked playwright install --with-deps chromium
       - name: Test both projects
-        run: uv run --locked python scripts/run_projects.py
+        shell: bash
+        run: |
+          set -o pipefail
+          uv run --locked python scripts/run_projects.py 2>&1 | tee "$RUNNER_TEMP/project-tests.log"
+      - name: Upload project test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-tests-${{ github.sha }}
+          path: ${{ runner.temp }}/project-tests.log
+          if-no-files-found: error
       - run: uv run --locked ruff check .
       - run: uv build
