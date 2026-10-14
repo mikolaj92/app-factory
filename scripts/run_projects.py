@@ -22,10 +22,12 @@ def main() -> int:
     failed = False
     for project in PROJECTS:
         # Resolve from cwd and validate locks, including nested uv commands.
+        # Inherited pytest options can silently select tests or only collect them.
         env = {
             key: value for key, value in os.environ.items()
             if key not in {
                 "UV_WORKING_DIR", "UV_PROJECT", "UV_NO_SYNC", "UV_FROZEN",
+                "PYTEST_ADDOPTS",
             }
         }
         env["UV_PROJECT_ENVIRONMENT"] = str(project / ".venv")

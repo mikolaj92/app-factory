@@ -35,6 +35,6 @@ jobs:
       - run: uv run --locked python scripts/refresh_platform_assets.py --check-http-releases
       - run: uv run --locked playwright install --with-deps chromium
       - name: Test both projects
-        run: python scripts/run_projects.py
+        run: uv run --locked python scripts/run_projects.py
       - run: uv run --locked ruff check .
       - run: uv build
