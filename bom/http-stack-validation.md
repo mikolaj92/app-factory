@@ -255,3 +255,49 @@ pytest. Manual BOM execution does not prove external collector acceptance.
 
 Main integration, publication, consumer upgrades and deployment:
 **not performed**. No service restart or deployed smoke is claimed.
+
+## Structured child execution evidence (from f6732d8)
+
+The revision introducing this section adds `PROJECT_TEST_RESULT=` JSON to
+`scripts/run_projects.py`. Each row records argv, absolute cwd, child PID and
+return code. Launch failures record a null PID and code 127. Existing gate
+markers, isolation, cleanup, timeouts and failure propagation remain intact.
+A PID does not replace a passing pytest summary or gate registration.
+
+Validation before commit used CPython 3.12.13 on macOS, matching CI's Python
+minor version. Both frozen all-extras installations and lock checks passed.
+The real runner executed root (327 passed, PID 80700, exit 0) and BOM
+(15 passed, PID 81001, exit 0), including all browser files, without skips.
+Both used `uv run --locked --all-extras pytest -q` in their respective cwd:
+
+- `/Users/mini-m4-0/Developer/app-factory/main-wt-99`
+- `/Users/mini-m4-0/Developer/app-factory/main-wt-99/examples/multi_user_bom`
+
+Existing HTTP tests, Ruff, package build and live release checks passed.
+The two locks have 8/8 current HTTP package resolutions, 0 outdated.
+In-memory probes exercised the real runner's import, success and failure
+statuses (including pytest 5), both environments, launch failure, timeout,
+missing process group and kill fallback. Probes are not persisted regressions;
+no test files or functions were added or changed, per this turn's instruction.
+The production evidence gap was reproduced before the change: launch failures
+emitted cwd markers but no argv or child identity. JSON rows now distinguish
+those failures from successfully launched children.
+
+Unauthenticated GitHub metadata showed PR #135 head `f6732d8` and base
+`7387a81`. Public rulesets were empty; branch protection returned HTTP 401.
+Required-check completeness and remote CI for the repair SHA are unverified.
+No GitHub tokens were read or written; no push was performed.
+
+**LOKAY_HOST_PERMISSION**: the active gate configuration cannot be changed
+under this turn's checkout-only write permission. The historical host source
+is `~/.lokay/host/repos.yaml`, possibly overridden by `LOKAY2_REPOS_FILE`;
+neither its current effective path nor current child registration was verified
+in this turn. The reported gate argv is `uv run pytest` at root, omitting BOM.
+Owner handoff: identify the effective source, select the existing two-project
+runner, and measure selection, execution and registration for the final SHA.
+Do not treat this local runner invocation as an ordinary-gate measurement.
+
+Verdict remains **KEEP** for `mikolaj92/app-factory`, PR #135. Local execution
+is 2/2; ordinary-gate registration, persistent runner regressions, mutation
+coverage and required-check completeness remain unverified. Main integration,
+release and deployment were not performed.

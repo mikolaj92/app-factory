@@ -8,6 +8,7 @@ Each invocation checks its lock and has a bounded execution time.
 
 from __future__ import annotations
 
+import json
 import os
 import signal
 import subprocess
@@ -37,6 +38,7 @@ def main() -> int:
         env["UV_PROJECT_ENVIRONMENT"] = str(project / ".venv")
         argv = ["uv", "run", "--locked", "--all-extras", "pytest", "-q"]
         print(f"LOKAY_TEST_CWD={project}", flush=True)
+        process = None
         try:
             process = subprocess.Popen(
                 argv, cwd=project, env=env, start_new_session=os.name == "posix",
@@ -69,6 +71,13 @@ def main() -> int:
         # Report actual child status; 124/127 identify timeout/launch failures.
         # This complements, never replaces, the real pytest summary above.
         print(f"LOKAY_TEST_EXIT_CODE={returncode} cwd={project}", flush=True)
+        # A launch request or cwd marker alone is not execution evidence.
+        print("PROJECT_TEST_RESULT=" + json.dumps({
+            "argv": argv,
+            "cwd": str(project),
+            "pid": process.pid if process is not None else None,
+            "returncode": returncode,
+        }), flush=True)
         failed |= returncode != 0
     return int(failed)
 
