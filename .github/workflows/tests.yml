@@ -11,6 +11,14 @@ permissions:
 jobs:
   pytest:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.14"]
+    env:
+      # Resolve against each project, never reuse an inherited root environment.
+      UV_PROJECT_ENVIRONMENT: .venv
+      UV_NO_ENV_FILE: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -18,7 +26,57 @@ jobs:
           enable-cache: true
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-      - run: uv sync --extra dev --extra browser
-      - run: uv run playwright install --with-deps chromium
-      - run: uv run pytest -q
+          python-version: ${{ matrix.python-version }}
+      - name: Check root lock
+        run: uv lock --check
+      - name: Check BOM lock
+        run: uv lock --check
+        working-directory: examples/multi_user_bom
+      - name: Install root extras
+        run: uv sync --frozen --all-extras
+      - name: Install BOM dependencies
+        run: uv sync --frozen --all-extras
+        working-directory: examples/multi_user_bom
+      - run: uv run --locked playwright install --with-deps chromium
+      - name: Test root project
+        shell: bash
+        run: |
+          set -o pipefail
+          printf 'cwd=%s\nargv=uv run --locked --all-extras pytest -q\n' "$PWD" | tee "$RUNNER_TEMP/root-tests.log"
+          set +e
+          uv run --locked --all-extras pytest -q 2>&1 | tee -a "$RUNNER_TEMP/root-tests.log"
+          status=$?
+          printf 'exit_code=%s\n' "$status" | tee -a "$RUNNER_TEMP/root-tests.log"
+          exit "$status"
+      - name: Test BOM project
+        # A failed root suite must not hide the separate consumer suite.
+        if: ${{ !cancelled() }}
+        working-directory: examples/multi_user_bom
+        shell: bash
+        run: |
+          set -o pipefail
+          printf 'cwd=%s\nargv=uv run --locked --all-extras pytest -q\n' "$PWD" | tee "$RUNNER_TEMP/bom-tests.log"
+          set +e
+          uv run --locked --all-extras pytest -q 2>&1 | tee -a "$RUNNER_TEMP/bom-tests.log"
+          status=$?
+          printf 'exit_code=%s\n' "$status" | tee -a "$RUNNER_TEMP/bom-tests.log"
+          exit "$status"
+      - name: Upload project test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-tests-${{ github.sha }}-python-${{ matrix.python-version }}
+          path: |
+            ${{ runner.temp }}/root-tests.log
+            ${{ runner.temp }}/bom-tests.log
+          if-no-files-found: error
+      # Independent checks must still report failures after either suite fails.
+      - name: Check stable HTTP releases
+        if: ${{ !cancelled() }}
+        run: uv run --locked python scripts/refresh_platform_assets.py --check-http-releases
+      - name: Lint
+        if: ${{ !cancelled() }}
+        run: uv run --locked ruff check .
+      - name: Build
+        if: ${{ !cancelled() }}
+        run: uv build

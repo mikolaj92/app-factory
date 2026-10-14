@@ -5,9 +5,9 @@ __pycache__/
 *.egg-info/
 dist/
 .pytest_cache/
+.playwright/
 .ruff_cache/
-uv.lock
-!examples/multi_user_bom/uv.lock
+.cache/
 .runtime/
 .lokay/
 .omo/

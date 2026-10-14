@@ -665,6 +665,13 @@ uv run uvicorn example.app:app --host 0.0.0.0 --port 8765 --app-dir .
 # launchd unit: gui/$(id -u)/dev.app-factory.storybook
 # plist: example/dev.app-factory.storybook.plist (repo $HOME/Developer/app-factory, or APP_FACTORY_ROOT)
 
+# Check stable HTTP releases against both committed locks (nonzero on backlog)
+uv run --extra dev python scripts/refresh_platform_assets.py --check-http-releases
+
+# Upgrade HTTP packages, then validate both projects before committing
+uv lock --upgrade-package fastapi --upgrade-package starlette --upgrade-package uvicorn --upgrade-package httpx2
+uv lock --project examples/multi_user_bom --upgrade-package fastapi --upgrade-package starlette --upgrade-package uvicorn --upgrade-package httpx2
+
 # Regenerate bundled platform assets
 uv run python scripts/refresh_platform_assets.py
 ```
@@ -677,13 +684,71 @@ Use it as the default place to visual-check chrome changes before tagging.
 The `examples/multi_user_bom/` package is the pinned multi-user BOM consumer
 (app-factory + my-auth + my-usermanager). Prefer it when checking identity
 lifecycle composition and package resolution (`uv lock` + pytest there).
+Installation is not test execution. Validate the two projects separately:
+
+```bash
+# Repository root: full suite, including browsers, and all public extras
+uv lock --check
+uv sync --frozen --all-extras
+uv run --locked playwright install --with-deps chromium
+uv run --locked --all-extras pytest -q
+uv run --locked ruff check .
+uv run --locked python scripts/refresh_platform_assets.py --check-http-releases
+uv build
+
+# Separate project: use its own cwd, environment, lock and full suite
+(cd examples/multi_user_bom && uv lock --check && uv sync --frozen --all-extras && uv run --locked --all-extras pytest -q)
+```
+
+After setup, `uv run --locked python scripts/run_projects.py` runs both full suites.
+CI executes `uv run --locked --all-extras pytest -q` directly in two steps:
+repository root, then `examples/multi_user_bom`, each with its own environment.
+It disables uv env-file loading in both projects.
+The BOM step also runs after a root failure; each step preserves pytest's
+failure status through the log pipeline. CI uploads both pytest summaries
+as `project-tests-<SHA>-python-<version>`, including on failure.
+The Python 3.12 and 3.14 matrix runs both projects independently.
+Separate root and BOM logs record each cwd, argv and exit status.
+Uploading a log does not prove either suite passed or that Lokay registered
+both projects. The same runner remains available locally; omit `--project`
+to execute both suites even if the first fails.
+It overrides inherited `UV_PROJECT_ENVIRONMENT` per project
+and removes inherited `UV_WORKING_DIR` and `UV_PROJECT`, including for nested
+`uv` commands. It removes `UV_NO_PROJECT` so project discovery cannot be bypassed.
+It also removes `UV_NO_SYNC` and `UV_FROZEN` so callers cannot
+skip lock validation or conflict with `--locked`. It removes `PYTEST_ADDOPTS`
+so inherited selection or collection-only options cannot bypass full execution.
+It removes `UV_NO_SOURCES` and `UV_NO_SOURCES_PACKAGE` so the BOM keeps
+its declared Git and editable path sources. It also removes inherited
+`UV_NO_DEV`, `UV_NO_GROUP` and `UV_NO_DEFAULT_GROUPS` dependency selectors.
+It removes `UV_ENV_FILE` and forces `UV_NO_ENV_FILE=1` so env files cannot
+restore those options in child or nested `uv` commands.
+It checks locked manifests
+and returns nonzero if either invocation fails.
+Each suite has a 240-second timeout, leaving time within Lokay's 600-second
+command budget. A timeout or launch error does not prevent the other suite
+from running. Each cwd marker precedes a real pytest invocation; a marker
+alone proves nothing. After each invocation, `LOKAY_TEST_EXIT_CODE` records its
+exit code and cwd (124 for timeout, 127 for launch failure).
+Each `PROJECT_TEST_RESULT=` JSON line records the actual argv, cwd, child PID
+and exit code. A null PID means launch failed; a PID alone does not prove
+that tests passed. These status lines do not replace pytest summaries. For checkout-local Chromium downloads, set
+`PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright"` during installation and execution;
+the downloaded browser directory is ignored by Git.
+
+For Lokay, the host owner must set the active app-factory test argv to
+`["uv", "run", "--locked", "python", "scripts/run_projects.py"]`.
+Adding this production runner does not change
+host configuration or prove gate acceptance. Root tests alone do not validate
+the BOM suite. Manual results, runner acceptance and remote CI for the final
+commit are three separate evidence requirements.
 
 Optional browser isolation (issue #9) skips unless Playwright is installed:
 
 ```bash
 uv sync --extra browser
 uv run playwright install chromium
-uv run pytest tests/test_browser_chrome.py
+uv run pytest tests/test_browser_chrome.py tests/test_browser_errors.py tests/test_browser_runs.py
 ```
 
 ---

@@ -13,8 +13,8 @@ dependencies = [
 
 [project.optional-dependencies]
 fastapi = [
-    "fastapi>=0.141.1",
-    "starlette>=1.6.0",
+    "fastapi>=0.143.0",
+    "starlette>=1.8.0",
     "python-multipart>=0.0.32",
 ]
 # platform = fastapi surface for install_platform + product shell.
@@ -22,27 +22,28 @@ fastapi = [
 # do not nest those git sources here: my-auth pins app-factory and would
 # conflict with this workspace while developing.
 platform = [
-    "fastapi>=0.141.1",
-    "starlette>=1.6.0",
+    "fastapi>=0.143.0",
+    "starlette>=1.8.0",
     "python-multipart>=0.0.32",
 ]
 dev = [
     "itsdangerous>=2.2",
     "pytest>=9",
-    "httpx2>=2.12.0",
-    "fastapi>=0.141.1",
-    "starlette>=1.6.0",
-    "uvicorn[standard]>=0.52.4",
+    "httpx2>=2.13.1",
+    "fastapi>=0.143.0",
+    "starlette>=1.8.0",
+    "uvicorn[standard]>=0.54.0",
     "python-multipart>=0.0.32",
     "ruff>=0.16",
+    "packaging>=26",
 ]
 browser = [
     "playwright>=1.62",
     "pytest>=9",
-    "httpx2>=2.12.0",
-    "fastapi>=0.141.1",
-    "starlette>=1.6.0",
-    "uvicorn[standard]>=0.52.4",
+    "httpx2>=2.13.1",
+    "fastapi>=0.143.0",
+    "starlette>=1.8.0",
+    "uvicorn[standard]>=0.54.0",
     "python-multipart>=0.0.32",
 ]
 
