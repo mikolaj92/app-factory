@@ -40,6 +40,7 @@ import sys
 import tarfile
 import tempfile
 import tomllib
+from http.client import HTTPException
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import urlopen
@@ -512,7 +513,7 @@ def check_http_releases() -> int:
             if not versions:
                 raise ValueError("no non-yanked stable release")
             latest[name] = max(versions)
-        except (OSError, ValueError, RuntimeError) as exc:
+        except (OSError, HTTPException, ValueError, RuntimeError) as exc:
             raise RuntimeError(f"{name}: release check failed: {exc}") from exc
 
     rows = []
