@@ -34,11 +34,19 @@ jobs:
         working-directory: examples/multi_user_bom
       - run: uv run --locked python scripts/refresh_platform_assets.py --check-http-releases
       - run: uv run --locked playwright install --with-deps chromium
-      - name: Test both projects
+      - name: Test root project
         shell: bash
         run: |
           set -o pipefail
-          uv run --locked python scripts/run_projects.py 2>&1 | tee "$RUNNER_TEMP/project-tests.log"
+          uv run --locked --all-extras pytest -q 2>&1 | tee "$RUNNER_TEMP/project-tests.log"
+      - name: Test BOM project
+        # A failed root suite must not hide the separate consumer suite.
+        if: ${{ !cancelled() }}
+        working-directory: examples/multi_user_bom
+        shell: bash
+        run: |
+          set -o pipefail
+          uv run --locked --all-extras pytest -q 2>&1 | tee -a "$RUNNER_TEMP/project-tests.log"
       - name: Upload project test evidence
         if: always()
         uses: actions/upload-artifact@v4
