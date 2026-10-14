@@ -26,7 +26,7 @@ def main() -> int:
         env = {
             key: value for key, value in os.environ.items()
             if key not in {
-                "UV_WORKING_DIR", "UV_PROJECT", "UV_NO_SYNC", "UV_FROZEN",
+                "UV_WORKING_DIR", "UV_PROJECT", "UV_NO_PROJECT", "UV_NO_SYNC", "UV_FROZEN",
                 "PYTEST_ADDOPTS",
             }
         }
