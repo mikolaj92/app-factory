@@ -32,7 +32,6 @@ jobs:
       - name: Install BOM dependencies
         run: uv sync --frozen --all-extras
         working-directory: examples/multi_user_bom
-      - run: uv run --locked python scripts/refresh_platform_assets.py --check-http-releases
       - run: uv run --locked playwright install --with-deps chromium
       - name: Test root project
         shell: bash
@@ -54,5 +53,13 @@ jobs:
           name: project-tests-${{ github.sha }}
           path: ${{ runner.temp }}/project-tests.log
           if-no-files-found: error
-      - run: uv run --locked ruff check .
-      - run: uv build
+      # Independent checks must still report failures after either suite fails.
+      - name: Check stable HTTP releases
+        if: ${{ !cancelled() }}
+        run: uv run --locked python scripts/refresh_platform_assets.py --check-http-releases
+      - name: Lint
+        if: ${{ !cancelled() }}
+        run: uv run --locked ruff check .
+      - name: Build
+        if: ${{ !cancelled() }}
+        run: uv build
