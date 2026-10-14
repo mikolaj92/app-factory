@@ -711,6 +711,8 @@ and removes inherited `UV_WORKING_DIR` and `UV_PROJECT`, including for nested
 It also removes `UV_NO_SYNC` and `UV_FROZEN` so callers cannot
 skip lock validation or conflict with `--locked`. It removes `PYTEST_ADDOPTS`
 so inherited selection or collection-only options cannot bypass full execution.
+It removes `UV_ENV_FILE` and forces `UV_NO_ENV_FILE=1` so env files cannot
+restore those options in child or nested `uv` commands.
 It checks locked manifests
 and returns nonzero if either invocation fails.
 Each suite has a 240-second timeout, leaving time within Lokay's 600-second

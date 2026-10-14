@@ -27,9 +27,12 @@ def main() -> int:
             key: value for key, value in os.environ.items()
             if key not in {
                 "UV_WORKING_DIR", "UV_PROJECT", "UV_NO_PROJECT", "UV_NO_SYNC", "UV_FROZEN",
-                "PYTEST_ADDOPTS",
+                "UV_ENV_FILE", "PYTEST_ADDOPTS",
             }
         }
+        # uv loads env files after this filtering and can restore pytest selectors.
+        # Keep that bypass disabled for child and nested uv commands alike.
+        env["UV_NO_ENV_FILE"] = "1"
         env["UV_PROJECT_ENVIRONMENT"] = str(project / ".venv")
         argv = ["uv", "run", "--locked", "--all-extras", "pytest", "-q"]
         print(f"LOKAY_TEST_CWD={project}", flush=True)
