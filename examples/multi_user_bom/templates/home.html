@@ -5,7 +5,7 @@
 {% block content %}
 <section class="app-page" data-bom-home>
   <header class="app-header">
-    <div class="app-stack app-stack--tight">
+    <div class="l--stack app-stack--tight">
       <p class="text-sm text-muted-foreground mono">examples/multi_user_bom</p>
       <h1 class="text-2xl font-semibold">Multi-user platform BOM</h1>
       <p class="text-sm text-muted-foreground max-w-prose">
@@ -15,12 +15,12 @@
     </div>
   </header>
 
-  <div class="app-stack">
+  <div class="l--stack">
     <p data-session-user>
       Session:
       {% if session_user %}<strong>{{ session_user }}</strong>{% else %}guest{% endif %}
     </p>
-    <div class="app-cluster">
+    <div class="l--cluster">
       <form method="post" action="{{ demo_root|default('') }}/demo/as/{{ admin_id }}">
         <button class="btn" type="submit" data-variant="primary">Sign in as admin</button>
       </form>
@@ -31,7 +31,7 @@
     <p class="text-sm text-muted-foreground" data-credential-counts>
       Seeded credentials — admin: {{ admin_credentials }}, member: {{ member_credentials }}
     </p>
-    <ul class="app-stack app-stack--tight">
+    <ul class="l--stack app-stack--tight">
       <li><a href="{{ paths.login }}">Login</a></li>
       <li><a href="{{ paths.register }}">Bootstrap register</a></li>
       <li><a href="{{ paths.account }}">Account</a></li>
