@@ -701,12 +701,15 @@ uv build
 ```
 
 After setup, `uv run --locked python scripts/run_projects.py` runs both full suites.
-CI invokes `uv run --locked --all-extras pytest -q` in two explicit steps:
-repository root, then `examples/multi_user_bom`. The BOM step also runs after a
-root failure; each step preserves pytest's exit code through the log pipeline.
-CI uploads both pytest summaries as `project-tests-<SHA>`, including on failure.
+CI selects `--project root` and `--project bom` in two explicit runner steps:
+repository root, then `examples/multi_user_bom`. Each child executes
+`uv run --locked --all-extras pytest -q` in its own cwd and environment.
+The BOM step also runs after a root failure; each step preserves the runner's
+failure status through the log pipeline. CI uploads both pytest summaries and
+structured process results as `project-tests-<SHA>`, including on failure.
 Uploading a log does not prove either suite passed or that Lokay registered
-both projects. The diagnostic runner below remains available independently.
+both projects. The same runner remains available locally; omit `--project`
+to execute both suites even if the first fails.
 It overrides inherited `UV_PROJECT_ENVIRONMENT` per project
 and removes inherited `UV_WORKING_DIR` and `UV_PROJECT`, including for nested
 `uv` commands. It removes `UV_NO_PROJECT` so project discovery cannot be bypassed.

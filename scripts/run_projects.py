@@ -8,6 +8,7 @@ Each invocation checks its lock and has a bounded execution time.
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import signal
@@ -20,8 +21,17 @@ PROJECT_TIMEOUT = 240  # Both suites must fit within Lokay's 600-second budget.
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--project", choices=("root", "bom"),
+        help="run one project for a separate CI step; default: run both",
+    )
+    args = parser.parse_args()
+    projects = PROJECTS if args.project is None else (
+        PROJECTS[0 if args.project == "root" else 1],
+    )
     failed = False
-    for project in PROJECTS:
+    for project in projects:
         # Resolve from cwd and validate locks, including nested uv commands.
         # UV_ISOLATED overrides UV_PROJECT_ENVIRONMENT with a temporary environment.
         # Inherited pytest options can silently select tests or only collect them.
