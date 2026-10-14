@@ -1,5 +1,51 @@
 # HTTP stack validation
 
+## Lock-validation environment repair from 9123a9b
+
+Repository: `mikolaj92/app-factory`, PR #135, branch `lokay/99`.
+Repair revision: the commit introducing this section. Verdict: **KEEP**.
+Only the production runner and its documentation changed; no tests were added.
+
+A disposable project inside this checkout had an impossible `jinja2>=999`
+manifest and the original lock. `uv run --locked --all-extras python -c pass`
+returned 1 normally but 0 with inherited `UV_NO_SYNC=true`: lock validation
+was bypassed. Inherited `UV_FROZEN=true` instead conflicted with `--locked`.
+The runner now removes both variables from child environments, alongside the
+existing project selectors. Running the repaired runner against that project
+with both overrides returned 1. No dependency pins or assertions changed.
+
+Validation of the production diff on macOS/Python 3.14:
+
+| Check | Result | Exit |
+| --- | --- | ---: |
+| Root and BOM lock checks | valid 2/2 | 0 each |
+| Frozen all-extras installs in separate environments | installed 2/2 | 0 each |
+| Chromium setup with `--with-deps` | installed | 0 |
+| Full runner with all five inherited overrides | root 327 passed; BOM 15 passed; failed 0; skipped 0 | 0 |
+| Ruff | passed | 0 |
+| Independent live PyPI release check | current 8/8; outdated 0 | 0 |
+| Package build | wheel and sdist | 0 |
+
+Actual cwd paths were `/Users/mini-m4-0/Developer/app-factory/main-wt-99`
+and its `examples/multi_user_bom` directory. Each child used its own absolute
+`.venv` and `uv run --locked --all-extras pytest -q`. Cache, browser downloads
+and the disposable reproduction stayed inside this checkout. An initial setup
+attempt inherited a shared environment and failed to launch Playwright (exit 2);
+explicit per-project setup environments corrected it before the full run.
+
+Manual projects=2/2, locks=2/2, omitted_projects=0. These are not measurements
+of the ordinary host gate. No host or other checkout was edited or inspected
+in this execution. `LOKAY2_REPOS_FILE` was unset in this shell; that does not
+establish the active host's configuration or selector. Required branch checks
+returned HTTP 401 through the unauthenticated public API. No tokens were read.
+
+Blocking owner: `mikolaj92`, app-factory #99 / PR #135. No separate host task
+identifier has been assigned or created. The owner must verify the effective
+host configuration, select `uv run --locked python scripts/run_projects.py`,
+and run the ordinary gate. Resume only when both actual cwd paths are recorded
+and all required GitHub checks pass for the same final SHA. No push, release,
+deployment or remote final-SHA acceptance is claimed.
+
 ## Inherited project-selector repair from 220c7d7
 
 Repository: `mikolaj92/app-factory`, PR #135, branch `lokay/99`.
