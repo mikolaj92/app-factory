@@ -22,12 +22,13 @@ def main() -> int:
     failed = False
     for project in PROJECTS:
         # Resolve from cwd and validate locks, including nested uv commands.
+        # UV_ISOLATED overrides UV_PROJECT_ENVIRONMENT with a temporary environment.
         # Inherited pytest options can silently select tests or only collect them.
         env = {
             key: value for key, value in os.environ.items()
             if key not in {
                 "UV_WORKING_DIR", "UV_PROJECT", "UV_NO_PROJECT", "UV_NO_SYNC", "UV_FROZEN",
-                "UV_ENV_FILE", "PYTEST_ADDOPTS",
+                "UV_ISOLATED", "UV_ENV_FILE", "PYTEST_ADDOPTS",
             }
         }
         # uv loads env files after this filtering and can restore pytest selectors.
