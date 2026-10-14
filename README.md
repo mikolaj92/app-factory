@@ -691,22 +691,22 @@ Installation is not test execution. Validate the two projects separately:
 uv lock --check
 uv sync --frozen --all-extras
 uv run --locked playwright install --with-deps chromium
-uv run --locked pytest -q
+uv run --locked --all-extras pytest -q
 uv run --locked ruff check .
 uv run --locked python scripts/refresh_platform_assets.py --check-http-releases
 uv build
 
 # Separate project: use its own cwd, environment, lock and full suite
-(cd examples/multi_user_bom && uv lock --check && uv sync --frozen --all-extras && uv run --locked pytest -q)
+(cd examples/multi_user_bom && uv lock --check && uv sync --frozen --all-extras && uv run --locked --all-extras pytest -q)
 ```
 
 After setup, `uv run --locked python scripts/run_projects.py` runs both full suites.
-CI selects `--project root` and `--project bom` in two explicit runner steps:
-repository root, then `examples/multi_user_bom`. Each child executes
-`uv run --locked --all-extras pytest -q` in its own cwd and environment.
-The BOM step also runs after a root failure; each step preserves the runner's
-failure status through the log pipeline. CI uploads both pytest summaries and
-structured process results as `project-tests-<SHA>`, including on failure.
+CI executes `uv run --locked --all-extras pytest -q` directly in two steps:
+repository root, then `examples/multi_user_bom`, each with its own environment.
+It disables uv env-file loading in both projects.
+The BOM step also runs after a root failure; each step preserves pytest's
+failure status through the log pipeline. CI uploads both pytest summaries
+as `project-tests-<SHA>`, including on failure.
 Uploading a log does not prove either suite passed or that Lokay registered
 both projects. The same runner remains available locally; omit `--project`
 to execute both suites even if the first fails.
