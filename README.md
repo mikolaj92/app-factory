@@ -706,7 +706,9 @@ repository root, then `examples/multi_user_bom`, each with its own environment.
 It disables uv env-file loading in both projects.
 The BOM step also runs after a root failure; each step preserves pytest's
 failure status through the log pipeline. CI uploads both pytest summaries
-as `project-tests-<SHA>`, including on failure.
+as `project-tests-<SHA>-python-<version>`, including on failure.
+The Python 3.12 and 3.14 matrix runs both projects independently.
+Separate root and BOM logs record each cwd, argv and exit status.
 Uploading a log does not prove either suite passed or that Lokay registered
 both projects. The same runner remains available locally; omit `--project`
 to execute both suites even if the first fails.
@@ -716,6 +718,9 @@ and removes inherited `UV_WORKING_DIR` and `UV_PROJECT`, including for nested
 It also removes `UV_NO_SYNC` and `UV_FROZEN` so callers cannot
 skip lock validation or conflict with `--locked`. It removes `PYTEST_ADDOPTS`
 so inherited selection or collection-only options cannot bypass full execution.
+It removes `UV_NO_SOURCES` and `UV_NO_SOURCES_PACKAGE` so the BOM keeps
+its declared Git and editable path sources. It also removes inherited
+`UV_NO_DEV`, `UV_NO_GROUP` and `UV_NO_DEFAULT_GROUPS` dependency selectors.
 It removes `UV_ENV_FILE` and forces `UV_NO_ENV_FILE=1` so env files cannot
 restore those options in child or nested `uv` commands.
 It checks locked manifests

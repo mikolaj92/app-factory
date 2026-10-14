@@ -35,11 +35,15 @@ def main() -> int:
         # Resolve from cwd and validate locks, including nested uv commands.
         # UV_ISOLATED overrides UV_PROJECT_ENVIRONMENT with a temporary environment.
         # Inherited pytest options can silently select tests or only collect them.
+        # Source/group selectors can also disable the BOM's declared Git/path
+        # sources or omit dependencies required by a complete suite.
         env = {
             key: value for key, value in os.environ.items()
             if key not in {
                 "UV_WORKING_DIR", "UV_PROJECT", "UV_NO_PROJECT", "UV_NO_SYNC", "UV_FROZEN",
                 "UV_ISOLATED", "UV_ENV_FILE", "PYTEST_ADDOPTS",
+                "UV_NO_SOURCES", "UV_NO_SOURCES_PACKAGE",
+                "UV_NO_DEV", "UV_NO_GROUP", "UV_NO_DEFAULT_GROUPS",
             }
         }
         # uv loads env files after this filtering and can restore pytest selectors.
