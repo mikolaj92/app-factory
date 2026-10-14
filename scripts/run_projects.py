@@ -37,11 +37,14 @@ def main() -> int:
         # Inherited pytest options can silently select tests or only collect them.
         # Source/group selectors can also disable the BOM's declared Git/path
         # sources or omit dependencies required by a complete suite.
+        # An inherited config path can fail before pytest starts or replace
+        # project settings; disabling config discovery also bypasses repo config.
         env = {
             key: value for key, value in os.environ.items()
             if key not in {
                 "UV_WORKING_DIR", "UV_PROJECT", "UV_NO_PROJECT", "UV_NO_SYNC", "UV_FROZEN",
                 "UV_ISOLATED", "UV_ENV_FILE", "PYTEST_ADDOPTS",
+                "UV_CONFIG_FILE", "UV_NO_CONFIG",
                 "UV_NO_SOURCES", "UV_NO_SOURCES_PACKAGE",
                 "UV_NO_DEV", "UV_NO_GROUP", "UV_NO_DEFAULT_GROUPS",
             }
