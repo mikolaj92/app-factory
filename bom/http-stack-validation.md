@@ -1,5 +1,45 @@
 # HTTP stack validation
 
+## Inherited project-selector repair from 220c7d7
+
+Repository: `mikolaj92/app-factory`, PR #135, branch `lokay/99`.
+Repair revision: the commit introducing this section.
+Verdict: **KEEP** until the real host gate and required remote checks accept
+that revision. No host files, test functions, manifests or locks were changed.
+
+A subprocess probe reproduced an inherited `UV_WORKING_DIR` redirecting the
+BOM command to the root despite its BOM cwd marker (exit 1). Explicit uv
+selectors fixed that invocation but not a nested uv command: the full BOM
+suite reported 14 passed, 1 failed because Ruff ran from the root.
+The production runner now removes `UV_WORKING_DIR` and `UV_PROJECT` from each
+child environment. Nested uv commands therefore also resolve from their cwd.
+The existing per-project `UV_PROJECT_ENVIRONMENT` override remains intact.
+
+Full execution with all three parent overrides deliberately pointing at the
+root or an incorrect environment completed with exit 0:
+
+| Actual cwd under this checkout | Passed | Failed | Skipped |
+| --- | ---: | ---: | ---: |
+| `/Users/mini-m4-0/Developer/app-factory/main-wt-99` | 327 | 0 | 0 |
+| `/Users/mini-m4-0/Developer/app-factory/main-wt-99/examples/multi_user_bom` | 15 | 0 | 0 |
+
+The argv was `python3 scripts/run_projects.py`; each child used
+`uv run --locked --all-extras pytest -q`. Both lock checks, frozen all-extras
+installs, Chromium setup, Ruff, live PyPI check (8 current, 0 outdated), and
+package build returned 0. Manual projects=2/2, locks=2/2, omitted_projects=0.
+These results do not prove host `tested_cwds=2` or final-SHA remote CI.
+
+Unauthenticated public API inspection found PR head `220c7d7` with visible
+`pytest=success`. Required branch-protection checks returned HTTP 401.
+No GitHub tokens were read and no push was performed.
+
+Host handoff identifier: `app-factory#99/PR#135:host-selector` (local handoff,
+not a newly created issue). Owner: `mikolaj92`. Identify the effective host
+configuration, select `uv run --locked python scripts/run_projects.py`, and
+rerun the normal gate. Resume closure only with both actual cwd paths recorded,
+no omitted project, and all required remote checks passing for the repair SHA.
+Host configuration and other checkouts remain outside the permitted edits.
+
 ## Production runner repair from debd990
 
 Repository: `mikolaj92/app-factory`, PR #135, branch `lokay/99`.

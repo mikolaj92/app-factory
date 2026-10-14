@@ -21,7 +21,12 @@ PROJECT_TIMEOUT = 240  # Both suites must fit within Lokay's 600-second budget.
 def main() -> int:
     failed = False
     for project in PROJECTS:
-        env = {**os.environ, "UV_PROJECT_ENVIRONMENT": str(project / ".venv")}
+        # Resolve from cwd, including nested uv commands launched by the suite.
+        env = {
+            key: value for key, value in os.environ.items()
+            if key not in {"UV_WORKING_DIR", "UV_PROJECT"}
+        }
+        env["UV_PROJECT_ENVIRONMENT"] = str(project / ".venv")
         argv = ["uv", "run", "--locked", "--all-extras", "pytest", "-q"]
         print(f"LOKAY_TEST_CWD={project}", flush=True)
         try:
