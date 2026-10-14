@@ -49,9 +49,8 @@ def main() -> int:
                 if os.name == "posix":
                     try:
                         os.killpg(process.pid, signal.SIGKILL)
-                    except ProcessLookupError:
-                        pass
                     except OSError:
+                        # A missing group does not prove that uv has exited.
                         # If group signalling fails, still stop and reap uv.
                         try:
                             process.kill()
