@@ -1,0 +1,180 @@
+{
+  "id": 116373879670,
+  "run_id": 38720589401,
+  "workflow_name": "Tests",
+  "head_branch": "lokay/133",
+  "run_url": "https://api.github.com/repos/mikolaj92/app-factory/actions/runs/38720589401",
+  "run_attempt": 1,
+  "node_id": "CR_kwDOTffuOs8AAAAbGGx7dg",
+  "head_sha": "185f51a6e661f947aa1ebebad4e9c2578bbce06d",
+  "url": "https://api.github.com/repos/mikolaj92/app-factory/actions/jobs/116373879670",
+  "html_url": "https://github.com/mikolaj92/app-factory/actions/runs/38720589401/job/116373879670",
+  "status": "completed",
+  "conclusion": "failure",
+  "created_at": "2026-10-15T10:29:08Z",
+  "started_at": "2026-10-15T10:29:11Z",
+  "completed_at": "2026-10-15T10:31:00Z",
+  "name": "pytest (3.12)",
+  "steps": [
+    {
+      "name": "Set up job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 1,
+      "started_at": "2026-10-15T10:29:12Z",
+      "completed_at": "2026-10-15T10:29:14Z"
+    },
+    {
+      "name": "Run actions/checkout@v4",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 2,
+      "started_at": "2026-10-15T10:29:14Z",
+      "completed_at": "2026-10-15T10:29:15Z"
+    },
+    {
+      "name": "Run astral-sh/setup-uv@v6",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 3,
+      "started_at": "2026-10-15T10:29:15Z",
+      "completed_at": "2026-10-15T10:29:17Z"
+    },
+    {
+      "name": "Run actions/setup-python@v5",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 4,
+      "started_at": "2026-10-15T10:29:17Z",
+      "completed_at": "2026-10-15T10:29:17Z"
+    },
+    {
+      "name": "Check root lock",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 5,
+      "started_at": "2026-10-15T10:29:17Z",
+      "completed_at": "2026-10-15T10:29:18Z"
+    },
+    {
+      "name": "Check BOM lock",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 6,
+      "started_at": "2026-10-15T10:29:18Z",
+      "completed_at": "2026-10-15T10:29:18Z"
+    },
+    {
+      "name": "Install root extras",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 7,
+      "started_at": "2026-10-15T10:29:18Z",
+      "completed_at": "2026-10-15T10:29:19Z"
+    },
+    {
+      "name": "Install BOM dependencies",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 8,
+      "started_at": "2026-10-15T10:29:19Z",
+      "completed_at": "2026-10-15T10:29:19Z"
+    },
+    {
+      "name": "Run uv run --locked playwright install --with-deps chromium",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 9,
+      "started_at": "2026-10-15T10:29:19Z",
+      "completed_at": "2026-10-15T10:29:56Z"
+    },
+    {
+      "name": "Test root project",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 10,
+      "started_at": "2026-10-15T10:29:56Z",
+      "completed_at": "2026-10-15T10:30:52Z"
+    },
+    {
+      "name": "Test BOM project",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 11,
+      "started_at": "2026-10-15T10:30:52Z",
+      "completed_at": "2026-10-15T10:30:55Z"
+    },
+    {
+      "name": "Upload project test evidence",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 12,
+      "started_at": "2026-10-15T10:30:55Z",
+      "completed_at": "2026-10-15T10:30:56Z"
+    },
+    {
+      "name": "Check stable HTTP releases",
+      "status": "completed",
+      "conclusion": "failure",
+      "number": 13,
+      "started_at": "2026-10-15T10:30:56Z",
+      "completed_at": "2026-10-15T10:30:56Z"
+    },
+    {
+      "name": "Lint",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 14,
+      "started_at": "2026-10-15T10:30:56Z",
+      "completed_at": "2026-10-15T10:30:56Z"
+    },
+    {
+      "name": "Build",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 15,
+      "started_at": "2026-10-15T10:30:56Z",
+      "completed_at": "2026-10-15T10:30:57Z"
+    },
+    {
+      "name": "Post Run actions/setup-python@v5",
+      "status": "completed",
+      "conclusion": "skipped",
+      "number": 28,
+      "started_at": "2026-10-15T10:30:57Z",
+      "completed_at": "2026-10-15T10:30:57Z"
+    },
+    {
+      "name": "Post Run astral-sh/setup-uv@v6",
+      "status": "completed",
+      "conclusion": "skipped",
+      "number": 29,
+      "started_at": "2026-10-15T10:30:57Z",
+      "completed_at": "2026-10-15T10:30:57Z"
+    },
+    {
+      "name": "Post Run actions/checkout@v4",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 30,
+      "started_at": "2026-10-15T10:30:57Z",
+      "completed_at": "2026-10-15T10:30:57Z"
+    },
+    {
+      "name": "Complete job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 31,
+      "started_at": "2026-10-15T10:30:57Z",
+      "completed_at": "2026-10-15T10:30:57Z"
+    }
+  ],
+  "check_run_url": "https://api.github.com/repos/mikolaj92/app-factory/check-runs/116373879670",
+  "labels": [
+    "ubuntu-latest"
+  ],
+  "runner_id": 1000005692,
+  "runner_name": "GitHub Actions 1000005692",
+  "runner_group_id": 0,
+  "runner_group_name": "GitHub Actions"
+}
