@@ -15,7 +15,7 @@
 {% block content %}
 <section class="app-page" data-htmx-panel="{{ panel }}">
   <header class="app-header">
-    <div class="l--stack app-stack--tight">
+    <div class="app-stack app-stack--tight">
       <p class="text-sm text-muted-foreground mono">story · htmx · panel {{ panel }}</p>
       <h1 class="text-2xl font-semibold">HTMX panel {{ panel }}</h1>
       <p class="text-sm text-muted-foreground max-w-prose">
@@ -27,13 +27,13 @@
     </div>
   </header>
 
-  <div class="l--autoColumns">
+  <div class="app-card-grid">
     <div class="card">
       <header><h2 class="text-base font-semibold">Swap target</h2></header>
-      <section class="l--stack app-stack--tight text-sm">
+      <section class="app-stack app-stack--tight text-sm">
         <p>This whole <code class="mono">#main-content</code> block is selected on navigation.</p>
         <p>Active panel: <strong data-panel-label>{{ panel }}</strong></p>
-        <div class="l--cluster">
+        <div class="app-cluster">
           <a class="btn" data-variant="outline" data-size="sm" href="/stories/htmx">Panel A</a>
           <a class="btn" data-variant="outline" data-size="sm" href="/stories/htmx/b">Panel B</a>
         </div>
@@ -42,11 +42,11 @@
 
     <div class="card" x-data="{ n: 0 }">
       <header><h2 class="text-base font-semibold">Alpine after swap</h2></header>
-      <section class="l--stack app-stack--tight">
+      <section class="app-stack app-stack--tight">
         <p class="text-sm text-muted-foreground">
           Click counter must keep working after HTMX navigation without duplicate handlers.
         </p>
-        <div class="l--cluster app-cluster--center">
+        <div class="app-cluster app-cluster--center">
           <button type="button" class="btn" data-variant="secondary" data-size="sm" @click="n++">
             Increment
           </button>
