@@ -7,7 +7,8 @@ Reference host: [`examples/multi_user_bom/`](examples/multi_user_bom/).
 
 | app-factory | my-auth | my-usermanager | Contract |
 |-------------|---------|----------------|----------|
-| **v0.7.9** | **v0.5.7** | **v0.6.10** | **Current**: Lism 1.0.1 layout-only CSS alongside Basecoat/Tailwind; shared views, passkey panels and account/admin forms adopt primitives. Adaptive card/field columns follow content width, not viewport breakpoints. |
+| **v0.7.10** | **v0.5.7** | **v0.6.10** | **Prepared patch**: native/HTMX 4 upload validation and cancellation; publication gate: README. |
+| **v0.7.9** | **v0.5.7** | **v0.6.10** | Lism 1.0.1 layout-only CSS alongside Basecoat/Tailwind; shared views, passkey panels and account/admin forms adopt primitives. Adaptive card/field columns follow content width, not viewport breakpoints. |
 | **v0.7.9** | **v0.5.6** | **v0.6.7** | Initial factory release with legacy adapter layouts; still compatible, but prefer the Lism-adapter row above. |
 | **v0.7.8** | **v0.5.6** | **v0.6.7** | `verify_cdn_asset` rejects a version or kind that differs from the approved pin even when the URL matches. Same companions as v0.7.7 |
 | **v0.7.7** | **v0.5.6** | **v0.6.7** | Chrome contract in files (`contract/paths.toml`, `contract/http.toml`, templates). FastAPI is one binding. Same companions as v0.7.6. Prefer v0.7.8 |
@@ -76,7 +77,7 @@ dependencies = [
 override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.7.9" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.7.10" }
 my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.5.7" }
 my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.6.10" }
 ```
@@ -85,7 +86,7 @@ Do **not** float `my-usermanager` on `branch = "main"` for production hosts.
 Do **not** re-copy theme boot, shell boot, or platform foot templates into hosts.
 Do **not** mix BOM generations. Current hosts pin my-auth **v0.5.7** with this row; older rows that say “keep my-auth 0.4.x” apply only to those historical generations.
 
-### Identity lifecycle capability matrix (BOM v0.7.9)
+### Identity lifecycle capability matrix (BOM v0.7.10)
 
 | Capability | Owner | Default surface | Visibility |
 |------------|-------|-----------------|------------|
@@ -105,7 +106,7 @@ Do **not** mix BOM generations. Current hosts pin my-auth **v0.5.7** with this r
 
 ### Supported upgrade order
 
-Apply one generation at a time, in this order, until the preferred BOM row (`v0.7.9` / `v0.5.7` / `v0.6.10`):
+Apply one generation at a time, in this order, until the preferred BOM row (`v0.7.10` / `v0.5.7` / `v0.6.10`):
 
 1. **app-factory** — paths (`PlatformPaths` from `contract/paths.toml`), identity shells, then composition (`v0.6.0` → `v0.7.7`).
 2. **my-auth** — subject-bound enrollment / recovery plus packaged ceremony shells and Lism panels (`v0.5.7`); `ensure_sqlite_schema` stamps `passkey_enrollment_capabilities`; keep `PasskeyPaths` aligned with `PlatformPaths`.
@@ -126,7 +127,7 @@ Inventory of the five named hosts (what was copied vs what stays):
 | **BOM cookie host** (`examples/multi_user_bom/app.py`) | In-memory stores + raw session cookie | Demo store + cookie get/set |
 | **BOM portal host** (`examples/multi_user_bom/rooted_app.py`) | Signed `SessionMiddleware` + `/portal` root | Session principal + `SessionCsrfProtection` |
 
-The chrome generation **v0.6.11 / v0.4.8 / v0.5.7** is not enough: those tags ship shells and nested pins but not this composer. Adopt **v0.7.9 / v0.5.7 / v0.6.10**.
+The chrome generation **v0.6.11 / v0.4.8 / v0.5.7** is not enough: those tags ship shells and nested pins but not this composer. Adopt **v0.7.10 / v0.5.7 / v0.6.10**.
 
 Delete from hosts:
 

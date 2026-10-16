@@ -4,7 +4,7 @@ Reference FastAPI hosts pinned to the immutable multi-user compatibility BOM:
 
 | Package | Tag |
 |---------|-----|
-| app-factory | `v0.7.9` (editable path while developing this repo) |
+| app-factory | `v0.7.10` (prepared patch; editable path while developing this repo) |
 | my-auth | `v0.5.7` |
 | my-usermanager | `v0.6.10` |
 
@@ -94,7 +94,7 @@ dependencies = [
 override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.7.9" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.7.10" }
 my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.5.7" }
 my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.6.10" }
 ```
