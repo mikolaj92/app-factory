@@ -8,7 +8,7 @@ files.
 The goal is one place to ship same-origin chrome so product apps do **not**
 re-implement Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.7.9` (bundled Lism layout primitives alongside Basecoat and Tailwind; multi-user BOM is v0.7.9 / my-auth v0.5.7 / my-usermanager v0.6.10)
+**Tag:** `v0.7.10` — prepared patch, not yet published (HTMX 4 upload cancellation; multi-user BOM is v0.7.10 / my-auth v0.5.7 / my-usermanager v0.6.10). Publish an immutable tag only after CI and POST-count acceptance.
 
 ---
 
@@ -18,7 +18,7 @@ This package is the thin shared layer in a small platform. Together:
 
 | Piece | Role | How consumers get it |
 |-------|------|----------------------|
-| **app-factory** (this repo) | Chrome files + HTTP contract; FastAPI binding is optional | `git` tag `v0.7.9` directly; multi-user hosts follow `COMPAT.md` |
+| **app-factory** (this repo) | Chrome files + HTTP contract; FastAPI binding is optional | `git` tag `v0.7.10` after publication; multi-user hosts follow `COMPAT.md` |
 | **basecoat-factory** | Historical palette/layout notes; not a runtime or host dependency | Not used at runtime |
 | **my-auth** (`fastapi-htmx`) | Generic passkey login/register UI | BOM tag `v0.5.7` |
 | **my-usermanager** (`fastapi-htmx`) | Generic account/admin UI | BOM tag `v0.6.10` |
@@ -118,7 +118,7 @@ route authorization, domain validation, accepted upload formats, and copy.
 
 ---
 
-## Bundled core assets (`v0.7.9`)
+## Bundled core assets (`v0.7.10`)
 
 The wheel ships all core files. `MANIFEST.json` pins filenames, versions, and
 SHA-384 digests; the runtime verifies it on first access.
@@ -156,6 +156,13 @@ confirmation, busy state, and an HTMX request indicator; the normal multipart
 form remains the no-JS fallback. Server-side format and security validation
 remain consumer-owned. HTMX 4 uses Fetch, so byte-level upload progress is not
 available from the transport.
+
+HTMX 4 events use colon names and expose request context in `event.detail.ctx`.
+The shared required/type/size validator cancels `htmx:config:request` with
+`preventDefault()` before transport or busy UI. Batch confirmation cancels the
+original event before a fresh submit. Hosts may cancel config/before-request
+events without stopping propagation; hosts own any retry via a fresh submit or
+`htmx.ajax` call, which revalidates current files. Never replay a saved context.
 
 The backend companions `read_upload_bounded(...)` and `read_uploads_bounded(...)`
 read `UploadFile` objects in chunks and enforce per-file, aggregate, and file-count
@@ -261,7 +268,7 @@ dependencies = [
 override-dependencies = ["app-factory[platform]"]
 
 [tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.7.9" }
+app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.7.10" }
 my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.5.7" }
 my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.6.10" }
 ```
@@ -621,7 +628,8 @@ factory_template_dirs()
 
 | app-factory | basecoat-css | Notes |
 |-------------|---------------|-------|
-| **v0.7.9** | **1.0.2** | Current: pinned Lism 1.0.1 layout-only CSS; shared views and catalog adopt adaptive layouts. Basecoat components, arbitrary Tailwind utilities, and legacy `.app-*` remain compatible. |
+| **v0.7.10** | **1.0.2** | Prepared patch: shared native/HTMX 4 upload validation, cancellable batch confirmation, and cancellation-safe busy UI. |
+| **v0.7.9** | **1.0.2** | pinned Lism 1.0.1 layout-only CSS; shared views and catalog adopt adaptive layouts. Basecoat components, arbitrary Tailwind utilities, and legacy `.app-*` remain compatible. |
 | **v0.7.8** | **1.0.2** | `verify_cdn_asset` rejects a version or kind that differs from the approved pin even when the URL matches. Same companions as v0.7.7. |
 | **v0.7.7** | **1.0.2** | Chrome contract in files (`contract/paths.toml`, `contract/http.toml`, templates). FastAPI is one binding. Same companions as v0.7.6. Prefer v0.7.8. |
 | **v0.7.6** | **1.0.2** | Same-origin `/favicon.ico` plus `login_redirect` (`?next=` and `HX-Redirect`). Same companions as v0.7.5. Prefer v0.7.8. |

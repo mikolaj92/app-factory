@@ -1,4 +1,3 @@
-{# Shared upload controller. HTMX owns transport; hosts own validation and responses. #}
 <script>
 (() => {
   if (window.__appFileUploadBooted) return;
@@ -87,35 +86,46 @@
       });
     }
 
-    form.addEventListener('submit', (event) => {
+    const rejectedSubmits = new WeakSet();
+    const validate = (event) => {
+      const sourceEvent = event.detail?.ctx?.sourceEvent || event;
+      if (rejectedSubmits.has(sourceEvent)) { event.preventDefault(); return; }
+      const reject = () => { rejectedSubmits.add(sourceEvent); event.preventDefault(); };
       const files = Array.from(input.files || []);
-      if (!files.length && input.required) { event.preventDefault(); setStatus(field.dataset.labelEmpty, 'error'); return; }
+      if (!files.length && input.required) { reject(); setStatus(field.dataset.labelEmpty, 'error'); return; }
       const max = Number.parseInt(field.dataset.maxBytes || '', 10);
       const oversized = Number.isFinite(max) ? files.filter((file) => file.size > max) : [];
-      if (oversized.length) { event.preventDefault(); setStatus(message(field.dataset.labelTooLarge, { file: oversized.map((f) => f.name).join(', ') }), 'error'); return; }
+      if (oversized.length) { reject(); setStatus(message(field.dataset.labelTooLarge, { file: oversized.map((f) => f.name).join(', ') }), 'error'); return; }
       const wrong = files.filter((file) => !accepts(file, field.dataset.accept));
-      if (wrong.length) { event.preventDefault(); setStatus(message(field.dataset.labelWrongType, { file: wrong.map((f) => f.name).join(', ') }), 'error'); return; }
+      if (wrong.length) { reject(); setStatus(message(field.dataset.labelWrongType, { file: wrong.map((f) => f.name).join(', ') }), 'error'); return; }
       if (files.length > 1 && confirmed && confirmed.value !== String(files.length)) {
-        event.preventDefault();
+        reject();
         if (window.confirm(message(field.dataset.labelConfirm, { count: files.length }))) {
           confirmed.value = String(files.length);
-          form.requestSubmit();
+          queueMicrotask(() => form.requestSubmit());
         }
       }
-    });
+    };
+    form.addEventListener('submit', validate);
+    form.addEventListener('htmx:config:request', validate);
 
-    form.addEventListener('htmx:before:request', () => {
-      if (submit) { submit.disabled = true; submit.setAttribute('aria-busy', 'true'); }
-      if (progress) progress.hidden = false;
-      if (bar) bar.removeAttribute('value');
-      if (progressLabel) progressLabel.textContent = '';
+    form.addEventListener('htmx:before:request', (event) => {
+      queueMicrotask(() => {
+        if (event.defaultPrevented) return;
+        if (submit) { submit.disabled = true; submit.setAttribute('aria-busy', 'true'); }
+        if (progress) progress.hidden = false;
+        if (bar) bar.removeAttribute('value');
+        if (progressLabel) progressLabel.textContent = '';
+      });
     });
-    form.addEventListener('htmx:after:request', () => {
+    const resetBusy = () => {
       if (submit) { submit.removeAttribute('aria-busy'); submit.disabled = input.required && !(input.files && input.files.length); }
       if (progress) progress.hidden = true;
       if (bar) bar.value = 0;
       if (progressLabel) progressLabel.textContent = '0%';
-    });
+    };
+    form.addEventListener('htmx:after:request', resetBusy);
+    form.addEventListener('htmx:finally:request', resetBusy);
     render();
   };
 
