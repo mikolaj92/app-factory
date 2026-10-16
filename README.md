@@ -8,7 +8,7 @@ files.
 The goal is one place to ship same-origin chrome so product apps do **not**
 re-implement Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.7.10` — unpublished HTMX 4 upload fix. Publish an immutable tag after CI and POST-count acceptance; companion pins: `COMPAT.md`.
+**Tag:** `v0.7.10` (unpublished). Publish after CI and POST-count acceptance. Pins: `COMPAT.md`.
 
 ---
 
@@ -157,12 +157,11 @@ form remains the no-JS fallback. Server-side format and security validation
 remain consumer-owned. HTMX 4 uses Fetch, so byte-level upload progress is not
 available from the transport.
 
-HTMX 4 uses colon event names and `event.detail.ctx` for request context.
-Shared native/HTMX required/type/size validation calls `preventDefault()` on
-`htmx:config:request` before transport or busy UI. Batch confirmation cancels
-before resubmission. Hosts may cancel config/before-request events without
-stopping propagation. Retry via fresh submit or `htmx.ajax` revalidates current
-files; never replay saved context.
+HTMX 4 request context is `event.detail.ctx`. Shared required/type/size validation
+cancels `htmx:config:request` with `preventDefault()` before transport or busy UI.
+Batch confirmation cancels before resubmission. Hosts may cancel
+`htmx:config:request` / `htmx:before:request` without stopping propagation;
+retry via fresh submit or `htmx.ajax` revalidates current files, not saved context.
 
 The backend companions `read_upload_bounded(...)` and `read_uploads_bounded(...)`
 read `UploadFile` objects in chunks and enforce per-file, aggregate, and file-count
