@@ -7,7 +7,7 @@ Reference host: [`examples/multi_user_bom/`](examples/multi_user_bom/).
 
 | app-factory | my-auth | my-usermanager | Contract |
 |-------------|---------|----------------|----------|
-| **v0.7.10** | **v0.5.7** | **v0.6.10** | **Prepared patch**: shared native/HTMX 4 upload validation and cancellation; same Lism companions. Publish only after CI and POST-count acceptance. |
+| **v0.7.10** | **v0.5.7** | **v0.6.10** | **Prepared patch**: native/HTMX 4 upload validation and cancellation; unchanged companions. Publish after CI and POST-count acceptance. |
 | **v0.7.9** | **v0.5.7** | **v0.6.10** | Lism 1.0.1 layout-only CSS alongside Basecoat/Tailwind; shared views, passkey panels and account/admin forms adopt primitives. Adaptive card/field columns follow content width, not viewport breakpoints. |
 | **v0.7.9** | **v0.5.6** | **v0.6.7** | Initial factory release with legacy adapter layouts; still compatible, but prefer the Lism-adapter row above. |
 | **v0.7.8** | **v0.5.6** | **v0.6.7** | `verify_cdn_asset` rejects a version or kind that differs from the approved pin even when the URL matches. Same companions as v0.7.7 |

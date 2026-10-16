@@ -8,7 +8,7 @@ files.
 The goal is one place to ship same-origin chrome so product apps do **not**
 re-implement Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.7.10` — prepared patch, not yet published (HTMX 4 upload cancellation; multi-user BOM is v0.7.10 / my-auth v0.5.7 / my-usermanager v0.6.10). Publish an immutable tag only after CI and POST-count acceptance.
+**Tag:** `v0.7.10` — unpublished HTMX 4 upload fix. Publish an immutable tag after CI and POST-count acceptance; companion pins: `COMPAT.md`.
 
 ---
 
@@ -157,12 +157,12 @@ form remains the no-JS fallback. Server-side format and security validation
 remain consumer-owned. HTMX 4 uses Fetch, so byte-level upload progress is not
 available from the transport.
 
-HTMX 4 events use colon names and expose request context in `event.detail.ctx`.
-The shared required/type/size validator cancels `htmx:config:request` with
-`preventDefault()` before transport or busy UI. Batch confirmation cancels the
-original event before a fresh submit. Hosts may cancel config/before-request
-events without stopping propagation; hosts own any retry via a fresh submit or
-`htmx.ajax` call, which revalidates current files. Never replay a saved context.
+HTMX 4 uses colon event names and `event.detail.ctx` for request context.
+Shared native/HTMX required/type/size validation calls `preventDefault()` on
+`htmx:config:request` before transport or busy UI. Batch confirmation cancels
+before resubmission. Hosts may cancel config/before-request events without
+stopping propagation. Retry via fresh submit or `htmx.ajax` revalidates current
+files; never replay saved context.
 
 The backend companions `read_upload_bounded(...)` and `read_uploads_bounded(...)`
 read `UploadFile` objects in chunks and enforce per-file, aggregate, and file-count
@@ -628,7 +628,7 @@ factory_template_dirs()
 
 | app-factory | basecoat-css | Notes |
 |-------------|---------------|-------|
-| **v0.7.10** | **1.0.2** | Prepared patch: shared native/HTMX 4 upload validation, cancellable batch confirmation, and cancellation-safe busy UI. |
+| **v0.7.10** | **1.0.2** | Prepared patch: native/HTMX 4 upload cancellation; see upload contract above. |
 | **v0.7.9** | **1.0.2** | pinned Lism 1.0.1 layout-only CSS; shared views and catalog adopt adaptive layouts. Basecoat components, arbitrary Tailwind utilities, and legacy `.app-*` remain compatible. |
 | **v0.7.8** | **1.0.2** | `verify_cdn_asset` rejects a version or kind that differs from the approved pin even when the URL matches. Same companions as v0.7.7. |
 | **v0.7.7** | **1.0.2** | Chrome contract in files (`contract/paths.toml`, `contract/http.toml`, templates). FastAPI is one binding. Same companions as v0.7.6. Prefer v0.7.8. |
