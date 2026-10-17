@@ -1,12 +1,7 @@
 # Multi-user platform BOM example
 
-Reference FastAPI hosts pinned to the immutable multi-user compatibility BOM:
-
-| Package | Tag |
-|---------|-----|
-| app-factory | `v0.7.9` (editable path while developing this repo) |
-| my-auth | `v0.5.7` |
-| my-usermanager | `v0.6.10` |
+Reference FastAPI hosts use the multi-user compatibility BOM.
+The factory source is a local editable path for development only.
 
 Machine-readable pins: [`bom/multi_user.toml`](../../bom/multi_user.toml).
 Human matrix / upgrade order / migration: [`COMPAT.md`](../../COMPAT.md).
@@ -26,16 +21,13 @@ This generation uses my-auth packaged ceremony shells (no host
 `my_auth_overrides`). SQLite hosts call `SQLiteAuthDatabase.initialize()` only —
 do not follow it with `create_invitation_tables` or a dummy
 `SQLiteEnrollmentCapabilityStore(db)` construction. Enrollment DDL
-(`passkey_enrollment_capabilities`) is stamped by my-usermanager v0.6.7
-`initialize()` via my-auth v0.5.6 `ensure_sqlite_schema`, including already-current schemas.
-
-Chrome generation v0.6.11 / v0.4.8 / v0.5.7 had no composer — bump
-app-factory to v0.7.7 (and UM to v0.6.7 if still on v0.5.7).
+(`passkey_enrollment_capabilities`) is stamped by `initialize()` via
+my-auth `ensure_sqlite_schema`, including already-current schemas.
 
 ## Why `override-dependencies`?
 
-`my-auth` and `my-usermanager` each declare nested `tool.uv.sources` for older
-app-factory tags (both Lism adapters nest app-factory v0.7.9). Without a host override, `uv lock` fails with conflicting
+`my-auth` and `my-usermanager` both nest app-factory v0.7.9.
+Without a host override, `uv lock` fails with conflicting
 URLs. This example (and production hosts) force one app-factory source.
 Do **not** override my-auth: UM v0.6.10 nests my-auth@v0.5.7.
 
@@ -81,20 +73,5 @@ and checks conflict / idempotency / fail-closed auth.
 
 Rooted host serves the same surfaces under `/portal/…`.
 
-## Production pin recipe
-
-```toml
-dependencies = [
-  "app-factory[platform]",
-  "my-auth[fastapi-htmx]",
-  "my-usermanager[fastapi-htmx,myauth]",
-]
-
-[tool.uv]
-override-dependencies = ["app-factory[platform]"]
-
-[tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.7.9" }
-my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.5.7" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.6.10" }
-```
+Production hosts use the immutable Git sources and tags from the BOM,
+with the source recipe in [COMPAT.md](../../COMPAT.md#host-rule).

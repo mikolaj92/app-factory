@@ -8,7 +8,7 @@ files.
 The goal is one place to ship same-origin chrome so product apps do **not**
 re-implement Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.7.9` (bundled Lism layout primitives alongside Basecoat and Tailwind; multi-user BOM is v0.7.9 / my-auth v0.5.7 / my-usermanager v0.6.10)
+**Tag:** `v0.7.9`. Multi-user companion pins: [`bom/multi_user.toml`](bom/multi_user.toml).
 
 ---
 
@@ -623,15 +623,6 @@ factory_template_dirs()
 |-------------|---------------|-------|
 | **v0.7.9** | **1.0.2** | Current: pinned Lism 1.0.1 layout-only CSS; shared views and catalog adopt adaptive layouts. Basecoat components, arbitrary Tailwind utilities, and legacy `.app-*` remain compatible. |
 | **v0.7.8** | **1.0.2** | `verify_cdn_asset` rejects a version or kind that differs from the approved pin even when the URL matches. Same companions as v0.7.7. |
-| **v0.7.7** | **1.0.2** | Chrome contract in files (`contract/paths.toml`, `contract/http.toml`, templates). FastAPI is one binding. Same companions as v0.7.6. Prefer v0.7.8. |
-| **v0.7.6** | **1.0.2** | Same-origin `/favicon.ico` plus `login_redirect` (`?next=` and `HX-Redirect`). Same companions as v0.7.5. Prefer v0.7.8. |
-| **v0.7.5** | **1.0.2** | `assert_public_origin_csrf` probes public Origin vs a different backend HTTP base URL. Same companions as v0.7.4. Prefer v0.7.8. |
-| **v0.7.4** | **1.0.2** | `identity_authenticated_shell` loads `usermanager-ui.css` when `static_url_path` is set. Prefer v0.7.8. |
-| **v0.7.3** | **1.0.2** | Companion my-usermanager `v0.6.7` (`install_local_identity`, durable OIDC flows, unlink-aware account UI). Chrome omitted `usermanager-ui.css`. Prefer v0.7.8. |
-| **v0.7.2** | **1.0.2** | Invite default `/admin/users`; `install_manifest` exported; preferred BOM tags exist in git. Same Tailwind `@layer` contract as v0.7.1. Prefer v0.7.8. |
-| **v0.7.1** | **1.0.2** | Tailwind virtual imports stay in `@layer`; same `create_product_app` / `RunPort` / `template_response` contract as v0.7.0. Prefer v0.7.8. |
-| **v0.7.0** | **1.0.2** | Same-origin Tailwind browser engine instead of a CSS safelist. Prefer v0.7.8. |
-| **v0.6.23** | **1.0.2** | Thin product host + opt-in run/intake views. Same my-auth v0.5.4 / my-usermanager v0.6.5. Prefer v0.7.8. |
 | **v0.6.22** | **1.0.2** | Request-safe app framework: request-local Jinja context, Origin CSRF, bounded uploads. |
 | **v0.6.16** | **1.0.2** | Additive on v0.6.11: `install_identity_adapters` + focused passkey/usermanager/session helpers; BOM row my-auth v0.4.8 / my-usermanager v0.5.31. No chrome change. |
 | **v0.6.11** | **1.0.2** | Shared browser mechanisms (HTMX redirect, session CSRF, toast boot, pagination). Multi-user BOM stayed on v0.6.10 until matching auth tags; chrome generation with my-auth v0.4.8 / my-usermanager v0.5.7 had no composer. |
