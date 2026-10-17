@@ -112,19 +112,11 @@ Apply one generation at a time, in this order, until the preferred BOM row (`v0.
 3. **my-usermanager** — account lifecycle + packaged invite admin + invitation DDL in `SQLiteAuthDatabase.initialize()` (`v0.6.10`); nested sources my-auth v0.5.7 (do not override my-auth); `initialize()` also stamps enrollment DDL on current auth schemas; default hosts call `install_local_identity`; set `base_template` to `app_factory/identity_authenticated_shell.html` (the composer does this).
 4. **Host** — pin all three tags from the same BOM row, add `override-dependencies = ["app-factory[platform]"]` only (do not override my-auth), migrate templates (below), replace installer forks with `install_identity_adapters`, delete host-owned recovery/enrollment/invite chrome, drop `my_auth_overrides`, host `create_invitation_tables`, dummy `SQLiteEnrollmentCapabilityStore(db)` after `initialize()`, and the second host `ensure_sqlite_schema(conn)` call.
 
-Rollback is the reverse order. Never run production with packages from different matrix rows.
+Never run production with packages from different matrix rows.
+Before migrating older auth, verify database backup restoration in an isolated sandbox.
+Reverting pins does not revert data migrations; restore compatible data as well.
 
 ### Migration from host installer forks (`install_identity_adapters`)
-
-Inventory of the five named hosts (what was copied vs what stays):
-
-| Host | Structure | Host-owned after migration |
-|------|-----------|----------------------------|
-| **anonimizator3000** | `SQLiteAuthDatabase` + `SessionMiddleware` + default paths | Persistence proxies, first-user admin, invite/RBAC catalog, product menu |
-| **Argus** (prefix `/argus`) | Reverse-proxy `PlatformPaths.root` | Product queue menu, RBAC mapping onto `PlatformUser.is_admin` |
-| **MSDS / emitype / rnkstr** | Same FastAPI + Jinja + HTMX pattern as the BOM hosts | Domain routes, role catalogs, store bindings |
-| **BOM cookie host** (`examples/multi_user_bom/app.py`) | In-memory stores + raw session cookie | Demo store + cookie get/set |
-| **BOM portal host** (`examples/multi_user_bom/rooted_app.py`) | Signed `SessionMiddleware` + `/portal` root | Session principal + `SessionCsrfProtection` |
 
 The chrome generation **v0.6.11 / v0.4.8 / v0.5.7** is not enough: those tags ship shells and nested pins but not this composer. Adopt **v0.7.9 / v0.5.7 / v0.6.10**.
 
@@ -171,14 +163,13 @@ Idempotent for the same chrome + adapter selection. A second call with a differe
 
 ### Migration from host-owned recovery / enrollment templates
 
-1. Delete host copies of activation, recovery, enroll, and “set up passkey” full-page templates.
-2. Point my-auth capability/credential pages at the shared shells. my-auth v0.4.5 packaged adapters already extend `identity_public_shell` / `identity_authenticated_shell`; delete host `my_auth_overrides` for those two templates. Login/register stay on `shell.html`.
-3. Set `UserManagerUiConfig.base_template = "app_factory/identity_authenticated_shell.html"`.
-4. Route invite delivery through my-usermanager `InvitationService` + my-auth enrollment capabilities; links target `platform_paths.activation` / `recovery` with the opaque token only.
-5. Delete host `invite.html`. Implement `invite_user`, `reissue_invitation`, and `revoke_invitation` hooks so the packaged admin users UI owns issuance / reissue / revoke (activation URL is shown once after invite/reissue).
-6. After `SQLiteAuthDatabase.initialize()`, do not call host `create_invitation_tables` — invitation DDL (`um_invitations`) is stamped in the same owned transaction (my-usermanager v0.5.2+). Do not construct a dummy `SQLiteEnrollmentCapabilityStore(db)` after `initialize()`, and do not call `ensure_sqlite_schema` a second time — enrollment DDL (`passkey_enrollment_capabilities`) is stamped by my-usermanager v0.5.6 `initialize()` via my-auth v0.4.5 `ensure_sqlite_schema` even when the auth schema is already current. Drop `my-auth` from `override-dependencies` if present (UM v0.5.6 nests v0.4.5).
-7. Enable identity nav with `enable_account`, `enable_credentials`, `enable_admin_users`, `enable_invite` instead of hand-built sidebar entries.
-8. Keep product authorization/role policy in the host; do not fork adapter ceremony markup.
+The composer selects shared shells and paths; hosts do not copy lifecycle markup.
+Login/register use `shell.html`; capability and credential pages use identity shells.
+Invitation delivery uses my-usermanager `InvitationService` and my-auth enrollment capabilities.
+Links target `platform_paths.activation` / `recovery` with the opaque token only.
+Hosts supply `invite_user`, `reissue_invitation`, and `revoke_invitation` policy hooks.
+The packaged admin UI shows the activation URL once after invite/reissue.
+Enable identity navigation through `PlatformConfig`, not duplicate sidebar entries.
 
 ### Chrome placement (hosts must not fork)
 
