@@ -361,11 +361,8 @@ def test_shared_upload_controller_allows_optional_empty_input():
         .render()
     )
     assert "if (!files.length && input.required)" in source
-    assert "submit.disabled = input.required && files.length === 0" in source
-    assert (
-        "submit.disabled = input.required && !(input.files && input.files.length)"
-        in source
-    )
+    assert "submit.disabled = busy || fields().some" in source
+    assert "return input?.required && !input.files?.length" in source
 
 
 def test_browser_htmx_swaps_errors_then_receipt_with_optional_upload():
