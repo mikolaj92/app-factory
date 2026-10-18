@@ -16,6 +16,7 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / ".runtime" / "ms-playwright"))
 PROJECTS = (ROOT, ROOT / "examples" / "multi_user_bom")
 PROJECT_TIMEOUT = 240  # Both suites must fit within Lokay's 600-second budget.
 
