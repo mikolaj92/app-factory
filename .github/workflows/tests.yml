@@ -20,6 +20,8 @@ jobs:
       UV_NO_ENV_FILE: "1"
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
@@ -31,7 +33,7 @@ jobs:
         run: |
           set -o pipefail
           root="$PWD"
-          export PLAYWRIGHT_BROWSERS_PATH="$root/.runtime/ms-playwright"
+          export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH-$root/.runtime/ms-playwright}"
           exec > >(tee "$RUNNER_TEMP/project-checks.log") 2>&1
           failed=0
           check() {
@@ -46,11 +48,16 @@ jobs:
           done
           for package in "${packages[@]}"; do
             cd "$package"
+            export UV_PROJECT_ENVIRONMENT="$package/.venv"
             printf 'LOKAY_TEST_CWD=%s\n' "$PWD"
             check lock uv lock --check
             check sync uv sync --locked --all-extras
             if [[ "$status" != 0 ]]; then
-              printf 'PROJECT_CHECK cwd=%s stages=browser,pytest,ruff,http,build status=not-run reason=sync-failed\n' "$PWD"
+              stages=(ruff pytest)
+              if [[ "$package" == "$root" ]]; then stages+=(browser http build); fi
+              for stage in "${stages[@]}"; do
+                printf 'PROJECT_CHECK cwd=%s stage=%s status=not-run reason=sync-failed\n' "$PWD" "$stage"
+              done
               continue
             fi
             if [[ "$package" == "$root" ]]; then
@@ -58,8 +65,8 @@ jobs:
               if [[ "$(uname -s)" == Linux ]]; then browser_args=(--with-deps chromium); fi
               check browser uv run --no-sync playwright install "${browser_args[@]}"
             fi
-            check pytest uv run --no-sync pytest
             check ruff uv run --no-sync ruff check .
+            check pytest uv run --no-sync pytest
             if [[ "$package" == "$root" ]]; then
               check http uv run --no-sync python scripts/refresh_platform_assets.py --check-http-releases
               check build uv build

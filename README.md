@@ -630,7 +630,7 @@ after validation.
 ```bash
 uv sync --locked --all-extras
 PLAYWRIGHT_BROWSERS_PATH="$PWD/.runtime/ms-playwright" uv run --no-sync playwright install chromium
-uv run pytest
+env -u PLAYWRIGHT_BROWSERS_PATH uv run pytest
 
 # Local chrome storybook (LAN-visible; iterate shell/CSS/JS here)
 uv run uvicorn example.app:app --host 0.0.0.0 --port 8765 --app-dir .
@@ -656,23 +656,9 @@ Use it as the default place to visual-check chrome changes before tagging.
 
 The `examples/multi_user_bom/` package is the pinned multi-user BOM consumer
 (app-factory + my-auth + my-usermanager). Prefer it when checking identity
-lifecycle composition and package resolution (`uv lock` + pytest there).
-Installation is not test execution. For each package, run:
+lifecycle composition and package resolution.
 
-```bash
-# Repository root: full suite, including browsers, and all public extras
-uv lock --check
-uv sync --locked --all-extras
-uv run --no-sync pytest
-uv run --no-sync ruff check .
-uv run --no-sync python scripts/refresh_platform_assets.py --check-http-releases
-uv build
-
-# Separate project: use its own cwd, environment, lock and full suite
-(cd examples/multi_user_bom && uv lock --check && uv sync --locked --all-extras && uv run --no-sync pytest && uv run --no-sync ruff check .)
-```
-
-Pytest loads `scripts.run_projects` to default to checkout-local `.runtime/ms-playwright`.
+`tests/conftest.py` defaults pytest to checkout-local `.runtime/ms-playwright`.
 An explicit `PLAYWRIGHT_BROWSERS_PATH` overrides that absolute path. Prepare Chromium
 with the command above; on Linux add `--with-deps` before `chromium`.
 Collection never downloads browsers. Missing or broken Chromium fails tests;
@@ -684,16 +670,13 @@ with `RUNNER_TEMP` pointing to a writable log directory.
 For each package it prints `LOKAY_TEST_CWD`, checks the lock, synchronizes all
 extras with `--locked`, then runs full pytest and Ruff without another sync.
 A failed sync marks dependent checks as not run; later packages still run.
-Root checks also prepare Chromium, check HTTP releases and build the package.
+Root checks also explicitly prepare Chromium, check HTTP releases and build the package.
 Every stage reports its status, and any failure makes the aggregate fail.
 CI runs Python 3.12 and 3.14 and uploads `project-checks.log`, including failures.
 
-After setup, `uv run --locked python scripts/run_projects.py` remains a separate
-full-suite runner for the root and BOM consumer. It isolates project environments,
-ignores inherited uv selectors and pytest options, and disables env-file loading.
-It continues after failures and enforces a 240-second timeout per suite.
-`LOKAY_TEST_EXIT_CODE` and `PROJECT_TEST_RESULT` report each invocation;
-these markers do not replace the pytest summaries.
+The workflow respects an explicit `PLAYWRIGHT_BROWSERS_PATH` during preparation
+and testing. Without it, both stages use the checkout's absolute
+`.runtime/ms-playwright` path.
 
 ---
 
