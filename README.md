@@ -658,7 +658,7 @@ The `examples/multi_user_bom/` package is the pinned multi-user BOM consumer
 (app-factory + my-auth + my-usermanager). Prefer it when checking identity
 lifecycle composition and package resolution.
 
-`tests/conftest.py` defaults pytest to checkout-local `.runtime/ms-playwright`.
+Pytest loads `scripts.run_projects` to default to checkout-local `.runtime/ms-playwright`.
 An explicit `PLAYWRIGHT_BROWSERS_PATH` overrides that absolute path. Prepare Chromium
 with the command above; on Linux add `--with-deps` before `chromium`.
 Collection never downloads browsers. Missing or broken Chromium fails tests;
