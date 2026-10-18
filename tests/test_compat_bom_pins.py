@@ -40,7 +40,7 @@ def _section(text: str, heading: str) -> str:
 def test_compat_preferred_row_matches_bom_pins() -> None:
     pins = _bom_pins()
     app_factory, auth, um = _preferred_compat_row()
-    assert app_factory == pins["app-factory"] == "v0.7.9"
+    assert app_factory == pins["app-factory"] == "v0.7.10"
     assert auth == pins["my-auth"] == "v0.5.7"
     assert um == pins["my-usermanager"] == "v0.6.10"
 
@@ -89,16 +89,6 @@ def test_preferred_bom_tags_exist() -> None:
     bom = toml.loads(BOM_PATH.read_text(encoding="utf-8"))
     project = toml.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     assert pins["app-factory"] == f"v{project['project']['version']}"
-    listed = subprocess.run(
-        ["git", "tag", "--list", pins["app-factory"]],
-        cwd=REPO_ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.split()
-    # The releasing commit may not have the tag yet; companions must resolve.
-    if listed:
-        assert pins["app-factory"] in listed
     for name in ("my-auth", "my-usermanager"):
         remote = subprocess.run(
             ["git", "ls-remote", "--tags", bom["sources"][name], pins[name]],
