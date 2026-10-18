@@ -2,6 +2,7 @@
 (() => {
   if (window.__appFileUploadBooted) return;
   window.__appFileUploadBooted = true;
+  const forms = new WeakMap();
 
   const formatBytes = (bytes) => {
     if (!Number.isFinite(bytes)) return '';
@@ -24,34 +25,108 @@
     (text, [key, value]) => text.replaceAll(`{${key}}`, String(value)), String(template || '')
   );
 
+  const initForm = (form) => {
+    if (forms.has(form)) return forms.get(form);
+    const fields = () => Array.from(form.querySelectorAll('[data-app-file-upload-field]'))
+      .filter((field) => field.closest('form') === form);
+    const status = () => form.querySelector('[data-app-file-status]');
+    const confirmed = () => form.querySelector('[data-app-file-confirmed-count]');
+    const setStatus = (text, state = '') => {
+      const element = status();
+      if (!element) return;
+      element.textContent = text || '';
+      if (state) element.dataset.state = state; else delete element.dataset.state;
+    };
+    const setBusy = (busy) => {
+      const submit = form.querySelector('[data-app-file-submit]');
+      if (submit) {
+        submit.disabled = busy || fields().some((field) => {
+          const input = field.querySelector('[data-app-file-input]');
+          return input?.required && !input.files?.length;
+        });
+        if (busy) submit.setAttribute('aria-busy', 'true'); else submit.removeAttribute('aria-busy');
+      }
+      const progress = form.querySelector('[data-app-file-progress]');
+      const bar = form.querySelector('[data-app-file-progress-bar]');
+      const label = form.querySelector('[data-app-file-progress-label]');
+      if (progress) progress.hidden = !busy;
+      if (bar) { if (busy) bar.removeAttribute('value'); else bar.value = 0; }
+      if (label) label.textContent = busy ? '' : '0%';
+    };
+    const validate = () => {
+      const reject = (error) => { setStatus(error, 'error'); return false; };
+      for (const field of fields()) {
+        const input = field.querySelector('[data-app-file-input]');
+        if (!input) continue;
+        const files = Array.from(input.files || []);
+        if (!files.length && input.required) return reject(field.dataset.labelEmpty);
+        const max = Number.parseInt(field.dataset.maxBytes || '', 10);
+        const oversized = Number.isFinite(max) ? files.filter((file) => file.size > max) : [];
+        if (oversized.length) return reject(message(field.dataset.labelTooLarge, { file: oversized.map((file) => file.name).join(', ') }));
+        const wrong = files.filter((file) => !accepts(file, field.dataset.accept));
+        if (wrong.length) return reject(message(field.dataset.labelWrongType, { file: wrong.map((file) => file.name).join(', ') }));
+      }
+      setStatus('');
+      return true;
+    };
+    const confirmBatch = () => {
+      const count = fields().reduce((total, field) => total + (field.querySelector('[data-app-file-input]')?.files?.length || 0), 0);
+      const marker = confirmed();
+      if (count <= 1 || !marker || marker.value === String(count)) return true;
+      const field = fields().find((field) => field.dataset.labelConfirm);
+      if (!window.confirm(message(field?.dataset.labelConfirm, { count }))) return false;
+      marker.value = String(count);
+      return true;
+    };
+    const ownsRequest = (event) => {
+      const ctx = event.detail?.ctx;
+      const source = ctx?.sourceElement;
+      return ctx?.request?.form === form && (source === form ||
+        (source?.form === form && source.matches('button[type="submit"], button:not([type]), input[type="submit"], input[type="image"]')));
+    };
+    const rejectedSubmits = new WeakSet();
+    form.addEventListener('submit', (event) => {
+      if (event.target !== form) return;
+      if (!validate() || (!event.defaultPrevented && !confirmBatch())) {
+        rejectedSubmits.add(event);
+        event.preventDefault();
+      }
+    }, true);
+    form.addEventListener('htmx:config:request', (event) => {
+      if (!ownsRequest(event)) return;
+      if (!validate() || rejectedSubmits.has(event.detail.ctx.sourceEvent) || (!event.defaultPrevented && !confirmBatch())) event.preventDefault();
+      if (!event.defaultPrevented && confirmed()) event.detail.ctx.request.body.set(confirmed().name, confirmed().value);
+    });
+    form.addEventListener('htmx:before:request', (event) => {
+      if (!ownsRequest(event)) return;
+      queueMicrotask(() => { if (!event.defaultPrevented) setBusy(true); });
+    });
+    for (const name of ['htmx:after:request', 'htmx:finally:request']) {
+      form.addEventListener(name, (event) => { if (ownsRequest(event)) setBusy(false); });
+    }
+    const changed = () => {
+      if (confirmed()) confirmed().value = '';
+      setStatus('');
+      setBusy(false);
+    };
+    forms.set(form, changed);
+    return changed;
+  };
+
   const init = (field) => {
     if (!field || field.dataset.appFileUploadReady === 'true') return;
-    field.dataset.appFileUploadReady = 'true';
     const form = field.closest('form');
-    if (!form) return;
     const input = field.querySelector('[data-app-file-input]');
+    if (!form || !input) return;
+    field.dataset.appFileUploadReady = 'true';
+    const changed = initForm(form);
     const dropzone = field.querySelector('[data-app-file-dropzone]');
     const list = field.querySelector('[data-app-file-list]');
-    const status = form.querySelector('[data-app-file-status]');
-    const submit = form.querySelector('[data-app-file-submit]');
-    const confirmed = form.querySelector('[data-app-file-confirmed-count]');
-    const progress = form.querySelector('[data-app-file-progress]');
-    const bar = form.querySelector('[data-app-file-progress-bar]');
-    const progressLabel = form.querySelector('[data-app-file-progress-label]');
-    if (!input) return;
-
-    const setStatus = (text, state = '') => {
-      if (!status) return;
-      status.textContent = text || '';
-      if (state) status.dataset.state = state; else delete status.dataset.state;
-    };
-
     const setFiles = (files) => {
       const transfer = new DataTransfer();
       files.forEach((file) => transfer.items.add(file));
       input.files = transfer.files;
     };
-
     const render = () => {
       const files = Array.from(input.files || []);
       if (list) {
@@ -72,64 +147,24 @@
           return item;
         }));
       }
-      if (submit) submit.disabled = input.required && files.length === 0;
-      if (confirmed) confirmed.value = '';
-      setStatus('');
+      changed();
     };
-
     input.addEventListener('change', render);
     if (dropzone) {
       dropzone.addEventListener('drop', (event) => {
         if (!event.dataTransfer) return;
+        event.preventDefault();
         setFiles(Array.from(event.dataTransfer.files));
         render();
       });
     }
-
-    const rejectedSubmits = new WeakSet();
-    const validate = (event) => {
-      const sourceEvent = event.detail?.ctx?.sourceEvent || event;
-      if (rejectedSubmits.has(sourceEvent)) { event.preventDefault(); return; }
-      const reject = () => { rejectedSubmits.add(sourceEvent); event.preventDefault(); };
-      const files = Array.from(input.files || []);
-      if (!files.length && input.required) { reject(); setStatus(field.dataset.labelEmpty, 'error'); return; }
-      const max = Number.parseInt(field.dataset.maxBytes || '', 10);
-      const oversized = Number.isFinite(max) ? files.filter((file) => file.size > max) : [];
-      if (oversized.length) { reject(); setStatus(message(field.dataset.labelTooLarge, { file: oversized.map((f) => f.name).join(', ') }), 'error'); return; }
-      const wrong = files.filter((file) => !accepts(file, field.dataset.accept));
-      if (wrong.length) { reject(); setStatus(message(field.dataset.labelWrongType, { file: wrong.map((f) => f.name).join(', ') }), 'error'); return; }
-      if (files.length > 1 && confirmed && confirmed.value !== String(files.length)) {
-        reject();
-        if (window.confirm(message(field.dataset.labelConfirm, { count: files.length }))) {
-          confirmed.value = String(files.length);
-          queueMicrotask(() => form.requestSubmit());
-        }
-      }
-    };
-    form.addEventListener('submit', validate);
-    form.addEventListener('htmx:config:request', validate);
-
-    form.addEventListener('htmx:before:request', (event) => {
-      queueMicrotask(() => {
-        if (event.defaultPrevented) return;
-        if (submit) { submit.disabled = true; submit.setAttribute('aria-busy', 'true'); }
-        if (progress) progress.hidden = false;
-        if (bar) bar.removeAttribute('value');
-        if (progressLabel) progressLabel.textContent = '';
-      });
-    });
-    const resetBusy = () => {
-      if (submit) { submit.removeAttribute('aria-busy'); submit.disabled = input.required && !(input.files && input.files.length); }
-      if (progress) progress.hidden = true;
-      if (bar) bar.value = 0;
-      if (progressLabel) progressLabel.textContent = '0%';
-    };
-    form.addEventListener('htmx:after:request', resetBusy);
-    form.addEventListener('htmx:finally:request', resetBusy);
     render();
   };
 
-  const initAll = (root = document) => root.querySelectorAll?.('[data-app-file-upload-field]').forEach(init);
+  const initAll = (root = document) => {
+    if (root.matches?.('[data-app-file-upload-field]')) init(root);
+    root.querySelectorAll?.('[data-app-file-upload-field]').forEach(init);
+  };
   document.addEventListener('DOMContentLoaded', () => initAll());
   document.addEventListener('htmx:after:swap', (event) => {
     const ctx = event.detail && event.detail.ctx;
@@ -138,5 +173,3 @@
   if (document.readyState !== 'loading') initAll();
 })();
 </script>
-
-

@@ -8,7 +8,7 @@ files.
 The goal is one place to ship same-origin chrome so product apps do **not**
 re-implement Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.7.10` (unpublished). Publish after CI and POST-count acceptance. Pins: `COMPAT.md`.
+**Tag:** `v0.7.10` (unpublished). Compatibility and release status: `COMPAT.md`.
 
 ---
 
@@ -157,11 +157,13 @@ form remains the no-JS fallback. Server-side format and security validation
 remain consumer-owned. HTMX 4 uses Fetch, so byte-level upload progress is not
 available from the transport.
 
-HTMX 4 request context is `event.detail.ctx`. Shared required/type/size validation
-cancels `htmx:config:request` with `preventDefault()` before transport or busy UI.
-Batch confirmation cancels before resubmission. Hosts may cancel
-`htmx:config:request` / `htmx:before:request` without stopping propagation;
-retry via fresh submit or `htmx.ajax` revalidates current files, not saved context.
+HTMX 4 exposes `sourceElement`, `sourceEvent`, and `request.form` in `event.detail.ctx`.
+One controller per form validates required/type/size on submit and
+`htmx:config:request`; rejection calls `preventDefault()` before transport or busy UI.
+Batch approval updates `confirmed_count` without replay; file changes clear it.
+Hosts may cancel config/before-request without stopping propagation, then replay
+via fresh submit or `htmx.ajax` with the form as source. Replay revalidates current
+files. Unrelated child requests are excluded; `htmx:finally:request` resets busy UI after cancellation or failure.
 
 The backend companions `read_upload_bounded(...)` and `read_uploads_bounded(...)`
 read `UploadFile` objects in chunks and enforce per-file, aggregate, and file-count
@@ -625,31 +627,7 @@ factory_template_dirs()
 
 ## Versioning
 
-| app-factory | basecoat-css | Notes |
-|-------------|---------------|-------|
-| **v0.7.10** | **1.0.2** | Prepared patch: native/HTMX 4 upload cancellation; see upload contract above. |
-| **v0.7.9** | **1.0.2** | pinned Lism 1.0.1 layout-only CSS; shared views and catalog adopt adaptive layouts. Basecoat components, arbitrary Tailwind utilities, and legacy `.app-*` remain compatible. |
-| **v0.7.8** | **1.0.2** | `verify_cdn_asset` rejects a version or kind that differs from the approved pin even when the URL matches. Same companions as v0.7.7. |
-| **v0.7.7** | **1.0.2** | Chrome contract in files (`contract/paths.toml`, `contract/http.toml`, templates). FastAPI is one binding. Same companions as v0.7.6. Prefer v0.7.8. |
-| **v0.7.6** | **1.0.2** | Same-origin `/favicon.ico` plus `login_redirect` (`?next=` and `HX-Redirect`). Same companions as v0.7.5. Prefer v0.7.8. |
-| **v0.7.5** | **1.0.2** | `assert_public_origin_csrf` probes public Origin vs a different backend HTTP base URL. Same companions as v0.7.4. Prefer v0.7.8. |
-| **v0.7.4** | **1.0.2** | `identity_authenticated_shell` loads `usermanager-ui.css` when `static_url_path` is set. Prefer v0.7.8. |
-| **v0.7.3** | **1.0.2** | Companion my-usermanager `v0.6.7` (`install_local_identity`, durable OIDC flows, unlink-aware account UI). Chrome omitted `usermanager-ui.css`. Prefer v0.7.8. |
-| **v0.7.2** | **1.0.2** | Invite default `/admin/users`; `install_manifest` exported; preferred BOM tags exist in git. Same Tailwind `@layer` contract as v0.7.1. Prefer v0.7.8. |
-| **v0.7.1** | **1.0.2** | Tailwind virtual imports stay in `@layer`; same `create_product_app` / `RunPort` / `template_response` contract as v0.7.0. Prefer v0.7.8. |
-| **v0.7.0** | **1.0.2** | Same-origin Tailwind browser engine instead of a CSS safelist. Prefer v0.7.8. |
-| **v0.6.23** | **1.0.2** | Thin product host + opt-in run/intake views. Same my-auth v0.5.4 / my-usermanager v0.6.5. Prefer v0.7.8. |
-| **v0.6.22** | **1.0.2** | Request-safe app framework: request-local Jinja context, Origin CSRF, bounded uploads. |
-| **v0.6.16** | **1.0.2** | Additive on v0.6.11: `install_identity_adapters` + focused passkey/usermanager/session helpers; BOM row my-auth v0.4.8 / my-usermanager v0.5.31. No chrome change. |
-| **v0.6.11** | **1.0.2** | Shared browser mechanisms (HTMX redirect, session CSRF, toast boot, pagination). Multi-user BOM stayed on v0.6.10 until matching auth tags; chrome generation with my-auth v0.4.8 / my-usermanager v0.5.7 had no composer. |
-| **v0.6.7** | **1.0.2** | Additive on v0.6.6: BOM row my-auth v0.4.5 / my-usermanager v0.5.6 (nested chrome v0.6.6; initialize() stamps enrollment on current schemas). No chrome change. |
-| **v0.6.6** | **1.0.2** | Additive on v0.6.5: slim TAP `client_shell` (no HTMX/Alpine) + `PlatformPaths.invite` default `/admin/users`; same my-auth v0.4.2 / my-usermanager v0.5.4 |
-| **v0.6.5** | **1.0.2** | Multi-user platform BOM + enrollment capability DDL in ensure_sqlite_schema (my-auth v0.4.2) + nested my-auth pin (my-usermanager v0.5.4); hosts override app-factory only |
-| **v0.6.4** | **1.0.2** | Multi-user platform BOM + packaged ceremony shells (my-auth v0.4.1) + invitation DDL in SQLiteAuthDatabase (my-usermanager v0.5.2) |
-| **v0.6.3** | **1.0.2** | Multi-user platform BOM + packaged invite admin (my-usermanager v0.5.3, my-auth v0.4.0) |
-| **v0.6.2** | **1.0.2** | Multi-user platform BOM + identity lifecycle shells/paths |
-| v0.5.39 | 1.0.2 | Full Basecoat + HTMX + Alpine + app shell + Material Symbols Outlined v364; chrome is committed dist |
-| v0.5.37 | 1.0.2 | Basecoat-first contract docs + CSS keep-list |
+`COMPAT.md` owns package generations and companion pins; `MANIFEST.json` owns asset versions.
 
 Chrome is committed dist in `app_factory/assets/`. There is no Node toolchain
 in this repo: no `package.json`, no lockfile, no compile step for hosts.
@@ -697,10 +675,10 @@ Installation is not test execution. Validate the two projects separately:
 # Repository root: full suite, including browsers, and all public extras
 uv lock --check
 uv sync --frozen --all-extras
-uv run --locked playwright install --with-deps chromium
+uv run --locked --all-extras playwright install --with-deps chromium
 uv run --locked --all-extras pytest -q
-uv run --locked ruff check .
-uv run --locked python scripts/refresh_platform_assets.py --check-http-releases
+uv run --locked --all-extras ruff check .
+uv run --locked --all-extras python scripts/refresh_platform_assets.py --check-http-releases
 uv build
 
 # Separate project: use its own cwd, environment, lock and full suite
@@ -716,9 +694,7 @@ failure status through the log pipeline. CI uploads both pytest summaries
 as `project-tests-<SHA>-python-<version>`, including on failure.
 The Python 3.12 and 3.14 matrix runs both projects independently.
 Separate root and BOM logs record each cwd, argv and exit status.
-Uploading a log does not prove either suite passed or that Lokay registered
-both projects. The same runner remains available locally; omit `--project`
-to execute both suites even if the first fails.
+The local runner executes both suites even if the first fails.
 It overrides inherited `UV_PROJECT_ENVIRONMENT` per project
 and removes inherited `UV_WORKING_DIR` and `UV_PROJECT`, including for nested
 `uv` commands. It removes `UV_NO_PROJECT` so project discovery cannot be bypassed.
@@ -742,13 +718,6 @@ and exit code. A null PID means launch failed; a PID alone does not prove
 that tests passed. These status lines do not replace pytest summaries. For checkout-local Chromium downloads, set
 `PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright"` during installation and execution;
 the downloaded browser directory is ignored by Git.
-
-For Lokay, the host owner must set the active app-factory test argv to
-`["uv", "run", "--locked", "python", "scripts/run_projects.py"]`.
-Adding this production runner does not change
-host configuration or prove gate acceptance. Root tests alone do not validate
-the BOM suite. Manual results, runner acceptance and remote CI for the final
-commit are three separate evidence requirements.
 
 Optional browser isolation (issue #9) skips unless Playwright is installed:
 
