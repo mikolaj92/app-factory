@@ -1,5 +1,3 @@
-"""Real-browser chrome isolation; prepare Chromium as described in README.md."""
-
 from __future__ import annotations
 
 import socket
