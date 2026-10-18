@@ -76,8 +76,8 @@ def test_example_pyproject_matches_bom_and_forces_single_source() -> None:
         "override_dependencies"
     ]
     readme = (EXAMPLE_ROOT / "README.md").read_text(encoding="utf-8")
-    for tag in bom["pins"].values():
-        assert tag in readme
+    assert "../../bom/multi_user.toml" in readme
+    assert "../../COMPAT.md" in readme
     assert not (EXAMPLE_ROOT / "templates" / "invite.html").exists()
     assert not (EXAMPLE_ROOT / "templates" / "my_auth_overrides").exists()
     host_python = "".join(

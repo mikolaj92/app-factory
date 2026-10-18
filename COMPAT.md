@@ -1,35 +1,32 @@
 # Platform BOM / compatibility matrix
 
-Single source of truth for host pins when using `app-factory[platform]`.
-
-Machine-readable multi-user BOM: [`bom/multi_user.toml`](bom/multi_user.toml).
-Reference host: [`examples/multi_user_bom/`](examples/multi_user_bom/).
+Machine-readable pins: [`bom/multi_user.toml`](bom/multi_user.toml); reference host: [`examples/multi_user_bom/`](examples/multi_user_bom/).
 
 | app-factory | my-auth | my-usermanager | Contract |
 |-------------|---------|----------------|----------|
 | **v0.7.9** | **v0.5.7** | **v0.6.10** | **Current**: Lism 1.0.1 layout-only CSS alongside Basecoat/Tailwind; shared views, passkey panels and account/admin forms adopt primitives. Adaptive card/field columns follow content width, not viewport breakpoints. |
 | **v0.7.9** | **v0.5.6** | **v0.6.7** | Initial factory release with legacy adapter layouts; still compatible, but prefer the Lism-adapter row above. |
 | **v0.7.8** | **v0.5.6** | **v0.6.7** | `verify_cdn_asset` rejects a version or kind that differs from the approved pin even when the URL matches. Same companions as v0.7.7 |
-| **v0.7.7** | **v0.5.6** | **v0.6.7** | Chrome contract in files (`contract/paths.toml`, `contract/http.toml`, templates). FastAPI is one binding. Same companions as v0.7.6. Prefer v0.7.8 |
-| **v0.7.6** | **v0.5.6** | **v0.6.7** | Same-origin `/favicon.ico` plus `login_redirect` (`?next=` and `HX-Redirect`). Same companions as v0.7.5. Prefer v0.7.8 |
-| **v0.7.5** | **v0.5.6** | **v0.6.7** | `assert_public_origin_csrf` probes public Origin against a different backend HTTP base URL (TLS terminator vs uvicorn). Same companions as v0.7.4. Prefer v0.7.8 |
-| **v0.7.4** | **v0.5.6** | **v0.6.7** | `identity_authenticated_shell` loads `usermanager-ui.css` when `static_url_path` is set. Prefer v0.7.8 |
-| **v0.7.3** | **v0.5.6** | **v0.6.7** | Companion my-usermanager ships `install_local_identity`, durable OIDC flow storage, and unlink-aware account controls. Chrome unchanged from v0.7.2 except it omitted `usermanager-ui.css`. Prefer v0.7.8 |
-| **v0.7.2** | **v0.5.6** | **v0.6.6** | Docs and public API match the request-safe chrome. Invite default is `/admin/users`; `install_manifest` is exported; preferred BOM tags exist in git. Same Tailwind `@layer` contract as v0.7.1. Prefer v0.7.8 |
-| **v0.7.1** | **v0.5.6** | **v0.6.6** | Wrap Tailwind virtual imports in `@layer` so Chromium does not request `/tailwindcss/theme` or `/tailwindcss/utilities`. Companion tags absorb Unreleased OP/RP work. Prefer v0.7.8 |
-| **v0.7.0** | **v0.5.4** | **v0.6.5** | Same-origin Tailwind browser engine instead of a CSS safelist; hosts may use any Tailwind class. Prefer v0.7.8 |
-| **v0.6.23** | **v0.5.4** | **v0.6.5** | Request-safe chrome plus thin `create_product_app`, canonical `RunPort` (`pending`/`label`), shared `template_response` (history restore is a full page), and opt-in intake/run HTML. Authentication has no first-account bootstrap or enrollment policy; hosts own registration exposure and initial grants. Prefer v0.7.8 |
-| **v0.6.22** | **v0.5.4** | **v0.6.5** | Request-safe app framework: identity composition, request-local Jinja context, Origin CSRF, bounded uploads. Prefer v0.7.8 |
+| **v0.7.7** | **v0.5.6** | **v0.6.7** | Chrome contract in files (`contract/paths.toml`, `contract/http.toml`, templates). FastAPI is one binding. Same companions as v0.7.6 |
+| **v0.7.6** | **v0.5.6** | **v0.6.7** | Same-origin `/favicon.ico` plus `login_redirect` (`?next=` and `HX-Redirect`). Same companions as v0.7.5 |
+| **v0.7.5** | **v0.5.6** | **v0.6.7** | `assert_public_origin_csrf` probes public Origin against a different backend HTTP base URL (TLS terminator vs uvicorn). Same companions as v0.7.4 |
+| **v0.7.4** | **v0.5.6** | **v0.6.7** | `identity_authenticated_shell` loads `usermanager-ui.css` when `static_url_path` is set |
+| **v0.7.3** | **v0.5.6** | **v0.6.7** | Companion my-usermanager ships `install_local_identity`, durable OIDC flow storage, and unlink-aware account controls. Chrome unchanged from v0.7.2 except it omitted `usermanager-ui.css` |
+| **v0.7.2** | **v0.5.6** | **v0.6.6** | Docs and public API match the request-safe chrome. Invite default is `/admin/users`; `install_manifest` is exported; preferred BOM tags exist in git. Same Tailwind `@layer` contract as v0.7.1 |
+| **v0.7.1** | **v0.5.6** | **v0.6.6** | Wrap Tailwind virtual imports in `@layer` so Chromium does not request `/tailwindcss/theme` or `/tailwindcss/utilities`. Companion tags absorb Unreleased OP/RP work |
+| **v0.7.0** | **v0.5.4** | **v0.6.5** | Same-origin Tailwind browser engine instead of a CSS safelist; hosts may use any Tailwind class |
+| **v0.6.23** | **v0.5.4** | **v0.6.5** | Request-safe chrome plus thin `create_product_app`, canonical `RunPort` (`pending`/`label`), shared `template_response` (history restore is a full page), and opt-in intake/run HTML. Authentication has no first-account bootstrap or enrollment policy; hosts own registration exposure and initial grants |
+| **v0.6.22** | **v0.5.4** | **v0.6.5** | Request-safe app framework: identity composition, request-local Jinja context, Origin CSRF, bounded uploads |
 | **v0.6.16** | **v0.4.8** | **v0.5.31** | **Identity-adapter ownership cleanup** (same `install_identity_adapters` composer; UM uses canonical authenticated shell + platform session, split UI route groups, and split SQLite schema/store owners behind a stable facade). Hosts bump the full immutable row together |
 | **v0.6.13** | **v0.4.8** | **v0.5.9** | **Identity-adapter composition** (`install_identity_adapters` + focused passkey/usermanager/session helpers). Hosts supply paths, persistence, page context, and product policy hooks only — do not copy installer/render/session glue. Chrome generation v0.6.11/v0.4.8/v0.5.7 had no composition API; bump app-factory (and UM to v0.5.9 if still on v0.5.7). Keep my-auth 0.4.x (do not mix 0.5.x); hosts pin one immutable generation |
-| **v0.6.11** | **v0.4.8** | **v0.5.7** | **Chrome generation** (shared browser mechanisms + nested auth pins on app-factory v0.6.11). No generic installer composition — hosts still fork `install_passkey_ui` / `install_usermanager_ui` glue. Prefer the v0.7.8 / v0.5.6 / v0.6.7 row |
-| **v0.6.10** | **v0.4.5** | **v0.5.6** | **Identity-lifecycle plus shared HTMX/Alpine `file_upload` / `file_upload_field` and opt-in TAP `client_interactive`** (auth tags unchanged from v0.6.7; hosts configure `accept` / `max_bytes` / labels; no product format in the kit); keep my-auth 0.4.x (do not mix 0.5.x); hosts pin one immutable generation (see capability matrix) |
-| **v0.6.7** | **v0.4.5** | **v0.5.6** | **Identity-lifecycle plus nested chrome aligned with TAP `client_shell`** (my-auth v0.4.5 and my-usermanager v0.5.6 nest app-factory v0.6.6; `SQLiteAuthDatabase.initialize()` stamps enrollment DDL on already-current schemas — hosts drop the second `ensure_sqlite_schema(conn)`); keep my-auth 0.4.x (do not mix 0.5.x); hosts pin one immutable generation (see capability matrix) |
-| **v0.6.6** | **v0.4.2** | **v0.5.4** | **Identity-lifecycle plus slim TAP `client_shell` (no HTMX/Alpine) and `PlatformPaths.invite` default `/admin/users`** (additive on v0.6.5: enrollment capability DDL + nested my-auth pin in my-usermanager); keep my-auth 0.4.x (do not mix 0.5.x); hosts pin one immutable generation (see capability matrix) |
-| **v0.6.5** | **v0.4.2** | **v0.5.4** | **Identity-lifecycle plus enrollment capability DDL** (my-auth v0.4.2 `ensure_sqlite_schema` stamps `passkey_enrollment_capabilities`; hosts drop dummy `SQLiteEnrollmentCapabilityStore(db)` after `initialize()`) **plus nested my-auth pin in my-usermanager** (v0.5.4 sources my-auth v0.4.2 + app-factory v0.6.4; hosts override `app-factory[platform]` only); keep my-auth 0.4.x (do not mix 0.5.x); hosts pin one immutable generation (see capability matrix) |
-| **v0.6.4** | **v0.4.1** | **v0.5.2** | **Identity-lifecycle plus packaged ceremony shells** (my-auth v0.4.1 activation/recovery/credentials extend identity shells; hosts drop `my_auth_overrides`) **plus invitation DDL owned by SQLiteAuthDatabase** (my-usermanager v0.5.2 `initialize()` stamps `um_invitations`; hosts drop `create_invitation_tables`); keep my-auth 0.4.x (do not mix 0.5.x); hosts pin one immutable generation (see capability matrix) |
-| **v0.6.3** | **v0.4.0** | **v0.5.3** | **Identity-lifecycle generation plus packaged invite admin** (status / reissue / revoke) from my-usermanager v0.5.3; keep my-auth v0.4.0 (do not mix 0.5.x); hosts pin one immutable generation (see capability matrix) |
-| **v0.6.2** | **v0.4.0** | **v0.5.0** | **Multi-user identity-lifecycle BOM**: subject-bound enrollment/recovery + invitations + shared identity shells/paths; hosts pin one immutable generation (see capability matrix) |
+| **v0.6.11** | **v0.4.8** | **v0.5.7** | **Chrome generation** (shared browser mechanisms + nested auth pins on app-factory v0.6.11). No generic installer composition — hosts still fork `install_passkey_ui` / `install_usermanager_ui` glue. Prefer the current v0.7.9 / v0.5.7 / v0.6.10 row |
+| **v0.6.10** | **v0.4.5** | **v0.5.6** | **Identity-lifecycle plus shared HTMX/Alpine `file_upload` / `file_upload_field` and opt-in TAP `client_interactive`** (auth tags unchanged from v0.6.7; hosts configure `accept` / `max_bytes` / labels; no product format in the kit); keep my-auth 0.4.x (do not mix 0.5.x); hosts pin one immutable generation (see identity lifecycle shells in README.md) |
+| **v0.6.7** | **v0.4.5** | **v0.5.6** | **Identity-lifecycle plus nested chrome aligned with TAP `client_shell`** (my-auth v0.4.5 and my-usermanager v0.5.6 nest app-factory v0.6.6; `SQLiteAuthDatabase.initialize()` stamps enrollment DDL on already-current schemas — hosts drop the second `ensure_sqlite_schema(conn)`); keep my-auth 0.4.x (do not mix 0.5.x); hosts pin one immutable generation (see identity lifecycle shells in README.md) |
+| **v0.6.6** | **v0.4.2** | **v0.5.4** | **Identity-lifecycle plus slim TAP `client_shell` (no HTMX/Alpine) and `PlatformPaths.invite` default `/admin/users`** (additive on v0.6.5: enrollment capability DDL + nested my-auth pin in my-usermanager); keep my-auth 0.4.x (do not mix 0.5.x); hosts pin one immutable generation (see identity lifecycle shells in README.md) |
+| **v0.6.5** | **v0.4.2** | **v0.5.4** | **Identity-lifecycle plus enrollment capability DDL** (my-auth v0.4.2 `ensure_sqlite_schema` stamps `passkey_enrollment_capabilities`; hosts drop dummy `SQLiteEnrollmentCapabilityStore(db)` after `initialize()`) **plus nested my-auth pin in my-usermanager** (v0.5.4 sources my-auth v0.4.2 + app-factory v0.6.4; hosts override `app-factory[platform]` only); keep my-auth 0.4.x (do not mix 0.5.x); hosts pin one immutable generation (see identity lifecycle shells in README.md) |
+| **v0.6.4** | **v0.4.1** | **v0.5.2** | **Identity-lifecycle plus packaged ceremony shells** (my-auth v0.4.1 activation/recovery/credentials extend identity shells; hosts drop `my_auth_overrides`) **plus invitation DDL owned by SQLiteAuthDatabase** (my-usermanager v0.5.2 `initialize()` stamps `um_invitations`; hosts drop `create_invitation_tables`); keep my-auth 0.4.x (do not mix 0.5.x); hosts pin one immutable generation (see identity lifecycle shells in README.md) |
+| **v0.6.3** | **v0.4.0** | **v0.5.3** | **Identity-lifecycle generation plus packaged invite admin** (status / reissue / revoke) from my-usermanager v0.5.3; keep my-auth v0.4.0 (do not mix 0.5.x); hosts pin one immutable generation (see identity lifecycle shells in README.md) |
+| **v0.6.2** | **v0.4.0** | **v0.5.0** | **Multi-user identity-lifecycle BOM**: subject-bound enrollment/recovery + invitations + shared identity shells/paths; hosts pin one immutable generation (see identity lifecycle shells in README.md) |
 | **v0.6.1** | **v0.3.25** | **v0.4.5** | Shared identity shells: public activation/recovery frame + authenticated account/credentials/users composition (`identity_*_shell`, public-state + denied partials) |
 | **v0.6.0** | **v0.3.25** | **v0.4.5** | Identity lifecycle path/navigation contract (`PlatformPaths` + opt-in account/credentials/users/invite slots; reverse-proxy `root`) |
 | **v0.5.24** | **v0.3.25** | **v0.4.5** | Accessible brand/home link in the bare login/passkey shell header |
@@ -60,159 +57,46 @@ Reference host: [`examples/multi_user_bom/`](examples/multi_user_bom/).
 | v0.5.0 | v0.3.6 | v0.3.1 | Platform composition + product shell foot |
 
 ## Host rule
+Pin all three packages and regenerate the host lock together; set `override-dependencies = ["app-factory[platform]"]` as in the [installation configuration](README.md#install-git--uv).
+The preferred row describes package compatibility, not completed product migrations.
+The rollout exceptions supplied with issue #133 remain unverified in this repository:
 
-Prefer the multi-user BOM generation (do not mix rows):
-
-```toml
-dependencies = [
-  "app-factory[platform]",
-  "my-auth[fastapi-htmx]",
-  "my-usermanager[fastapi-htmx,myauth]",
-]
-
-[tool.uv]
-# Nested adapter sources may still pin an older app-factory release.
-# Override app-factory only; keep the three direct pins on one BOM row.
-override-dependencies = ["app-factory[platform]"]
-
-[tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.7.9" }
-my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.5.7" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.6.10" }
-```
-
+| Host | Migration prerequisite | Host PR / suite / geometry evidence |
+|------|------------------------|-------------------------------------|
+| Anonimizator3000 | Preserve unrelated manifest/lock changes; migrate published auth 0.4 to 0.5 | Not supplied |
+| PunkRecords | Preserve unrelated manifest/lock changes; migrate older auth generation | Not supplied |
+| Temida / Argus | Isolate release/pin migration from the dirty multi-project checkout | Not supplied |
+| PlnFlr | Upgrade factory v0.7.3 with both companions; adopt actual layout primitives | Not supplied |
+| wolnyrolnik | Upgrade factory v0.6.22 / auth v0.5.4 / UM v0.6.5 together | Not supplied |
 Do **not** float `my-usermanager` on `branch = "main"` for production hosts.
 Do **not** re-copy theme boot, shell boot, or platform foot templates into hosts.
-Do **not** mix BOM generations. Current hosts pin my-auth **v0.5.7** with this row; older rows that say “keep my-auth 0.4.x” apply only to those historical generations.
-
-### Identity lifecycle capability matrix (BOM v0.7.9)
-
-| Capability | Owner | Default surface | Visibility |
-|------------|-------|-----------------|------------|
-| Bootstrap registration | my-auth | `/register` | public (host policy) |
-| Invitation activation | my-auth + my-usermanager | `/activate` | public capability URL |
-| Account recovery | my-auth | `/recover` | public capability URL |
-| Account credentials | my-auth | `/account/passkeys` | authenticated |
-| Account profile / session | my-usermanager | `/account` | authenticated |
-| Admin user management | my-usermanager | `/admin/users` | admin |
-| Invite issuance / reissue / revoke UI | my-usermanager | `/admin/users` (POST `/admin/users/invite`) | admin |
-| Shared public / authenticated shells | app-factory | `identity_*_shell` | composition |
-| Packaged ceremony shells | my-auth | `/activate`, `/recover`, `/account/passkeys` | composition |
-| Invitation table DDL | my-usermanager | `SQLiteAuthDatabase.initialize()` | host bootstrap |
-| Enrollment capability DDL | my-auth | `ensure_sqlite_schema` (via `SQLiteAuthDatabase.initialize()`) | host bootstrap |
-| Path + identity nav contract | app-factory | `PlatformPaths` | composition |
-| Generic identity install | app-factory | `install_identity_adapters` | composition |
+Do **not** mix BOM generations. The preferred row requires my-auth **v0.5.7**; older rows that say “keep my-auth 0.4.x” apply only to those historical generations.
 
 ### Supported upgrade order
-
 Apply one generation at a time, in this order, until the preferred BOM row (`v0.7.9` / `v0.5.7` / `v0.6.10`):
-
 1. **app-factory** — paths (`PlatformPaths` from `contract/paths.toml`), identity shells, then composition (`v0.6.0` → `v0.7.7`).
 2. **my-auth** — subject-bound enrollment / recovery plus packaged ceremony shells and Lism panels (`v0.5.7`); `ensure_sqlite_schema` stamps `passkey_enrollment_capabilities`; keep `PasskeyPaths` aligned with `PlatformPaths`.
 3. **my-usermanager** — account lifecycle + packaged invite admin + invitation DDL in `SQLiteAuthDatabase.initialize()` (`v0.6.10`); nested sources my-auth v0.5.7 (do not override my-auth); `initialize()` also stamps enrollment DDL on current auth schemas; default hosts call `install_local_identity`; set `base_template` to `app_factory/identity_authenticated_shell.html` (the composer does this).
 4. **Host** — pin all three tags from the same BOM row, add `override-dependencies = ["app-factory[platform]"]` only (do not override my-auth), migrate templates (below), replace installer forks with `install_identity_adapters`, delete host-owned recovery/enrollment/invite chrome, drop `my_auth_overrides`, host `create_invitation_tables`, dummy `SQLiteEnrollmentCapabilityStore(db)` after `initialize()`, and the second host `ensure_sqlite_schema(conn)` call.
-
-Rollback is the reverse order. Never run production with packages from different matrix rows.
+Never run production with packages from different matrix rows.
+Before migrating older auth, verify database backup restoration in an isolated sandbox with separate sessions and no real invitation delivery. Reverting pins does not revert data migrations; restore compatible data as well.
 
 ### Migration from host installer forks (`install_identity_adapters`)
-
-Inventory of the five named hosts (what was copied vs what stays):
-
-| Host | Structure | Host-owned after migration |
-|------|-----------|----------------------------|
-| **anonimizator3000** | `SQLiteAuthDatabase` + `SessionMiddleware` + default paths | Persistence proxies, first-user admin, invite/RBAC catalog, product menu |
-| **Argus** (prefix `/argus`) | Reverse-proxy `PlatformPaths.root` | Product queue menu, RBAC mapping onto `PlatformUser.is_admin` |
-| **MSDS / emitype / rnkstr** | Same FastAPI + Jinja + HTMX pattern as the BOM hosts | Domain routes, role catalogs, store bindings |
-| **BOM cookie host** (`examples/multi_user_bom/app.py`) | In-memory stores + raw session cookie | Demo store + cookie get/set |
-| **BOM portal host** (`examples/multi_user_bom/rooted_app.py`) | Signed `SessionMiddleware` + `/portal` root | Session principal + `SessionCsrfProtection` |
-
 The chrome generation **v0.6.11 / v0.4.8 / v0.5.7** is not enough: those tags ship shells and nested pins but not this composer. Adopt **v0.7.9 / v0.5.7 / v0.6.10**.
-
-Delete from hosts:
-
-- `install_passkey_ui` / `install_usermanager_ui` / `PasskeyUiConfig` / `UserManagerUiConfig` construction
-- Dummy `render_login` / `render_register` (and `PasskeyRouteHooks` only to satisfy those slots)
-- Manual `PasskeyPaths` ↔ `PlatformPaths` copying
-- `apply_platform_context` loops / request middleware that only rebinds chrome globals
-- `base_template="app_factory/identity_authenticated_shell.html"` (the composer sets it)
-
-Keep in hosts:
-
-- Persistence (SQLite/memory stores, enrollment claim/consume)
-- Session transport (`login` / `logout` / `get_session_user`)
-- Product policy (`require_admin`, role/capability catalogs, invite delivery)
-- Optional `page_context` when the host needs extra template keys
-
-```python
-from app_factory.adapters import (
-    PasskeyBinding,
-    UserManagerBinding,
-    install_identity_adapters,
-)
-from app_factory.csrf import SessionCsrfProtection
-from app_factory.platform import PlatformConfig, PlatformPaths
-
-install_identity_adapters(
-    app,
-    environments=[templates.env],
-    config=PlatformConfig(paths=PlatformPaths(root="/argus"), enable_account=True, ...),
-    passkey=PasskeyBinding(service=service, hooks=policy_hooks, cookies=cookies),
-    usermanager=UserManagerBinding(
-        hooks=um_hooks,
-        csrf_protection=SessionCsrfProtection(),
-        environment=templates.env,
-    ),
-    current_user=platform_user_from_request,
-)
-# SessionMiddleware is added *after* the installer (Starlette last-added-first).
-```
-
+Delete host construction of `install_passkey_ui`, `install_usermanager_ui`, `PasskeyUiConfig`, and `UserManagerUiConfig`; dummy `render_login` / `render_register` (and `PasskeyRouteHooks` only for those slots); manual `PasskeyPaths` ↔ `PlatformPaths` copying; chrome-only `apply_platform_context` loops / request middleware; and `base_template="app_factory/identity_authenticated_shell.html"` (the composer sets it).
+Keep persistence, session transport, product policy, invite delivery and optional `page_context` in hosts.
 Idempotent for the same chrome + adapter selection. A second call with a different mount, config, or adapter set raises `IdentityAdapterConflict`. Admin UI without CSRF and a passkey service without hooks fail closed.
 
 ### Migration from host-owned recovery / enrollment templates
-
-1. Delete host copies of activation, recovery, enroll, and “set up passkey” full-page templates.
-2. Point my-auth capability/credential pages at the shared shells. my-auth v0.4.5 packaged adapters already extend `identity_public_shell` / `identity_authenticated_shell`; delete host `my_auth_overrides` for those two templates. Login/register stay on `shell.html`.
-3. Set `UserManagerUiConfig.base_template = "app_factory/identity_authenticated_shell.html"`.
-4. Route invite delivery through my-usermanager `InvitationService` + my-auth enrollment capabilities; links target `platform_paths.activation` / `recovery` with the opaque token only.
-5. Delete host `invite.html`. Implement `invite_user`, `reissue_invitation`, and `revoke_invitation` hooks so the packaged admin users UI owns issuance / reissue / revoke (activation URL is shown once after invite/reissue).
-6. After `SQLiteAuthDatabase.initialize()`, do not call host `create_invitation_tables` — invitation DDL (`um_invitations`) is stamped in the same owned transaction (my-usermanager v0.5.2+). Do not construct a dummy `SQLiteEnrollmentCapabilityStore(db)` after `initialize()`, and do not call `ensure_sqlite_schema` a second time — enrollment DDL (`passkey_enrollment_capabilities`) is stamped by my-usermanager v0.5.6 `initialize()` via my-auth v0.4.5 `ensure_sqlite_schema` even when the auth schema is already current. Drop `my-auth` from `override-dependencies` if present (UM v0.5.6 nests v0.4.5).
-7. Enable identity nav with `enable_account`, `enable_credentials`, `enable_admin_users`, `enable_invite` instead of hand-built sidebar entries.
-8. Keep product authorization/role policy in the host; do not fork adapter ceremony markup.
-
-### Chrome placement (hosts must not fork)
-
-| Surface | Partial | Contents |
-|---------|---------|----------|
-| **Main header** | `product_shell` + `platform_theme_locale` | language (optional) + icon theme toggle |
-| **Sidebar foot** | `platform_auth` | signed-in identity/avatar, or guest Login (+ Register) |
-| **Identity nav slot** | `platform_sidebar` (`data-platform-identity-navigation`) | opt-in Account / Credentials / Users / Invite (admin gated) |
-| **Account page** | `platform_session` | **Log out** form (only place) |
-| **Public activation/recovery** | `identity_public_shell` | branded no-sidebar frame; theme/locale; host notice/footer blocks |
-| **Authenticated account/users** | `identity_authenticated_shell` | `product_shell` wrapper that loads `usermanager-ui.css` when `static_url_path` is set |
-| **Invalid public capability** | `identity_public_state` | non-enumerating alert; host-overridable copy |
-| **Unauthorized authenticated** | `identity_denied` / `identity_denied_fragment` | full-page shell or HTMX fragment |
-| **No-sidebar shells** | `platform_controls` | theme/locale + auth (still no logout — include `platform_session` on the account/home surface) |
-| **Slim TAP client** | `client_shell` | Basecoat + theme boot + `platform_controls`; no HTMX/Alpine. Hosts extend this instead of forking `client_base.html` |
-
-### Identity lifecycle paths
-
-`PlatformPaths` is the shared route contract. Defaults match my-auth / my-usermanager:
-
-| Surface | Default | Visibility |
-|---------|---------|------------|
-| login / logout / register | `/login`, `/logout`, `/register` | public |
-| activation / recovery | `/activate`, `/recover` | public (capability URLs; not chrome links) |
-| account / credentials | `/account`, `/account/passkeys` | authenticated |
-| users / invite | `/admin/users` | admin (`PlatformUser.is_admin`) |
-
-Hosts may override every path and set `PlatformPaths.root` (e.g. `/argus`) for a reverse-proxy mount. `build_platform_context` resolves rooted URLs once. Enable sidebar links with `enable_account`, `enable_credentials`, `enable_admin_users`, and `enable_invite`. Adapters still own handlers; app-factory composes links, navigation, and shared shells.
-
-Mount recipe:
-
-- my-auth activation/recovery → extend `app_factory/identity_public_shell.html` (fill `identity_panel`, or override `content` for passkey centering).
-- my-auth credentials / my-usermanager account & users → `base_template="app_factory/identity_authenticated_shell.html"` (or extend it).
-- Invalid/expired capability → include `app_factory/identity_public_state.html`.
-- Unauthorized GET → render `app_factory/identity_denied.html`; HTMX/mutations → include `identity_denied_fragment.html`.
-
-Forbidden host forks: identity/avatar in the header, theme in sidebar, logout in nav menu, logout next to the account name, or host-owned activation/recovery/account chrome that duplicates these shells.
+The composer selects shells and paths: login/register use `shell.html`; capability and credential pages use identity shells. Delete copied lifecycle templates.
+Invitation delivery uses my-usermanager `InvitationService` and my-auth enrollment capabilities; hosts supply `invite_user`, `reissue_invitation`, and `revoke_invitation` policy hooks. Links carry only opaque tokens; the packaged UI shows activation URLs once after invite/reissue.
+### Identity lifecycle paths — Identity lifecycle capability matrix (BOM v0.7.9)
+| Capability | Default surface | Owner / visibility |
+|------------|-----------------|--------------------|
+| Bootstrap registration | `/register` | my-auth; public (host policy) |
+| Invitation activation | `/activate` | my-auth + my-usermanager; public capability URL |
+| Account recovery | `/recover` | my-auth; public capability URL |
+| Account credentials | `/account/passkeys` | my-auth; authenticated |
+| Account profile / session | `/account` | my-usermanager; authenticated |
+| users / invite | `/admin/users` | my-usermanager; Admin user management / Invite issuance, reissue, revoke; admin (`PlatformUser.is_admin`); issuance POST `/admin/users/invite` |
+Other path defaults, shell placement and extension points: [README.md](README.md#identity-lifecycle-shells). Override paths with `PlatformPaths.root`; `build_platform_context` resolves rooted URLs once. Adapters own handlers; `PlatformConfig` enables navigation.
