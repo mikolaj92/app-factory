@@ -8,7 +8,7 @@ files.
 The goal is one place to ship same-origin chrome so product apps do **not**
 re-implement Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.7.9`. Companions: my-auth `v0.5.7` / my-usermanager `v0.6.10`; pins: [`bom/multi_user.toml`](bom/multi_user.toml).
+**Tag:** `v0.7.9`. Companions: my-auth `v0.5.7` / my-usermanager `v0.6.10`; pins: [`bom/multi_user.toml`](bom/multi_user.toml). This is the library BOM, not confirmation of product rollout.
 
 ---
 
@@ -254,8 +254,8 @@ my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.5.7" }
 my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.6.10" }
 ```
 
-New products use `create_product_app(...)`, one `ProductAppConfig`, and `app_factory/product_shell.html` (see [`examples/minimal_host/app.py`](examples/minimal_host/app.py)).
-Do not copy passkey or user-manager installers; add identity bindings only when needed.
+New products use `create_product_app(...)`, one `ProductAppConfig`, and `app_factory/product_shell.html` (see [`examples/minimal_host/app.py`](examples/minimal_host/app.py)); add identity bindings without copying installers.
+Existing products must update all three pins and their lock, then replace repeated card/form/content layouts with Lism; loading its asset alone is not adoption.
 
 ---
 
@@ -562,7 +562,7 @@ installed = install_identity_adapters(
 3. Extend identity shells for lifecycle pages; keep navigation data-driven via `PlatformPaths`.
 4. Supply passkey/usermanager **policy** hooks only — do not call `install_passkey_ui` / `install_usermanager_ui` from the host.
 5. Keep only product CSS and product CDN extras in the app.
-6. Contract-test that canonical local assets and enabled UI routes return 200 (see `examples/multi_user_bom`).
+6. Verify each host's full suite and container-width/mobile/light/dark/HTMX geometry; record its PR and results separately. The BOM example does not verify the [named rollout exceptions](COMPAT.md#host-rule), and tests do not prove deployment.
 
 ---
 

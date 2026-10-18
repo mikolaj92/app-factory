@@ -57,20 +57,20 @@ Machine-readable pins: [`bom/multi_user.toml`](bom/multi_user.toml); reference h
 | v0.5.0 | v0.3.6 | v0.3.1 | Platform composition + product shell foot |
 
 ## Host rule
-Prefer the multi-user BOM generation (do not mix rows):
-```toml
-dependencies = ["app-factory[platform]", "my-auth[fastapi-htmx]", "my-usermanager[fastapi-htmx,myauth]"]
-[tool.uv]
-# Override factory only; nested adapter sources may pin an older factory.
-override-dependencies = ["app-factory[platform]"]
-[tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory", tag = "v0.7.9" }
-my-auth = { git = "https://github.com/mikolaj92/my-auth", tag = "v0.5.7" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager", tag = "v0.6.10" }
-```
+Pin all three packages and regenerate the host lock together; set `override-dependencies = ["app-factory[platform]"]` as in the [installation configuration](README.md#install-git--uv).
+The preferred row describes package compatibility, not completed product migrations.
+The rollout exceptions supplied with issue #133 remain unverified in this repository:
+
+| Host | Migration prerequisite | Host PR / suite / geometry evidence |
+|------|------------------------|-------------------------------------|
+| Anonimizator3000 | Preserve unrelated manifest/lock changes; migrate published auth 0.4 to 0.5 | Not supplied |
+| PunkRecords | Preserve unrelated manifest/lock changes; migrate older auth generation | Not supplied |
+| Temida / Argus | Isolate release/pin migration from the dirty multi-project checkout | Not supplied |
+| PlnFlr | Upgrade factory v0.7.3 with both companions; adopt actual layout primitives | Not supplied |
+| wolnyrolnik | Upgrade factory v0.6.22 / auth v0.5.4 / UM v0.6.5 together | Not supplied |
 Do **not** float `my-usermanager` on `branch = "main"` for production hosts.
 Do **not** re-copy theme boot, shell boot, or platform foot templates into hosts.
-Do **not** mix BOM generations. Current hosts pin my-auth **v0.5.7** with this row; older rows that say “keep my-auth 0.4.x” apply only to those historical generations.
+Do **not** mix BOM generations. The preferred row requires my-auth **v0.5.7**; older rows that say “keep my-auth 0.4.x” apply only to those historical generations.
 
 ### Supported upgrade order
 Apply one generation at a time, in this order, until the preferred BOM row (`v0.7.9` / `v0.5.7` / `v0.6.10`):
@@ -91,13 +91,12 @@ Idempotent for the same chrome + adapter selection. A second call with a differe
 The composer selects shells and paths: login/register use `shell.html`; capability and credential pages use identity shells. Delete copied lifecycle templates.
 Invitation delivery uses my-usermanager `InvitationService` and my-auth enrollment capabilities; hosts supply `invite_user`, `reissue_invitation`, and `revoke_invitation` policy hooks. Links carry only opaque tokens; the packaged UI shows activation URLs once after invite/reissue.
 ### Identity lifecycle paths — Identity lifecycle capability matrix (BOM v0.7.9)
-| Capability | Owner | Default surface / visibility |
-|------------|-------|------------------------------|
-| Bootstrap registration | my-auth | `/register`; public (host policy) |
-| Invitation activation | my-auth + my-usermanager | `/activate`; public capability URL |
-| Account recovery | my-auth | `/recover`; public capability URL |
-| Account credentials | my-auth | `/account/passkeys`; authenticated |
-| Account profile / session | my-usermanager | `/account`; authenticated |
-| Admin user management / Invite issuance, reissue, revoke | my-usermanager | `/admin/users` (issuance POST `/admin/users/invite`); admin (`PlatformUser.is_admin`) |
-| users / invite | `/admin/users` | admin; issuance POST `/admin/users/invite` |
+| Capability | Default surface | Owner / visibility |
+|------------|-----------------|--------------------|
+| Bootstrap registration | `/register` | my-auth; public (host policy) |
+| Invitation activation | `/activate` | my-auth + my-usermanager; public capability URL |
+| Account recovery | `/recover` | my-auth; public capability URL |
+| Account credentials | `/account/passkeys` | my-auth; authenticated |
+| Account profile / session | `/account` | my-usermanager; authenticated |
+| users / invite | `/admin/users` | my-usermanager; Admin user management / Invite issuance, reissue, revoke; admin (`PlatformUser.is_admin`); issuance POST `/admin/users/invite` |
 Other path defaults, shell placement and extension points: [README.md](README.md#identity-lifecycle-shells). Override paths with `PlatformPaths.root`; `build_platform_context` resolves rooted URLs once. Adapters own handlers; `PlatformConfig` enables navigation.
