@@ -672,8 +672,8 @@ uv build
 (cd examples/multi_user_bom && uv lock --check && uv sync --locked --all-extras && uv run --no-sync pytest && uv run --no-sync ruff check .)
 ```
 
-Pytest defaults to the absolute checkout-local `.runtime/ms-playwright` directory.
-An explicit `PLAYWRIGHT_BROWSERS_PATH` overrides that default. Prepare Chromium
+Pytest loads `scripts.run_projects` to default to checkout-local `.runtime/ms-playwright`.
+An explicit `PLAYWRIGHT_BROWSERS_PATH` overrides that absolute path. Prepare Chromium
 with the command above; on Linux add `--with-deps` before `chromium`.
 Collection never downloads browsers. Missing or broken Chromium fails tests;
 only an absent optional Playwright package can skip browser modules.

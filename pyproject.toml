@@ -54,5 +54,6 @@ packages = ["app_factory"]
 include = ["app_factory", "README.md", "COMPAT.md", "bom", "pyproject.toml"]
 
 [tool.pytest.ini_options]
+addopts = "-p scripts.run_projects"
 pythonpath = ["."]
 testpaths = ["tests"]
