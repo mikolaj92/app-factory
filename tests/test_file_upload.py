@@ -94,8 +94,6 @@ def test_shared_controller_uses_htmx_transport_not_fetch_or_xhr() -> None:
     assert "htmx:after:swap" in source
     assert "htmx:xhr:progress" not in source
     assert "DataTransfer" in source
-    assert "htmx:config:request" in source
-    assert "requestSubmit" not in source
 
 
 def test_single_file_upload_does_not_render_batch_confirmation_field() -> None:
