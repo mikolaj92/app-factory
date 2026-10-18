@@ -26,10 +26,9 @@ my-auth `ensure_sqlite_schema`, including already-current schemas.
 
 ## Why `override-dependencies`?
 
-`my-auth` and `my-usermanager` both nest app-factory v0.7.9.
-Without a host override, `uv lock` fails with conflicting
-URLs. This example (and production hosts) force one app-factory source.
-Do **not** override my-auth: UM v0.6.10 nests my-auth@v0.5.7.
+The override selects this checkout's editable factory instead of nested Git
+sources. Production hosts select the immutable factory source from the BOM.
+Keep the BOM auth source; do **not** override my-auth.
 
 ```toml
 [tool.uv]

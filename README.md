@@ -617,23 +617,7 @@ factory_template_dirs()
 
 ---
 
-## Versioning
-
-| app-factory | basecoat-css | Notes |
-|-------------|---------------|-------|
-| **v0.7.9** | **1.0.2** | Current: pinned Lism 1.0.1 layout-only CSS; shared views and catalog adopt adaptive layouts. Basecoat components, arbitrary Tailwind utilities, and legacy `.app-*` remain compatible. |
-| **v0.7.8** | **1.0.2** | `verify_cdn_asset` rejects a version or kind that differs from the approved pin even when the URL matches. Same companions as v0.7.7. |
-| **v0.6.22** | **1.0.2** | Request-safe app framework: request-local Jinja context, Origin CSRF, bounded uploads. |
-| **v0.6.16** | **1.0.2** | Additive on v0.6.11: `install_identity_adapters` + focused passkey/usermanager/session helpers; BOM row my-auth v0.4.8 / my-usermanager v0.5.31. No chrome change. |
-| **v0.6.11** | **1.0.2** | Shared browser mechanisms (HTMX redirect, session CSRF, toast boot, pagination). Multi-user BOM stayed on v0.6.10 until matching auth tags; chrome generation with my-auth v0.4.8 / my-usermanager v0.5.7 had no composer. |
-| **v0.6.7** | **1.0.2** | Additive on v0.6.6: BOM row my-auth v0.4.5 / my-usermanager v0.5.6 (nested chrome v0.6.6; initialize() stamps enrollment on current schemas). No chrome change. |
-| **v0.6.6** | **1.0.2** | Additive on v0.6.5: slim TAP `client_shell` (no HTMX/Alpine) + `PlatformPaths.invite` default `/admin/users`; same my-auth v0.4.2 / my-usermanager v0.5.4 |
-| **v0.6.5** | **1.0.2** | Multi-user platform BOM + enrollment capability DDL in ensure_sqlite_schema (my-auth v0.4.2) + nested my-auth pin (my-usermanager v0.5.4); hosts override app-factory only |
-| **v0.6.4** | **1.0.2** | Multi-user platform BOM + packaged ceremony shells (my-auth v0.4.1) + invitation DDL in SQLiteAuthDatabase (my-usermanager v0.5.2) |
-| **v0.6.3** | **1.0.2** | Multi-user platform BOM + packaged invite admin (my-usermanager v0.5.3, my-auth v0.4.0) |
-| **v0.6.2** | **1.0.2** | Multi-user platform BOM + identity lifecycle shells/paths |
-| v0.5.39 | 1.0.2 | Full Basecoat + HTMX + Alpine + app shell + Material Symbols Outlined v364; chrome is committed dist |
-| v0.5.37 | 1.0.2 | Basecoat-first contract docs + CSS keep-list |
+## Asset maintenance
 
 Chrome is committed dist in `app_factory/assets/`. There is no Node toolchain
 in this repo: no `package.json`, no lockfile, no compile step for hosts.
@@ -700,9 +684,7 @@ failure status through the log pipeline. CI uploads both pytest summaries
 as `project-tests-<SHA>-python-<version>`, including on failure.
 The Python 3.12 and 3.14 matrix runs both projects independently.
 Separate root and BOM logs record each cwd, argv and exit status.
-Uploading a log does not prove either suite passed or that Lokay registered
-both projects. The same runner remains available locally; omit `--project`
-to execute both suites even if the first fails.
+Omit `--project` to execute both suites even if the first fails.
 It overrides inherited `UV_PROJECT_ENVIRONMENT` per project
 and removes inherited `UV_WORKING_DIR` and `UV_PROJECT`, including for nested
 `uv` commands. It removes `UV_NO_PROJECT` so project discovery cannot be bypassed.
@@ -726,13 +708,6 @@ and exit code. A null PID means launch failed; a PID alone does not prove
 that tests passed. These status lines do not replace pytest summaries. For checkout-local Chromium downloads, set
 `PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright"` during installation and execution;
 the downloaded browser directory is ignored by Git.
-
-For Lokay, the host owner must set the active app-factory test argv to
-`["uv", "run", "--locked", "python", "scripts/run_projects.py"]`.
-Adding this production runner does not change
-host configuration or prove gate acceptance. Root tests alone do not validate
-the BOM suite. Manual results, runner acceptance and remote CI for the final
-commit are three separate evidence requirements.
 
 Optional browser isolation (issue #9) skips unless Playwright is installed:
 

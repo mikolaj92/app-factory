@@ -39,10 +39,9 @@ def test_compat_documents_bom_matrix_upgrade_order_and_migration() -> None:
     text = COMPAT_PATH.read_text(encoding="utf-8")
     bom = _bom()
     assert f"| **{bom['pins']['app-factory']}** | **{bom['pins']['my-auth']}** | **{bom['pins']['my-usermanager']}** |" in text
-    assert "| **v0.6.4** | **v0.4.1** | **v0.5.2** |" in text
-    assert "Identity lifecycle capability matrix" in text
+    assert "### Identity lifecycle paths" in text
     assert "Supported upgrade order" in text
-    assert "Migration from host-owned recovery" in text
+    assert "Migration from host installer forks" in text
     assert 'override-dependencies = ["app-factory[platform]"]' in text
     assert (
         'override-dependencies = ["app-factory[platform]", "my-auth[fastapi-htmx]"]'
@@ -50,16 +49,15 @@ def test_compat_documents_bom_matrix_upgrade_order_and_migration() -> None:
     )
     assert "ensure_sqlite_schema" in text
     assert "SQLiteEnrollmentCapabilityStore" in text
-    assert "1. **app-factory**" in text
-    assert "2. **my-auth**" in text
-    assert "3. **my-usermanager**" in text
-    assert "4. **Host**" in text
+    assert "1. Align factory paths" in text
+    assert "2. Align my-auth" in text
+    assert "3. Initialize my-usermanager" in text
+    assert "4. Pin the complete row" in text
     required_capabilities = (
-        "Bootstrap registration",
-        "Invitation activation",
-        "Account recovery",
-        "Account credentials",
-        "Admin user management",
+        "login / logout / register",
+        "activation / recovery",
+        "account / credentials",
+        "users / invite",
         "Invite issuance",
     )
     for label in required_capabilities:
@@ -76,8 +74,8 @@ def test_example_pyproject_matches_bom_and_forces_single_source() -> None:
         "override_dependencies"
     ]
     readme = (EXAMPLE_ROOT / "README.md").read_text(encoding="utf-8")
-    for tag in bom["pins"].values():
-        assert tag in readme
+    assert "../../bom/multi_user.toml" in readme
+    assert "../../COMPAT.md" in readme
     assert not (EXAMPLE_ROOT / "templates" / "invite.html").exists()
     assert not (EXAMPLE_ROOT / "templates" / "my_auth_overrides").exists()
     host_python = "".join(
