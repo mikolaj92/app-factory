@@ -8,7 +8,7 @@ files.
 The goal is one place to ship same-origin chrome so product apps do **not**
 re-implement Basecoat/HTMX/Alpine loading, credential wiring, or theme FOUC guards.
 
-**Tag:** `v0.7.9`. Multi-user companion pins: [`bom/multi_user.toml`](bom/multi_user.toml).
+**Tag:** `v0.7.9`. Companions: my-auth `v0.5.7` / my-usermanager `v0.6.10`; pins: [`bom/multi_user.toml`](bom/multi_user.toml).
 
 ---
 
@@ -44,12 +44,7 @@ This package is the thin shared layer in a small platform. Together:
 
 `install_platform()` is chrome-only. Multi-user hosts call `install_identity_adapters()` with `PasskeyBinding` and/or `UserManagerBinding`; they do not invoke the package installers directly.
 
-Apps should not ship:
-
-- a local platform shell or runtime dependency on basecoat-factory,
-- private copies of bundled `basecoat.css` / `htmx` / `alpine`,
-- a parallel hand-rolled full-page login that replaces package passkey UI,
-- a private copy of optional CDN pins (import `app_factory.cdn` instead).
+Do not ship private platform shells/assets, replacement passkey pages or copied CDN pins (`app_factory.cdn` owns them).
 
 ---
 
@@ -247,24 +242,7 @@ deploy checks. Product templates load extras after the factory head include.
 ---
 ## Install (git + uv)
 
-Prefer a **tag**, not a local path:
-
-```toml
-# pyproject.toml — pin one BOM generation from COMPAT.md / bom/multi_user.toml
-dependencies = [
-  "app-factory[platform]",
-  "my-auth[fastapi-htmx]",
-  "my-usermanager[fastapi-htmx,myauth]",
-]
-
-[tool.uv]
-override-dependencies = ["app-factory[platform]"]
-
-[tool.uv.sources]
-app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.7.9" }
-my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.5.7" }
-my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.6.10" }
-```
+Use the tagged dependency configuration in [COMPAT.md](COMPAT.md#host-rule), not a local path.
 
 ```bash
 uv lock && uv sync
@@ -452,13 +430,7 @@ without host template forks:
 {% endblock %}
 ```
 
-```python
-# my-usermanager account / users / invite
-UserManagerUiConfig(
-    base_template="app_factory/identity_authenticated_shell.html",
-    # labels=...  # host copy overrides
-)
-```
+The identity composer selects `identity_authenticated_shell.html` for my-usermanager account, users and invite pages.
 
 Extension points (no forks):
 
@@ -617,7 +589,32 @@ factory_template_dirs()
 
 ---
 
-## Asset maintenance
+## Versioning
+
+| app-factory | basecoat-css | Notes |
+|-------------|---------------|-------|
+| **v0.7.9** | **1.0.2** | Current: pinned Lism 1.0.1 layout-only CSS; shared views and catalog adopt adaptive layouts. Basecoat components, arbitrary Tailwind utilities, and legacy `.app-*` remain compatible. |
+| **v0.7.8** | **1.0.2** | `verify_cdn_asset` rejects a version or kind that differs from the approved pin even when the URL matches. Same companions as v0.7.7. |
+| **v0.7.7** | **1.0.2** | Chrome contract in files (`contract/paths.toml`, `contract/http.toml`, templates). FastAPI is one binding. Same companions as v0.7.6. |
+| **v0.7.6** | **1.0.2** | Same-origin `/favicon.ico` plus `login_redirect` (`?next=` and `HX-Redirect`). Same companions as v0.7.5. |
+| **v0.7.5** | **1.0.2** | `assert_public_origin_csrf` probes public Origin vs a different backend HTTP base URL. Same companions as v0.7.4. |
+| **v0.7.4** | **1.0.2** | `identity_authenticated_shell` loads `usermanager-ui.css` when `static_url_path` is set. |
+| **v0.7.3** | **1.0.2** | Companion my-usermanager `v0.6.7` (`install_local_identity`, durable OIDC flows, unlink-aware account UI). Chrome omitted `usermanager-ui.css`. |
+| **v0.7.2** | **1.0.2** | Invite default `/admin/users`; `install_manifest` exported; preferred BOM tags exist in git. Same Tailwind `@layer` contract as v0.7.1. |
+| **v0.7.1** | **1.0.2** | Tailwind virtual imports stay in `@layer`; same `create_product_app` / `RunPort` / `template_response` contract as v0.7.0. |
+| **v0.7.0** | **1.0.2** | Same-origin Tailwind browser engine instead of a CSS safelist. |
+| **v0.6.23** | **1.0.2** | Thin product host + opt-in run/intake views. Same my-auth v0.5.4 / my-usermanager v0.6.5. |
+| **v0.6.22** | **1.0.2** | Request-safe app framework: request-local Jinja context, Origin CSRF, bounded uploads. |
+| **v0.6.16** | **1.0.2** | Additive on v0.6.11: `install_identity_adapters` + focused passkey/usermanager/session helpers; BOM row my-auth v0.4.8 / my-usermanager v0.5.31. No chrome change. |
+| **v0.6.11** | **1.0.2** | Shared browser mechanisms (HTMX redirect, session CSRF, toast boot, pagination). Multi-user BOM stayed on v0.6.10 until matching auth tags; chrome generation with my-auth v0.4.8 / my-usermanager v0.5.7 had no composer. |
+| **v0.6.7** | **1.0.2** | Additive on v0.6.6: BOM row my-auth v0.4.5 / my-usermanager v0.5.6 (nested chrome v0.6.6; initialize() stamps enrollment on current schemas). No chrome change. |
+| **v0.6.6** | **1.0.2** | Additive on v0.6.5: slim TAP `client_shell` (no HTMX/Alpine) + `PlatformPaths.invite` default `/admin/users`; same my-auth v0.4.2 / my-usermanager v0.5.4 |
+| **v0.6.5** | **1.0.2** | Multi-user platform BOM + enrollment capability DDL in ensure_sqlite_schema (my-auth v0.4.2) + nested my-auth pin (my-usermanager v0.5.4); hosts override app-factory only |
+| **v0.6.4** | **1.0.2** | Multi-user platform BOM + packaged ceremony shells (my-auth v0.4.1) + invitation DDL in SQLiteAuthDatabase (my-usermanager v0.5.2) |
+| **v0.6.3** | **1.0.2** | Multi-user platform BOM + packaged invite admin (my-usermanager v0.5.3, my-auth v0.4.0) |
+| **v0.6.2** | **1.0.2** | Multi-user platform BOM + identity lifecycle shells/paths |
+| v0.5.39 | 1.0.2 | Full Basecoat + HTMX + Alpine + app shell + Material Symbols Outlined v364; chrome is committed dist |
+| v0.5.37 | 1.0.2 | Basecoat-first contract docs + CSS keep-list |
 
 Chrome is committed dist in `app_factory/assets/`. There is no Node toolchain
 in this repo: no `package.json`, no lockfile, no compile step for hosts.

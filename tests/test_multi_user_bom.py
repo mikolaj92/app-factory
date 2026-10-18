@@ -39,9 +39,9 @@ def test_compat_documents_bom_matrix_upgrade_order_and_migration() -> None:
     text = COMPAT_PATH.read_text(encoding="utf-8")
     bom = _bom()
     assert f"| **{bom['pins']['app-factory']}** | **{bom['pins']['my-auth']}** | **{bom['pins']['my-usermanager']}** |" in text
-    assert "### Identity lifecycle paths" in text
+    assert "| **v0.6.4** | **v0.4.1** | **v0.5.2** |" in text
     assert "Supported upgrade order" in text
-    assert "Migration from host installer forks" in text
+    assert "Migration from host-owned recovery" in text
     assert 'override-dependencies = ["app-factory[platform]"]' in text
     assert (
         'override-dependencies = ["app-factory[platform]", "my-auth[fastapi-htmx]"]'
@@ -49,19 +49,10 @@ def test_compat_documents_bom_matrix_upgrade_order_and_migration() -> None:
     )
     assert "ensure_sqlite_schema" in text
     assert "SQLiteEnrollmentCapabilityStore" in text
-    assert "1. Align factory paths" in text
-    assert "2. Align my-auth" in text
-    assert "3. Initialize my-usermanager" in text
-    assert "4. Pin the complete row" in text
-    required_capabilities = (
-        "login / logout / register",
-        "activation / recovery",
-        "account / credentials",
-        "users / invite",
-        "Invite issuance",
-    )
-    for label in required_capabilities:
-        assert label in text
+    assert "1. **app-factory**" in text
+    assert "2. **my-auth**" in text
+    assert "3. **my-usermanager**" in text
+    assert "4. **Host**" in text
 
 
 def test_example_pyproject_matches_bom_and_forces_single_source() -> None:
