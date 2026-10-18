@@ -46,7 +46,7 @@ def live_server() -> Iterator[str]:
 
     base = f"http://127.0.0.1:{port}"
     deadline = time.time() + 10
-    while time.time() < deadline and not server.should_exit:
+    while time.time() < deadline and thread.is_alive() and not server.should_exit:
         try:
             with httpx2.Client(base_url=base, timeout=0.5) as client:
                 if client.get("/").status_code == 200:

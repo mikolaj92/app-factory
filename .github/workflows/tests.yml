@@ -33,7 +33,7 @@ jobs:
         run: |
           set -o pipefail
           root="$PWD"
-          export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH-$root/.runtime/ms-playwright}"
+          browser_path="${PLAYWRIGHT_BROWSERS_PATH-$root/.runtime/ms-playwright}"
           exec > >(tee "$RUNNER_TEMP/project-checks.log") 2>&1
           failed=0
           check() {
@@ -63,7 +63,7 @@ jobs:
             if [[ "$package" == "$root" ]]; then
               browser_args=(chromium)
               if [[ "$(uname -s)" == Linux ]]; then browser_args=(--with-deps chromium); fi
-              check browser uv run --no-sync playwright install "${browser_args[@]}"
+              check browser env PLAYWRIGHT_BROWSERS_PATH="$browser_path" uv run --no-sync playwright install "${browser_args[@]}"
             fi
             check ruff uv run --no-sync ruff check .
             check pytest uv run --no-sync pytest

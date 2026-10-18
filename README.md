@@ -658,9 +658,9 @@ The `examples/multi_user_bom/` package is the pinned multi-user BOM consumer
 (app-factory + my-auth + my-usermanager). Prefer it when checking identity
 lifecycle composition and package resolution.
 
-Pytest loads `scripts.run_projects` to default to checkout-local `.runtime/ms-playwright`.
-An explicit `PLAYWRIGHT_BROWSERS_PATH` overrides that absolute path. Prepare Chromium
-with the command above; on Linux add `--with-deps` before `chromium`.
+`tests/conftest.py` defaults pytest to the checkout's absolute `.runtime/ms-playwright`.
+An explicit `PLAYWRIGHT_BROWSERS_PATH` overrides it; use that same value for installation.
+Prepare Chromium with the command above; on Linux add `--with-deps` before `chromium`.
 Collection never downloads browsers. Missing or broken Chromium fails tests;
 only an absent optional Playwright package can skip browser modules.
 
@@ -674,9 +674,8 @@ Root checks also explicitly prepare Chromium, check HTTP releases and build the 
 Every stage reports its status, and any failure makes the aggregate fail.
 CI runs Python 3.12 and 3.14 and uploads `project-checks.log`, including failures.
 
-The workflow respects an explicit `PLAYWRIGHT_BROWSERS_PATH` during preparation
-and testing. Without it, both stages use the checkout's absolute
-`.runtime/ms-playwright` path.
+The workflow passes the browser path explicitly only during installation.
+Pytest independently selects the same default or respects the operator's override.
 
 ---
 

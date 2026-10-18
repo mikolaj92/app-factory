@@ -84,9 +84,8 @@ def run_browser():
         else:
             pytest.fail("Run test server did not start")
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            try:
-                page = browser.new_page()
+            with p.chromium.launch(headless=True) as browser, browser.new_context() as context:
+                page = context.new_page()
                 page.set_default_timeout(8000)
                 response = page.request.post(
                     base + "/api/runs",
@@ -95,8 +94,6 @@ def run_browser():
                 )
                 assert response.status == 202
                 yield page, base, port
-            finally:
-                browser.close()
     finally:
         server.should_exit = True
         thread.join(timeout=5)
