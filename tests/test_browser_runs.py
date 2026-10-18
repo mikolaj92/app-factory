@@ -84,10 +84,7 @@ def run_browser():
         else:
             pytest.fail("Run test server did not start")
         with sync_playwright() as p:
-            try:
-                browser = p.chromium.launch(headless=True)
-            except Exception as exc:
-                pytest.skip(f"Chromium unavailable: {exc}")
+            browser = p.chromium.launch(headless=True)
             try:
                 page = browser.new_page()
                 page.set_default_timeout(8000)

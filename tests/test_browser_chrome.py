@@ -1,8 +1,4 @@
-"""Optional real-browser chrome isolation (issue #9).
-
-Default suite stays dep-free. These tests skip unless Playwright + Chromium
-are available (``uv sync --extra browser && uv run playwright install chromium``).
-"""
+"""Real-browser chrome isolation; prepare Chromium as described in README.md."""
 
 from __future__ import annotations
 
@@ -52,9 +48,7 @@ def live_server() -> Iterator[str]:
 
     base = f"http://127.0.0.1:{port}"
     deadline = time.time() + 10
-    while time.time() < deadline:
-        if server.should_exit:
-            break
+    while time.time() < deadline and not server.should_exit:
         try:
             with httpx2.Client(base_url=base, timeout=0.5) as client:
                 if client.get("/").status_code == 200:
@@ -64,7 +58,7 @@ def live_server() -> Iterator[str]:
     else:
         server.should_exit = True
         thread.join(timeout=2)
-        pytest.skip("uvicorn test server failed to become ready")
+        pytest.fail("uvicorn test server failed to become ready")
 
     try:
         yield base
@@ -76,17 +70,13 @@ def live_server() -> Iterator[str]:
 @pytest.fixture
 def browser_page(live_server: str):
     with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
         try:
-            browser = p.chromium.launch(headless=True)
-        except Exception as exc:  # noqa: BLE001  # pragma: no cover - env dependent
-            pytest.skip(f"chromium unavailable: {exc}")
-        context = browser.new_context()
-        page = context.new_page()
-        page.set_default_timeout(8_000)
-        try:
-            yield page, live_server
+            with browser.new_context() as context:
+                page = context.new_page()
+                page.set_default_timeout(8_000)
+                yield page, live_server
         finally:
-            context.close()
             browser.close()
 
 

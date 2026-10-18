@@ -16,7 +16,6 @@ jobs:
       matrix:
         python-version: ["3.12", "3.14"]
     env:
-      # Resolve against each project, never reuse an inherited root environment.
       UV_PROJECT_ENVIRONMENT: .venv
       UV_NO_ENV_FILE: "1"
     steps:
@@ -27,56 +26,51 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Check root lock
-        run: uv lock --check
-      - name: Check BOM lock
-        run: uv lock --check
-        working-directory: examples/multi_user_bom
-      - name: Install root extras
-        run: uv sync --frozen --all-extras
-      - name: Install BOM dependencies
-        run: uv sync --frozen --all-extras
-        working-directory: examples/multi_user_bom
-      - run: uv run --locked playwright install --with-deps chromium
-      - name: Test root project
+      - name: Check all projects
         shell: bash
         run: |
           set -o pipefail
-          printf 'cwd=%s\nargv=uv run --locked --all-extras pytest -q\n' "$PWD" | tee "$RUNNER_TEMP/root-tests.log"
-          set +e
-          uv run --locked --all-extras pytest -q 2>&1 | tee -a "$RUNNER_TEMP/root-tests.log"
-          status=$?
-          printf 'exit_code=%s\n' "$status" | tee -a "$RUNNER_TEMP/root-tests.log"
-          exit "$status"
-      - name: Test BOM project
-        # A failed root suite must not hide the separate consumer suite.
-        if: ${{ !cancelled() }}
-        working-directory: examples/multi_user_bom
-        shell: bash
-        run: |
-          set -o pipefail
-          printf 'cwd=%s\nargv=uv run --locked --all-extras pytest -q\n' "$PWD" | tee "$RUNNER_TEMP/bom-tests.log"
-          set +e
-          uv run --locked --all-extras pytest -q 2>&1 | tee -a "$RUNNER_TEMP/bom-tests.log"
-          status=$?
-          printf 'exit_code=%s\n' "$status" | tee -a "$RUNNER_TEMP/bom-tests.log"
-          exit "$status"
-      - name: Upload project test evidence
+          root="$PWD"
+          export PLAYWRIGHT_BROWSERS_PATH="$root/.runtime/ms-playwright"
+          exec > >(tee "$RUNNER_TEMP/project-checks.log") 2>&1
+          failed=0
+          check() {
+            local stage="$1"
+            shift
+            if "$@"; then status=0; else status=$?; failed=1; fi
+            printf 'PROJECT_CHECK cwd=%s stage=%s exit_code=%s\n' "$PWD" "$stage" "$status"
+          }
+          packages=("$root")
+          for manifest in "$root"/examples/*/pyproject.toml; do
+            [[ -f "$manifest" ]] && packages+=("${manifest%/pyproject.toml}")
+          done
+          for package in "${packages[@]}"; do
+            cd "$package"
+            printf 'LOKAY_TEST_CWD=%s\n' "$PWD"
+            check lock uv lock --check
+            check sync uv sync --locked --all-extras
+            if [[ "$status" != 0 ]]; then
+              printf 'PROJECT_CHECK cwd=%s stages=browser,pytest,ruff,http,build status=not-run reason=sync-failed\n' "$PWD"
+              continue
+            fi
+            if [[ "$package" == "$root" ]]; then
+              browser_args=(chromium)
+              if [[ "$(uname -s)" == Linux ]]; then browser_args=(--with-deps chromium); fi
+              check browser uv run --no-sync playwright install "${browser_args[@]}"
+            fi
+            check pytest uv run --no-sync pytest
+            check ruff uv run --no-sync ruff check .
+            if [[ "$package" == "$root" ]]; then
+              check http uv run --no-sync python scripts/refresh_platform_assets.py --check-http-releases
+              check build uv build
+            fi
+          done
+          printf 'PROJECT_CHECK_RESULT=%s\n' "$failed"
+          exit "$failed"
+      - name: Upload project check evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: project-tests-${{ github.sha }}-python-${{ matrix.python-version }}
-          path: |
-            ${{ runner.temp }}/root-tests.log
-            ${{ runner.temp }}/bom-tests.log
+          path: ${{ runner.temp }}/project-checks.log
           if-no-files-found: error
-      # Independent checks must still report failures after either suite fails.
-      - name: Check stable HTTP releases
-        if: ${{ !cancelled() }}
-        run: uv run --locked python scripts/refresh_platform_assets.py --check-http-releases
-      - name: Lint
-        if: ${{ !cancelled() }}
-        run: uv run --locked ruff check .
-      - name: Build
-        if: ${{ !cancelled() }}
-        run: uv build
