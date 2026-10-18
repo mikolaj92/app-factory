@@ -40,6 +40,7 @@ def test_compat_documents_bom_matrix_upgrade_order_and_migration() -> None:
     bom = _bom()
     assert f"| **{bom['pins']['app-factory']}** | **{bom['pins']['my-auth']}** | **{bom['pins']['my-usermanager']}** |" in text
     assert "| **v0.6.4** | **v0.4.1** | **v0.5.2** |" in text
+    assert "Identity lifecycle capability matrix" in text
     assert "Supported upgrade order" in text
     assert "Migration from host-owned recovery" in text
     assert 'override-dependencies = ["app-factory[platform]"]' in text
@@ -53,6 +54,16 @@ def test_compat_documents_bom_matrix_upgrade_order_and_migration() -> None:
     assert "2. **my-auth**" in text
     assert "3. **my-usermanager**" in text
     assert "4. **Host**" in text
+    required_capabilities = (
+        "Bootstrap registration",
+        "Invitation activation",
+        "Account recovery",
+        "Account credentials",
+        "Admin user management",
+        "Invite issuance",
+    )
+    for label in required_capabilities:
+        assert label in text
 
 
 def test_example_pyproject_matches_bom_and_forces_single_source() -> None:

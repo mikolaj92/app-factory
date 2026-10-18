@@ -44,7 +44,7 @@ This package is the thin shared layer in a small platform. Together:
 
 `install_platform()` is chrome-only. Multi-user hosts call `install_identity_adapters()` with `PasskeyBinding` and/or `UserManagerBinding`; they do not invoke the package installers directly.
 
-Do not ship private platform shells/assets, replacement passkey pages or copied CDN pins (`app_factory.cdn` owns them).
+Do not ship local platform shells, runtime dependencies on basecoat-factory, private copies of bundled `basecoat.css` / HTMX / Alpine, replacement full-page passkey login, or copied optional CDN pins (use `app_factory.cdn`).
 
 ---
 
@@ -242,20 +242,20 @@ deploy checks. Product templates load extras after the factory head include.
 ---
 ## Install (git + uv)
 
-Use the tagged dependency configuration in [COMPAT.md](COMPAT.md#host-rule), not a local path.
-
-```bash
-uv lock && uv sync
+Pin one tagged BOM generation, not a local path; then run `uv lock && uv sync`:
+```toml
+# pyproject.toml; compatibility rules: COMPAT.md; reference: examples/multi_user_bom/
+dependencies = ["app-factory[platform]", "my-auth[fastapi-htmx]", "my-usermanager[fastapi-htmx,myauth]"]
+[tool.uv]
+override-dependencies = ["app-factory[platform]"]
+[tool.uv.sources]
+app-factory = { git = "https://github.com/mikolaj92/app-factory.git", tag = "v0.7.9" }
+my-auth = { git = "https://github.com/mikolaj92/my-auth.git", tag = "v0.5.7" }
+my-usermanager = { git = "https://github.com/mikolaj92/my-usermanager.git", tag = "v0.6.10" }
 ```
 
-Reference integration (bootstrap, invite activation, credentials, recovery, admin users):
-[`examples/multi_user_bom/`](examples/multi_user_bom/).
-
-For a new product, prefer `create_product_app(...)`, one `ProductAppConfig`,
-and a template extending `app_factory/product_shell.html` (see
-[`examples/minimal_host/app.py`](examples/minimal_host/app.py)).
-Do not copy passkey or user-manager installers into a new host; add the identity
-bindings only when the product needs them.
+New products use `create_product_app(...)`, one `ProductAppConfig`, and `app_factory/product_shell.html` (see [`examples/minimal_host/app.py`](examples/minimal_host/app.py)).
+Do not copy passkey or user-manager installers; add identity bindings only when needed.
 
 ---
 

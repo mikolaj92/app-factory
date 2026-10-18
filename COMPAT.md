@@ -79,25 +79,25 @@ Apply one generation at a time, in this order, until the preferred BOM row (`v0.
 3. **my-usermanager** — account lifecycle + packaged invite admin + invitation DDL in `SQLiteAuthDatabase.initialize()` (`v0.6.10`); nested sources my-auth v0.5.7 (do not override my-auth); `initialize()` also stamps enrollment DDL on current auth schemas; default hosts call `install_local_identity`; set `base_template` to `app_factory/identity_authenticated_shell.html` (the composer does this).
 4. **Host** — pin all three tags from the same BOM row, add `override-dependencies = ["app-factory[platform]"]` only (do not override my-auth), migrate templates (below), replace installer forks with `install_identity_adapters`, delete host-owned recovery/enrollment/invite chrome, drop `my_auth_overrides`, host `create_invitation_tables`, dummy `SQLiteEnrollmentCapabilityStore(db)` after `initialize()`, and the second host `ensure_sqlite_schema(conn)` call.
 Never run production with packages from different matrix rows.
-Before migrating older auth, verify database backup restoration in an isolated sandbox with separate sessions and no real invitation delivery.
-Reverting pins does not revert data migrations; restore compatible data as well.
+Before migrating older auth, verify database backup restoration in an isolated sandbox with separate sessions and no real invitation delivery. Reverting pins does not revert data migrations; restore compatible data as well.
 
 ### Migration from host installer forks (`install_identity_adapters`)
 The chrome generation **v0.6.11 / v0.4.8 / v0.5.7** is not enough: those tags ship shells and nested pins but not this composer. Adopt **v0.7.9 / v0.5.7 / v0.6.10**.
-Delete from hosts:
-- `install_passkey_ui` / `install_usermanager_ui` / `PasskeyUiConfig` / `UserManagerUiConfig` construction
-- Dummy `render_login` / `render_register` (and `PasskeyRouteHooks` only to satisfy those slots)
-- Manual `PasskeyPaths` ↔ `PlatformPaths` copying
-- `apply_platform_context` loops / request middleware that only rebinds chrome globals
-- `base_template="app_factory/identity_authenticated_shell.html"` (the composer sets it)
+Delete host construction of `install_passkey_ui`, `install_usermanager_ui`, `PasskeyUiConfig`, and `UserManagerUiConfig`; dummy `render_login` / `render_register` (and `PasskeyRouteHooks` only for those slots); manual `PasskeyPaths` ↔ `PlatformPaths` copying; chrome-only `apply_platform_context` loops / request middleware; and `base_template="app_factory/identity_authenticated_shell.html"` (the composer sets it).
 Keep persistence, session transport, product policy, invite delivery and optional `page_context` in hosts.
 Idempotent for the same chrome + adapter selection. A second call with a different mount, config, or adapter set raises `IdentityAdapterConflict`. Admin UI without CSRF and a passkey service without hooks fail closed.
 
 ### Migration from host-owned recovery / enrollment templates
 The composer selects shells and paths: login/register use `shell.html`; capability and credential pages use identity shells. Delete copied lifecycle templates.
 Invitation delivery uses my-usermanager `InvitationService` and my-auth enrollment capabilities; hosts supply `invite_user`, `reissue_invitation`, and `revoke_invitation` policy hooks. Links carry only opaque tokens; the packaged UI shows activation URLs once after invite/reissue.
-### Identity lifecycle paths
-| Surface | Default | Visibility |
-|---------|---------|------------|
-| users / invite | `/admin/users` | admin (`PlatformUser.is_admin`); issuance POSTs to `/admin/users/invite` |
+### Identity lifecycle paths — Identity lifecycle capability matrix (BOM v0.7.9)
+| Capability | Owner | Default surface / visibility |
+|------------|-------|------------------------------|
+| Bootstrap registration | my-auth | `/register`; public (host policy) |
+| Invitation activation | my-auth + my-usermanager | `/activate`; public capability URL |
+| Account recovery | my-auth | `/recover`; public capability URL |
+| Account credentials | my-auth | `/account/passkeys`; authenticated |
+| Account profile / session | my-usermanager | `/account`; authenticated |
+| Admin user management / Invite issuance, reissue, revoke | my-usermanager | `/admin/users` (issuance POST `/admin/users/invite`); admin (`PlatformUser.is_admin`) |
+| users / invite | `/admin/users` | admin; issuance POST `/admin/users/invite` |
 Other path defaults, shell placement and extension points: [README.md](README.md#identity-lifecycle-shells). Override paths with `PlatformPaths.root`; `build_platform_context` resolves rooted URLs once. Adapters own handlers; `PlatformConfig` enables navigation.
