@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-"""Run both project suites with isolated environments and actual cwd markers.
-
-A marker is not proof of success: each following pytest invocation must
-produce its own passing summary.
-Each invocation checks its lock and has a bounded execution time.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -21,7 +14,7 @@ PROJECT_TIMEOUT = 240  # Both suites must fit within Lokay's 600-second budget.
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description="Run both project suites with isolated environments.")
     parser.add_argument(
         "--project", choices=("root", "bom"),
         help="run one project for a separate CI step; default: run both",
