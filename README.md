@@ -145,12 +145,12 @@ Exact sources, licenses, and digests are stored under `app_factory/assets/`.
 ### Reusable file upload
 
 `app_factory/components/file_upload.html` exports domain-blind `file_upload` and `file_upload_field` Jinja macros.
-The host configures `accept`, `multiple`, `max_bytes`, labels, action, and HTMX
-target. The component provides picker/drop, selected-file removal, batch
-confirmation, busy state, and an HTMX request indicator; the normal multipart
-form remains the no-JS fallback. Server-side format and security validation
-remain consumer-owned. HTMX 4 uses Fetch, so byte-level upload progress is not
-available from the transport.
+Native submit and cancellable HTMX 4 `htmx:before:request` share required/type/size
+validation of current enabled fields in `detail.ctx.request.form` on every retry.
+Multipart `ctx.request.body` is collected before that event; owned file entries
+are refreshed while host entries remain. Batch decisions cover unchanged selections
+within one attempt, not later retries. `htmx:finally:request` clears busy/progress
+on cancellation or failure. HTMX owns Fetch; native multipart remains the fallback.
 
 The backend companions `read_upload_bounded(...)` and `read_uploads_bounded(...)`
 read `UploadFile` objects in chunks and enforce per-file, aggregate, and file-count
@@ -173,8 +173,8 @@ Client pages opt into the same HTMX/Alpine generation without forking the shell:
 ) }}
 ```
 
-The macro does not name or inspect product formats. Browser `accept` is UX only;
-the consumer must validate bytes and policy on the server.
+The host configures labels, action, target and file policy. Browser `accept` is UX only;
+the consumer must validate bytes and security policy on the server.
 
 ### Shared presentation contract (Basecoat-first, no per-app CSS toolchain)
 
