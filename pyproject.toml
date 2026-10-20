@@ -29,6 +29,7 @@ platform = [
 dev = [
     "itsdangerous>=2.2",
     "pytest>=9",
+    "pytest-env>=1.8.1",
     "httpx2>=2.13.1",
     "fastapi>=0.143.0",
     "starlette>=1.8.0",
@@ -57,4 +58,5 @@ include = ["app_factory", "README.md", "COMPAT.md", "bom", "pyproject.toml"]
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+required_plugins = ["pytest-env>=1.8.1"]
 env = ["PLAYWRIGHT_BROWSERS_PATH=.playwright"]

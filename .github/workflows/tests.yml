@@ -45,9 +45,9 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          printf 'cwd=%s\nargv=uv run --locked --all-extras pytest -q\n' "$PWD" | tee "$RUNNER_TEMP/root-tests.log"
+          printf 'LOKAY_TEST_CWD=%s\nargv=uv run --locked --all-extras pytest -q\n' "$PWD" | tee "$RUNNER_TEMP/root-tests.log"
           set +e
-          uv run --locked --all-extras pytest -q 2>&1 | tee -a "$RUNNER_TEMP/root-tests.log"
+          env -u PLAYWRIGHT_BROWSERS_PATH uv run --locked --all-extras pytest -q 2>&1 | tee -a "$RUNNER_TEMP/root-tests.log"
           status=$?
           printf 'exit_code=%s\n' "$status" | tee -a "$RUNNER_TEMP/root-tests.log"
           exit "$status"

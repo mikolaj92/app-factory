@@ -628,7 +628,8 @@ after validation.
 ## Development
 
 ```bash
-uv sync --extra dev
+uv sync --locked --all-extras
+PLAYWRIGHT_BROWSERS_PATH=.playwright uv run --locked playwright install chromium
 uv run pytest
 
 # Local chrome storybook (LAN-visible; iterate shell/CSS/JS here)
@@ -705,14 +706,6 @@ and exit code. A null PID means launch failed; a PID alone does not prove
 that tests passed. These status lines do not replace pytest summaries.
 Root pytest config sets `PLAYWRIGHT_BROWSERS_PATH=.playwright`, also for `uv run pytest`.
 Install Chromium explicitly as above; `.playwright/` is ignored by Git.
-
-Optional browser isolation (issue #9) skips unless Playwright is installed:
-
-```bash
-uv sync --extra browser
-PLAYWRIGHT_BROWSERS_PATH=.playwright uv run playwright install chromium
-uv run pytest tests/test_browser_chrome.py tests/test_browser_errors.py tests/test_browser_runs.py
-```
 
 ---
 
