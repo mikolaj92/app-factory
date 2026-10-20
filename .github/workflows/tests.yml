@@ -38,7 +38,7 @@ jobs:
         run: uv sync --frozen --all-extras
         working-directory: examples/multi_user_bom
       - name: Install checkout-local Chromium
-        run: uv run --locked playwright install --with-deps chromium
+        run: uv run --locked --all-extras playwright install --with-deps chromium
         env:
           PLAYWRIGHT_BROWSERS_PATH: .playwright
       - name: Test root project
