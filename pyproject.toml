@@ -45,6 +45,7 @@ browser = [
     "starlette>=1.8.0",
     "uvicorn[standard]>=0.54.0",
     "python-multipart>=0.0.32",
+    "pytest-env>=1.8.1",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -56,3 +57,4 @@ include = ["app_factory", "README.md", "COMPAT.md", "bom", "pyproject.toml"]
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+env = ["PLAYWRIGHT_BROWSERS_PATH=.playwright"]

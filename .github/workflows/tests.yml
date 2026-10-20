@@ -37,7 +37,10 @@ jobs:
       - name: Install BOM dependencies
         run: uv sync --frozen --all-extras
         working-directory: examples/multi_user_bom
-      - run: uv run --locked playwright install --with-deps chromium
+      - name: Install checkout-local Chromium
+        run: uv run --locked playwright install --with-deps chromium
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: .playwright
       - name: Test root project
         shell: bash
         run: |
