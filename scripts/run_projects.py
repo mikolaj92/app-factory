@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Run both project suites with isolated environments and actual cwd markers.
 
-Setup (including Chromium) remains a separate step. A marker is not proof of
-success: each following pytest invocation must produce its own passing summary.
+A marker is not proof of success: each following pytest invocation must
+produce its own passing summary.
 Each invocation checks its lock and has a bounded execution time.
 """
 
@@ -43,7 +43,7 @@ def main() -> int:
             key: value for key, value in os.environ.items()
             if key not in {
                 "UV_WORKING_DIR", "UV_PROJECT", "UV_NO_PROJECT", "UV_NO_SYNC", "UV_FROZEN",
-                "UV_ISOLATED", "UV_ENV_FILE", "PYTEST_ADDOPTS",
+                "UV_ISOLATED", "UV_ENV_FILE", "PYTEST_ADDOPTS", "PLAYWRIGHT_BROWSERS_PATH",
                 "UV_CONFIG_FILE", "UV_NO_CONFIG",
                 "UV_NO_SOURCES", "UV_NO_SOURCES_PACKAGE",
                 "UV_NO_DEV", "UV_NO_GROUP", "UV_NO_DEFAULT_GROUPS",
@@ -57,6 +57,14 @@ def main() -> int:
         print(f"LOKAY_TEST_CWD={project}", flush=True)
         process = None
         try:
+            if project == ROOT:
+                setup = subprocess.run(
+                    ["uv", "run", "--locked", "--all-extras", "playwright", "install", "chromium"],
+                    cwd=project, env={**env, "PLAYWRIGHT_BROWSERS_PATH": str(ROOT / ".playwright")},
+                    timeout=PROJECT_TIMEOUT,
+                )
+                if setup.returncode:
+                    return setup.returncode
             process = subprocess.Popen(
                 argv, cwd=project, env=env, start_new_session=os.name == "posix",
             )
