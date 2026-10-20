@@ -16,7 +16,7 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PROJECTS = (ROOT, ROOT / "examples" / "multi_user_bom")
+PROJECTS = (ROOT, *(path.parent.resolve() for path in sorted((ROOT / "examples").glob("*/pyproject.toml"))))
 PROJECT_TIMEOUT = 240  # Both suites must fit within Lokay's 600-second budget.
 
 
@@ -28,9 +28,10 @@ def main() -> int:
     )
     args = parser.parse_args()
     projects = PROJECTS if args.project is None else (
-        PROJECTS[0 if args.project == "root" else 1],
+        ROOT if args.project == "root" else ROOT / "examples" / "multi_user_bom",
     )
     failed = False
+    results = []
     for project in projects:
         # Resolve from cwd and validate locks, including nested uv commands.
         # UV_ISOLATED overrides UV_PROJECT_ENVIRONMENT with a temporary environment.
@@ -53,49 +54,48 @@ def main() -> int:
         # Keep that bypass disabled for child and nested uv commands alike.
         env["UV_NO_ENV_FILE"] = "1"
         env["UV_PROJECT_ENVIRONMENT"] = str(project / ".venv")
-        argv = ["uv", "run", "--locked", "--all-extras", "pytest", "-q"]
-        print(f"LOKAY_TEST_CWD={project}", flush=True)
-        process = None
-        try:
-            process = subprocess.Popen(
-                argv, cwd=project, env=env, start_new_session=os.name == "posix",
-            )
+        for stage, argv in (
+            ("SYNC", ["uv", "sync", "--locked", "--all-extras"]),
+            ("TEST", ["uv", "run", "--locked", "--all-extras", "pytest"]),
+        ):
+            print(f"LOKAY_{stage}_CWD={project}", flush=True)
+            process = None
             try:
-                returncode = process.wait(timeout=PROJECT_TIMEOUT)
-            except BaseException:
-                # uv launches pytest, which can launch browser/server children.
-                # Kill the entire session before starting the other project.
-                if os.name == "posix":
-                    try:
-                        os.killpg(process.pid, signal.SIGKILL)
-                    except OSError:
-                        # A missing group does not prove that uv has exited.
-                        # If group signalling fails, still stop and reap uv.
+                process = subprocess.Popen(
+                    argv, cwd=project, env=env, start_new_session=os.name == "posix",
+                )
+                try:
+                    returncode = process.wait(timeout=PROJECT_TIMEOUT)
+                except BaseException:
+                    if os.name == "posix":
                         try:
-                            process.kill()
-                        except ProcessLookupError:
-                            pass
-                else:
-                    process.kill()
-                process.wait()
-                raise
-        except subprocess.TimeoutExpired:
-            print(f"Tests timed out in {project} after {PROJECT_TIMEOUT}s", flush=True)
-            returncode = 124
-        except OSError as exc:
-            print(f"Cannot run tests in {project}: {exc}", flush=True)
-            returncode = 127
-        # Report actual child status; 124/127 identify timeout/launch failures.
-        # This complements, never replaces, the real pytest summary above.
-        print(f"LOKAY_TEST_EXIT_CODE={returncode} cwd={project}", flush=True)
-        # A launch request or cwd marker alone is not execution evidence.
-        print("PROJECT_TEST_RESULT=" + json.dumps({
-            "argv": argv,
-            "cwd": str(project),
-            "pid": process.pid if process is not None else None,
-            "returncode": returncode,
-        }), flush=True)
-        failed |= returncode != 0
+                            os.killpg(process.pid, signal.SIGKILL)
+                        except OSError:
+                            try:
+                                process.kill()
+                            except ProcessLookupError:
+                                pass
+                    else:
+                        process.kill()
+                    process.wait()
+                    raise
+            except subprocess.TimeoutExpired:
+                print(f"{stage} timed out in {project} after {PROJECT_TIMEOUT}s", flush=True)
+                returncode = 124
+            except OSError as exc:
+                print(f"Cannot run {stage} in {project}: {exc}", flush=True)
+                returncode = 127
+            print(f"LOKAY_{stage}_EXIT_CODE={returncode} cwd={project}", flush=True)
+            result = {
+                "argv": argv,
+                "cwd": str(project),
+                "pid": process.pid if process is not None else None,
+                "returncode": returncode,
+            }
+            print(f"PROJECT_{stage}_RESULT=" + json.dumps(result), flush=True)
+            results.append(result)
+            failed |= returncode != 0
+    print("PROJECT_CHECK_SUMMARY=" + json.dumps(results), flush=True)
     return int(failed)
 
 
