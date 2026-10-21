@@ -145,17 +145,17 @@ Exact sources, licenses, and digests are stored under `app_factory/assets/`.
 ### Reusable file upload
 
 `app_factory/components/file_upload.html` exports domain-blind `file_upload` and `file_upload_field` Jinja macros.
-The host configures `accept`, `multiple`, `max_bytes`, labels, action, and HTMX
-target. The component provides picker/drop, selected-file removal, batch
-confirmation, busy state, and an HTMX request indicator; the normal multipart
-form remains the no-JS fallback. Server-side format and security validation
-remain consumer-owned. HTMX 4 uses Fetch, so byte-level upload progress is not
-available from the transport.
+The host configures `accept`, `multiple`, `max_bytes`, labels, action, and HTMX target; multipart submission remains the no-JS fallback.
+The bundled HTMX 4 emits cancelable, bubbling `htmx:config:request` and `htmx:before:request` on the source element before Fetch; `preventDefault()` at either gate stops transport.
+Both carry `event.detail.ctx`: `ctx.sourceElement`, `ctx.sourceEvent`, `ctx.target`, and `ctx.request` (including `form`, `body`, `signal`, and `abort`). FormData is collected before these gates.
+The current controller validates required/type/size only on native `submit`; size equal to `max_bytes` is accepted. HTMX does not use that submit event's `defaultPrevented` as a transport gate.
+Batch approval stores `confirmed_count` and calls `requestSubmit()`; this count is not file identity. A change event clears it, but direct HTMX retries bypass controller validation and confirmation.
+Hosts must validate current files on retries; changing inputs after FormData collection does not update that request's body. Native cancellation alone does not guarantee zero POST or one batch dialog/request.
+The controller sets busy/progress on `htmx:before:request` and resets on `htmx:after:request` (after response text). Cancellation at the former gate or a Fetch failure can leave busy/progress set; `htmx:finally:request` runs on those paths.
+HTMX uses Fetch without byte-level upload progress. Server-side format and security validation remain consumer-owned; the client controller is not a security boundary.
 
-The backend companions `read_upload_bounded(...)` and `read_uploads_bounded(...)`
-read `UploadFile` objects in chunks and enforce per-file, aggregate, and file-count
-limits. They deliberately do not validate file formats, archives, malware, or
-product policy.
+`read_upload_bounded(...)` and `read_uploads_bounded(...)` read `UploadFile` objects in chunks and enforce per-file, aggregate, and file-count limits.
+They deliberately do not validate file formats, archives, malware, or product policy.
 
 Client pages opt into the same HTMX/Alpine generation without forking the shell:
 
