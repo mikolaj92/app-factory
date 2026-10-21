@@ -145,17 +145,14 @@ Exact sources, licenses, and digests are stored under `app_factory/assets/`.
 ### Reusable file upload
 
 `app_factory/components/file_upload.html` exports domain-blind `file_upload` and `file_upload_field` Jinja macros.
-The host configures `accept`, `multiple`, `max_bytes`, labels, action, and HTMX
-target. The component provides picker/drop, selected-file removal, batch
-confirmation, busy state, and an HTMX request indicator; the normal multipart
-form remains the no-JS fallback. Server-side format and security validation
-remain consumer-owned. HTMX 4 uses Fetch, so byte-level upload progress is not
-available from the transport.
-
-The backend companions `read_upload_bounded(...)` and `read_uploads_bounded(...)`
-read `UploadFile` objects in chunks and enforce per-file, aggregate, and file-count
-limits. They deliberately do not validate file formats, archives, malware, or
-product policy.
+Hosts configure `accept`, `multiple`, `max_bytes`, labels, action, and target; multipart POST is the no-JS fallback.
+The current controller validates required/type/size and confirms batches on native
+`submit` only; `preventDefault()` there is not an HTMX transport veto.
+Bundled HTMX 4 collects `FormData` before `htmx:config:request`, then emits
+`htmx:before:request` on the source; both bubble, are cancelable, and carry
+`event.detail.ctx` (`sourceElement`, `target`, `request`, `sourceEvent`); cancellation stops Fetch.
+With `hx-confirm`, `htmx:confirm` carries `{ctx, issueRequest, dropRequest}`; cancel its default and call one callback.
+`issueRequest()` resumes with collected data; fresh submission recollects files, but has no HTMX revalidation gate.
 
 Client pages opt into the same HTMX/Alpine generation without forking the shell:
 
@@ -173,8 +170,11 @@ Client pages opt into the same HTMX/Alpine generation without forking the shell:
 ) }}
 ```
 
-The macro does not name or inspect product formats. Browser `accept` is UX only;
-the consumer must validate bytes and policy on the server.
+`htmx:after:request` follows response-body reading, including HTTP errors; it is
+not emitted on cancellation or Fetch failure. `htmx:finally:request` runs for
+admitted requests, including cancellation/error; the controller does not use it, so busy/progress can remain set. `htmx:after:swap` carries `{ctx}`.
+HTMX uses Fetch, without byte-level upload progress. Server validation remains host-owned.
+`read_upload_bounded` / `read_uploads_bounded` enforce byte/count limits, not formats, archives, malware, or product policy.
 
 ### Shared presentation contract (Basecoat-first, no per-app CSS toolchain)
 
