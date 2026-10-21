@@ -101,7 +101,7 @@
         if (event.type === 'submit') {
           event.preventDefault();
           event.stopImmediatePropagation();
-          form.requestSubmit(event.submitter || undefined);
+          setTimeout(() => form.requestSubmit(event.submitter || undefined), 0);
         }
       }
     };
