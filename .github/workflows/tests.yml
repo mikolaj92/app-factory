@@ -30,45 +30,26 @@ jobs:
       - name: Check root lock
         run: uv lock --check
       - name: Check BOM lock
+        if: ${{ !cancelled() }}
         run: uv lock --check
         working-directory: examples/multi_user_bom
       - name: Install root extras
-        run: uv sync --frozen --all-extras
-      - name: Install BOM dependencies
-        run: uv sync --frozen --all-extras
-        working-directory: examples/multi_user_bom
-      - run: uv run --locked playwright install --with-deps chromium
-      - name: Test root project
-        shell: bash
-        run: |
-          set -o pipefail
-          printf 'cwd=%s\nargv=uv run --locked --all-extras pytest -q\n' "$PWD" | tee "$RUNNER_TEMP/root-tests.log"
-          set +e
-          uv run --locked --all-extras pytest -q 2>&1 | tee -a "$RUNNER_TEMP/root-tests.log"
-          status=$?
-          printf 'exit_code=%s\n' "$status" | tee -a "$RUNNER_TEMP/root-tests.log"
-          exit "$status"
-      - name: Test BOM project
-        # A failed root suite must not hide the separate consumer suite.
         if: ${{ !cancelled() }}
-        working-directory: examples/multi_user_bom
+        run: uv sync --locked --all-extras
+      - run: uv run --locked --all-extras playwright install --with-deps chromium
+        if: ${{ !cancelled() }}
+      - name: Check all projects
+        if: ${{ !cancelled() }}
         shell: bash
         run: |
           set -o pipefail
-          printf 'cwd=%s\nargv=uv run --locked --all-extras pytest -q\n' "$PWD" | tee "$RUNNER_TEMP/bom-tests.log"
-          set +e
-          uv run --locked --all-extras pytest -q 2>&1 | tee -a "$RUNNER_TEMP/bom-tests.log"
-          status=$?
-          printf 'exit_code=%s\n' "$status" | tee -a "$RUNNER_TEMP/bom-tests.log"
-          exit "$status"
+          python scripts/run_projects.py 2>&1 | tee "$RUNNER_TEMP/project-tests.log"
       - name: Upload project test evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: project-tests-${{ github.sha }}-python-${{ matrix.python-version }}
-          path: |
-            ${{ runner.temp }}/root-tests.log
-            ${{ runner.temp }}/bom-tests.log
+          path: ${{ runner.temp }}/project-tests.log
           if-no-files-found: error
       # Independent checks must still report failures after either suite fails.
       - name: Check stable HTTP releases
