@@ -113,7 +113,9 @@
     }, true);
 
     form.addEventListener('htmx:before:request', (event) => {
-      if (!validate(event)) return;
+      if (event.defaultPrevented || !validate(event)) return;
+      const body = event.detail?.ctx?.request?.body;
+      if (confirmed && body instanceof FormData) body.set(confirmed.name, confirmed.value);
       if (submit) { submit.disabled = true; submit.setAttribute('aria-busy', 'true'); }
       if (progress) progress.hidden = false;
       if (bar) bar.removeAttribute('value');
