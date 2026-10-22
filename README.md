@@ -154,21 +154,21 @@ The contract below comes from [`file_upload_boot.html`](app_factory/templates/ap
   HTMX does not check `submit.defaultPrevented`: the controller's `preventDefault()` stops native submission, not that HTMX request or other listeners.
 - **Validation and confirmation:** each controller `submit` checks required files, per-file `max_bytes`, then extension/MIME `accept` tokens.
   For multiple files, a mismatched hidden `confirmed_count` cancels native submission and opens `window.confirm()`.
-  Acceptance stores the count and calls `form.requestSubmit()`, repeating submission and validation; rejection does not undo HTMX work already started.
+  Acceptance stores the count and calls `form.requestSubmit()` without a submitter, repeating submission and validation; rejection does not undo HTMX work already started.
   Picker/drop/removal rendering clears the count and status, not busy/progress. Confirmation is a count, not a file identity or security check.
 - **Payload and events:** HTMX normally calls `reportValidity()`, then snapshots `new FormData(form)` and includes a named submitter.
-  Multipart encoding preserves file entries under `name` (default `files`) and `confirmed_count` when present; HTMX uses Fetch, not XHR upload progress.
+  Multipart encoding preserves file entries under `name` (default `files`) and the snapshotted `confirmed_count`, even if confirmation changes it later; Fetch provides no upload progress events here.
   Request events expose `event.detail.ctx`: `sourceElement`, `sourceEvent`, `request` (`body`, `form`, `submitter`, `abort`, `signal`), then `response` and `text` as available.
   `htmx:config:request` precedes synchronization; `htmx:before:request` precedes Fetch; `htmx:before:response` precedes reading the response body.
   `htmx:after:request` follows body reading, including HTTP errors, before `htmx:response:error` and swapping. It does not mean server success.
-- **Cancellation and retry:** cancelling `htmx:config:request` or `htmx:before:request` prevents Fetch; cancelling `htmx:before:response` skips `htmx:after:request`.
+- **Cancellation and retry:** `preventDefault()` on `htmx:config:request` or `htmx:before:request` prevents Fetch, not other event listeners; cancelling `htmx:before:response` skips body reading and `htmx:after:request`.
   `ctx.request.abort()` or `htmx:abort` on the source aborts active transport; abort cannot guarantee the server did not process the POST.
   There is no automatic upload retry. A fresh submit snapshots current files and reruns controller checks, but has the same listener-order limitation.
-  Default synchronization is `queue first`; a queued request resumes with its existing context/payload, without recollection or repeated file checks.
+  Default synchronization is `queue first`: one active request and at most one waiting request; later arrivals are dropped. Dequeuing reuses context/payload without recollection or file revalidation.
 - **Busy/progress reset:** `htmx:before:request` disables submit, sets `aria-busy`, shows indeterminate progress, and clears its label.
   Only the controller's `htmx:after:request` handler removes busy, restores disabled according to required/file presence, hides progress, and sets `0` / `0%`.
-  Fetch rejection, timeout, or abort emits `htmx:error` then `htmx:finally:request`, not `htmx:after:request`; cancellation before response reading also skips that reset.
-  Cancelling `htmx:before:request` can leave controller busy state set. HTMX finally cleans its own indicators/`hx-disable`, not the controller's busy/progress (navigation may retain indicators).
+  Fetch/body-read rejection, timeout, or abort before `htmx:after:request` emits `htmx:error` then `htmx:finally:request`, without that reset; cancelling `htmx:before:response` reaches finally without an error event.
+  Cancelling `htmx:before:request` still runs the controller listener and can leave busy/progress set; cancelling config does not enter this phase. Finally cleans HTMX indicators/`hx-disable`, not controller state (navigation may retain indicators).
   After swaps, the controller initializes fields within `ctx.target || ctx.sourceElement`; replacement markup supplies fresh state, not a reset of the old form.
 
 Server-side validation remains mandatory on every attempt. `read_upload_bounded(...)` / `read_uploads_bounded(...)` enforce chunked per-file/aggregate/count limits, not formats, archives, malware, or product policy; client checks and confirmation cannot enforce those rules.
