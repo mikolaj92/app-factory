@@ -145,17 +145,19 @@ Exact sources, licenses, and digests are stored under `app_factory/assets/`.
 ### Reusable file upload
 
 `app_factory/components/file_upload.html` exports domain-blind `file_upload` and `file_upload_field` Jinja macros.
-The host configures `accept`, `multiple`, `max_bytes`, labels, action, and HTMX
-target. The component provides picker/drop, selected-file removal, batch
-confirmation, busy state, and an HTMX request indicator; the normal multipart
-form remains the no-JS fallback. Server-side format and security validation
-remain consumer-owned. HTMX 4 uses Fetch, so byte-level upload progress is not
-available from the transport.
+The host supplies action, target/swap, `accept`, `multiple`, `max_bytes`, and copy; native multipart POST is the no-JS fallback. This contract comes from [`file_upload_boot.html`](app_factory/templates/app_factory/file_upload_boot.html), the [macros](app_factory/templates/app_factory/components/file_upload.html), and the [bundled HTMX 4.0.0](app_factory/assets/htmx.min.js), not a browser run. It does not establish observed POST counts.
 
-The backend companions `read_upload_bounded(...)` and `read_uploads_bounded(...)`
-read `UploadFile` objects in chunks and enforce per-file, aggregate, and file-count
-limits. They deliberately do not validate file formats, archives, malware, or
-product policy.
+- In the shared head, HTMX registers its `DOMContentLoaded` initializer before the upload boot. On default macro forms, its `submit` handler therefore runs first: native `reportValidity()`, `FormData` collection, then cancelable `htmx:config:request` precede the upload handler's checks. Swapped content is also processed by HTMX before `htmx:after:swap` initializes upload fields.
+- The upload `submit` handler checks required files, per-file `max_bytes`, then extension/MIME `accept`. Failure calls `preventDefault()`, not `stopImmediatePropagation()`. HTMX does not check `defaultPrevented`; this is not a reliable HTMX transport veto, including when confirmation is declined.
+- For multiple files, a mismatched hidden `confirmed_count` prompts confirmation. Acceptance stores the current count and calls `requestSubmit()`; this requests another native submission, not a transport retry. Native reentrancy/validation can affect it; do not assume a POST count from this code alone.
+- The multipart payload uses the input `name` (default `files`) for file parts plus successful form controls; `multiple=true` adds `confirmed_count`, initially empty. HTMX snapshots `FormData` before the upload handler changes that hidden value; a changed DOM value does not update an already collected body.
+- HTMX defaults to `queue first` synchronization. Queued requests retain their collected body; issuing them does not rerun upload checks. `htmx.ajax()` also bypasses the native `submit` handler. Validate current files on every server request; `accept` and `confirmed_count` are not security controls.
+- Picker change, drop, and removal rebuild the selection display, clear status and `confirmed_count`, and update submit availability. A manual retry through `submit` reruns file checks; without a selection change, the matching count skips confirmation. No automatic upload retry or selection reset is provided.
+- Cancelable events carry `event.detail.ctx`: `sourceElement`, `target`, `request` (including `body`, `signal`, `abort()`), and, after Fetch resolves, `response` (`raw`, `status`, `headers`). Normal order is `htmx:config:request` → `htmx:before:request` → Fetch → `htmx:before:response` → body read → `htmx:after:request` → response-error/redirect/swap handling → `htmx:finally:request`.
+- The upload listener sets disabled/`aria-busy` and shows indeterminate progress on `htmx:before:request`. Only its `htmx:after:request` listener clears busy, restores required-file availability, hides progress, and resets bar/label to `0`/`0%`; HTTP errors reaching that event reset too. Fetch provides no byte-level upload progress.
+- Canceling `config:request` prevents issuance before busy starts. Canceling `before:request` still runs its upload listener but skips Fetch; canceling `before:response`, Fetch/body-read failure, abort, or timeout skips `after:request`, so the upload UI can remain busy. Canceling `after:request` still runs its reset listener but stops later response handling. Cancellation does not stop other listeners by itself.
+- HTMX emits `htmx:error` on caught transport errors and `htmx:finally:request` in the admitted request's `finally` block. That block clears timeout, releases synchronization, and removes HTMX request indicators/`hx-disable` state unless a redirect keeps indicators; the upload controller listens to neither event, so those paths do not reset its busy/progress UI.
+- Server helpers `read_upload_bounded(...)` / `read_uploads_bounded(...)` enforce per-file, aggregate, and count limits while reading chunks. Hosts own format, archive, malware, authorization, and product-policy validation.
 
 Client pages opt into the same HTMX/Alpine generation without forking the shell:
 
@@ -172,9 +174,6 @@ Client pages opt into the same HTMX/Alpine generation without forking the shell:
     submit_label="Upload",
 ) }}
 ```
-
-The macro does not name or inspect product formats. Browser `accept` is UX only;
-the consumer must validate bytes and policy on the server.
 
 ### Shared presentation contract (Basecoat-first, no per-app CSS toolchain)
 
