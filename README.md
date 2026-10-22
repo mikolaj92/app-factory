@@ -145,17 +145,17 @@ Exact sources, licenses, and digests are stored under `app_factory/assets/`.
 ### Reusable file upload
 
 `app_factory/components/file_upload.html` exports domain-blind `file_upload` and `file_upload_field` Jinja macros.
-The host configures `accept`, `multiple`, `max_bytes`, labels, action, and HTMX
-target. The component provides picker/drop, selected-file removal, batch
-confirmation, busy state, and an HTMX request indicator; the normal multipart
-form remains the no-JS fallback. Server-side format and security validation
-remain consumer-owned. HTMX 4 uses Fetch, so byte-level upload progress is not
-available from the transport.
+The host configures `accept`, `multiple`, `max_bytes`, labels, action, and HTMX target; multipart submission remains the no-JS fallback.
+Source inspection of the bundled HTMX 4 establishes cancelable, bubbling `htmx:config:request` and `htmx:before:request` on the source element before Fetch. These reach the form when the source is the form or its descendant; `preventDefault()` makes dispatch return false, stopping transport.
+Both carry `event.detail.ctx`: `ctx.sourceElement`, `ctx.sourceEvent`, `ctx.target`, and `ctx.request` (`form`, `submitter`, `body`, `signal`, `abort`). FormData is collected before these gates; multipart requests retain it as `ctx.request.body`.
+The controller validates required/type/size on native `submit` only; optional-empty and exact-size-limit files pass. HTMX separately calls `reportValidity()`, but does not honor the submit event's `defaultPrevented` as a transport gate.
+Batch approval stores `confirmed_count` and calls `requestSubmit()`; a change clears the count, which identifies neither files nor fields. Each field adds form listeners and shares the form's first status, submit, confirmation and progress controls.
+Direct `htmx.ajax()` retries recollect FormData but bypass the controller's submit validation and batch dialog. Hosts must revalidate current files at a cancelable HTMX gate; later input changes do not update the collected body. Native cancellation alone does not guarantee zero POST or one dialog/request.
+Busy/progress starts on `htmx:before:request` regardless of earlier or later `preventDefault()` listeners. The controller resets it on `htmx:after:request`, after response text is read, including HTTP errors. Canceling `htmx:before:request` or `htmx:before:response`, Fetch failure, body-read failure or abort can skip that reset; `htmx:finally:request` still runs, unlike cancellation at `htmx:config:request`.
+These are source-established behaviors, not browser replay results. HTMX uses Fetch without byte-level upload progress. Server-side format and security validation remain consumer-owned; the client controller is not a security boundary.
 
-The backend companions `read_upload_bounded(...)` and `read_uploads_bounded(...)`
-read `UploadFile` objects in chunks and enforce per-file, aggregate, and file-count
-limits. They deliberately do not validate file formats, archives, malware, or
-product policy.
+`read_upload_bounded(...)` and `read_uploads_bounded(...)` read `UploadFile` objects in chunks and enforce per-file, aggregate, and file-count limits.
+They deliberately do not validate file formats, archives, malware, or product policy.
 
 Client pages opt into the same HTMX/Alpine generation without forking the shell:
 
