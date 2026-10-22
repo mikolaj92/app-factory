@@ -87,7 +87,7 @@
       });
     }
 
-    form.addEventListener('submit', (event) => {
+    const validate = (event) => {
       const files = Array.from(input.files || []);
       if (!files.length && input.required) { event.preventDefault(); setStatus(field.dataset.labelEmpty, 'error'); return; }
       const max = Number.parseInt(field.dataset.maxBytes || '', 10);
@@ -102,7 +102,9 @@
           form.requestSubmit();
         }
       }
-    });
+    };
+    form.addEventListener('submit', validate, true);
+    form.addEventListener('htmx:config:request', validate);
 
     form.addEventListener('htmx:before:request', () => {
       if (submit) { submit.disabled = true; submit.setAttribute('aria-busy', 'true'); }
@@ -110,12 +112,14 @@
       if (bar) bar.removeAttribute('value');
       if (progressLabel) progressLabel.textContent = '';
     });
-    form.addEventListener('htmx:after:request', () => {
+    const reset = () => {
       if (submit) { submit.removeAttribute('aria-busy'); submit.disabled = input.required && !(input.files && input.files.length); }
       if (progress) progress.hidden = true;
       if (bar) bar.value = 0;
       if (progressLabel) progressLabel.textContent = '0%';
-    });
+    };
+    form.addEventListener('htmx:after:request', reset);
+    form.addEventListener('htmx:finally:request', reset);
     render();
   };
 
