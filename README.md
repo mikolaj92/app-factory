@@ -144,34 +144,37 @@ Exact sources, licenses, and digests are stored under `app_factory/assets/`.
 
 ### Reusable file upload
 
-[`file_upload.html`](app_factory/templates/app_factory/components/file_upload.html) exports domain-blind `file_upload` and `file_upload_field` Jinja macros.
-The host supplies `accept`, `multiple`, `max_bytes`, labels, action, and HTMX target. Picker/drop and removal update the native file input; the form retains a normal multipart POST fallback without JavaScript.
-Client pages set `client_interactive = true`, extend `app_factory/client_shell.html`, and import the macro above.
-The contract below comes from [`file_upload_boot.html`](app_factory/templates/app_factory/file_upload_boot.html), [`head_assets.html`](app_factory/templates/app_factory/head_assets.html), and the bundled [HTMX 4.0.0 source](app_factory/assets/htmx.min.js), not browser-run results or verified POST counts.
+`app_factory/components/file_upload.html` exports domain-blind `file_upload` and `file_upload_field` Jinja macros.
+The host configures `accept`, `multiple`, `max_bytes`, labels, action, and HTMX
+target. The component provides picker/drop, selected-file removal, batch
+confirmation, busy state, and an HTMX request indicator; the normal multipart
+form remains the no-JS fallback. Server-side format and security validation
+remain consumer-owned. HTMX 4 uses Fetch, so byte-level upload progress is not
+available from the transport.
 
-- **Submit order:** on the normal head-loading path, HTMX registers its `DOMContentLoaded` callback before the upload boot.
-  HTMX installs its form `submit` listener first and can collect the payload and reach Fetch before the controller's separate, non-capturing listener checks files.
-  HTMX does not check `submit.defaultPrevented`: the controller's `preventDefault()` stops native submission, not that HTMX request or other listeners.
-- **Validation and confirmation:** each controller `submit` checks required files, per-file `max_bytes`, then extension/MIME `accept` tokens.
-  For multiple files, a mismatched hidden `confirmed_count` cancels native submission and opens `window.confirm()`.
-  Acceptance stores the count and calls `form.requestSubmit()` without a submitter; this is not HTMX replay or a guaranteed second submit event (native submission can reject re-entry). Rejection does not undo HTMX work already started.
-  Picker/drop/removal rendering clears the count and status, not busy/progress. Confirmation is a count, not a file identity or security check.
-- **Payload and events:** HTMX normally calls `reportValidity()`, then snapshots `new FormData(form)` and includes a named submitter.
-  Multipart encoding preserves file entries under `name` (default `files`) and the snapshotted `confirmed_count`, even if confirmation changes it later; Fetch provides no upload progress events here.
-  Request events expose `event.detail.ctx`: `sourceElement`, `sourceEvent`, `request` (`body`, `form`, `submitter`, `abort`, `signal`), then `response` and `text` as available.
-  `htmx:config:request` precedes synchronization; `htmx:before:request` precedes Fetch; `htmx:before:response` precedes reading the response body.
-  `htmx:after:request` follows body reading, including HTTP errors, before `htmx:response:error` and swapping. Cancelling it skips both later steps, not other listeners or finally cleanup; it does not mean server success.
-- **Cancellation and retry:** `preventDefault()` on `htmx:config:request` or `htmx:before:request` prevents Fetch, not other event listeners; cancelling `htmx:before:response` skips body reading and `htmx:after:request`.
-  `ctx.request.abort()` or `htmx:abort` on the source aborts active transport; abort cannot guarantee the server did not process the POST.
-  There is no automatic upload retry. A fresh submit event snapshots current files and reruns controller checks, with the same listener-order limitation; `htmx.ajax()` alone does not run those submit checks.
-  Default synchronization is `queue first` per source: one active request and at most one waiting request; later arrivals are dropped. Dequeuing reuses context/payload without recollection, config events, or file revalidation.
-- **Busy/progress reset:** `htmx:before:request` disables submit, sets `aria-busy`, shows indeterminate progress, and clears its label.
-  Only the controller's `htmx:after:request` handler removes busy, restores disabled according to required/file presence, hides progress, and sets `0` / `0%`.
-  Fetch/body-read rejection, timeout, or abort before `htmx:after:request` emits `htmx:error` then `htmx:finally:request`, without that reset; cancelling `htmx:before:response` reaches finally without an error event.
-  Cancelling `htmx:before:request` still runs the controller listener and can leave busy/progress set; cancelling config does not enter this phase. Finally cleans HTMX indicators/`hx-disable`, not controller state (navigation may retain indicators).
-  After swaps, the controller scans descendants of `ctx.target || ctx.sourceElement` (or document); ready fields are skipped. An `outerHTML` swap can leave `ctx.target` detached, so replacement initialization is not guaranteed.
+The backend companions `read_upload_bounded(...)` and `read_uploads_bounded(...)`
+read `UploadFile` objects in chunks and enforce per-file, aggregate, and file-count
+limits. They deliberately do not validate file formats, archives, malware, or
+product policy.
 
-Server-side validation remains mandatory on every attempt. `read_upload_bounded(...)` / `read_uploads_bounded(...)` enforce chunked per-file/aggregate/count limits, not formats, archives, malware, or product policy; client checks and confirmation cannot enforce those rules.
+Client pages opt into the same HTMX/Alpine generation without forking the shell:
+
+```jinja2
+{% set client_interactive = true %}
+{% extends "app_factory/client_shell.html" %}
+{% from "app_factory/components/file_upload.html" import file_upload %}
+
+{{ file_upload(
+    id="evidence",
+    action="/evidence",
+    accept=".example,application/x-example",
+    max_bytes=26214400,
+    submit_label="Upload",
+) }}
+```
+
+The macro does not name or inspect product formats. Browser `accept` is UX only;
+the consumer must validate bytes and policy on the server.
 
 ### Shared presentation contract (Basecoat-first, no per-app CSS toolchain)
 
