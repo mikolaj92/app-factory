@@ -145,19 +145,17 @@ Exact sources, licenses, and digests are stored under `app_factory/assets/`.
 ### Reusable file upload
 
 `app_factory/components/file_upload.html` exports domain-blind `file_upload` and `file_upload_field` Jinja macros.
-The host supplies action, target/swap, `accept`, `multiple`, `max_bytes`, and copy; native multipart POST is the no-JS fallback. This contract comes from [`file_upload_boot.html`](app_factory/templates/app_factory/file_upload_boot.html), the [macros](app_factory/templates/app_factory/components/file_upload.html), and the [bundled HTMX 4.0.0](app_factory/assets/htmx.min.js), not a browser run. It does not establish observed POST counts.
+The host configures `accept`, `multiple`, `max_bytes`, labels, action, and HTMX
+target. The component provides picker/drop, selected-file removal, batch
+confirmation, busy state, and an HTMX request indicator; the normal multipart
+form remains the no-JS fallback. Server-side format and security validation
+remain consumer-owned. HTMX 4 uses Fetch, so byte-level upload progress is not
+available from the transport.
 
-- In the shared head, HTMX registers its `DOMContentLoaded` initializer before the upload boot. On default macro forms, its `submit` handler runs first: `reportValidity()` → `FormData` collection → `htmx:config:request` → `htmx:before:request` → Fetch invocation precede the upload checks. Custom asynchronous `hx-vals`/`hx-headers` can defer later stages. HTMX also processes swapped content before `htmx:after:swap` initializes upload fields.
-- The upload `submit` handler checks required files, per-file `max_bytes`, then extension/MIME `accept`. Failure calls `preventDefault()`, not `stopImmediatePropagation()`. HTMX does not check `defaultPrevented`; this is not a reliable HTMX transport veto, including when confirmation is declined.
-- For multiple files, a mismatched hidden `confirmed_count` prompts confirmation after the file checks. Acceptance stores the current count and calls `requestSubmit()` without a submitter; this attempts native resubmission, not transport replay. Native reentrancy/validation can affect it; neither acceptance nor cancellation establishes a POST count from source alone.
-- The multipart payload uses the input `name` (default `files`) for file parts plus successful form controls and any named submitter; `multiple=true` adds `confirmed_count`, initially empty. HTMX snapshots `FormData` before the upload handler changes that hidden value; changing the DOM does not update that body. Request hooks can modify `event.detail.ctx.request.body` explicitly.
-- HTMX defaults to `queue first` per source element: one active request and at most one waiting request; further requests are dropped. `hx-sync` can change scope/strategy. Each submission collects its body before queue admission; dequeue reuses that body without recollecting or revalidating files. `htmx.ajax()` bypasses the upload `submit` handler; native `form.submit()` bypasses both submit handlers and native validation. Servers must revalidate every received batch, including retries; neither `accept` nor `confirmed_count` is a security control.
-- Picker change, drop, and removal rebuild the selection display, clear status and `confirmed_count`, and update submit availability; they do not clear `aria-busy` or progress. A retry that dispatches native `submit` reruns file checks; without a selection change, a matching count skips confirmation. No automatic retry or selection reset is provided, and a stuck disabled button can prevent a manual retry.
-- Request lifecycle events are cancelable and carry `event.detail.ctx`: `sourceElement`, `sourceEvent`, `target`, `request` (`body`, `signal`, `abort()`), then `response` (`raw`, `status`, `headers`) after Fetch resolves and `text` after body read. Normal order is `htmx:config:request` → queue admission → `htmx:before:request` → Fetch → `htmx:before:response` → body read → `htmx:after:request` → response-error/redirect/swap handling → `htmx:finally:request`; cancelability does not mean every event's return value controls execution.
-- The upload listener sets disabled/`aria-busy` and shows indeterminate progress on `htmx:before:request`. Only its `htmx:after:request` listener clears busy, restores required-file availability, hides progress, and resets bar/label to `0`/`0%`; HTTP errors reaching that event reset too. Fetch provides no byte-level upload progress.
-- `preventDefault()` on `htmx:config:request` returns before queue admission and this request's busy listener. On `htmx:before:request`, it skips Fetch but does not stop that listener. Canceling `htmx:before:response` or a Fetch/body-read failure (including abort/timeout) skips `htmx:after:request`, leaving busy/progress uncleared. Canceling `htmx:after:request` does not stop its reset listener but stops later response handling. `stopPropagation()` alone does not stop other listeners on the same form; `stopImmediatePropagation()` can.
-- Abort uses `ctx.request.abort()` or `htmx:abort` on the source; HTMX's default timeout is 60,000 ms. Caught transport errors emit `htmx:error`; admitted requests emit `htmx:finally:request` during cleanup. Cleanup clears timeout, releases synchronization, and removes HTMX indicators/`hx-disable` state unless a redirect keeps them. Neither event resets upload busy/progress; only the upload `htmx:after:request` listener does.
-- Server helpers `read_upload_bounded(...)` / `read_uploads_bounded(...)` enforce per-file, aggregate, and count limits while reading chunks. Hosts own format, archive, malware, authorization, and product-policy validation.
+The backend companions `read_upload_bounded(...)` and `read_uploads_bounded(...)`
+read `UploadFile` objects in chunks and enforce per-file, aggregate, and file-count
+limits. They deliberately do not validate file formats, archives, malware, or
+product policy.
 
 Client pages opt into the same HTMX/Alpine generation without forking the shell:
 
@@ -174,6 +172,9 @@ Client pages opt into the same HTMX/Alpine generation without forking the shell:
     submit_label="Upload",
 ) }}
 ```
+
+The macro does not name or inspect product formats. Browser `accept` is UX only;
+the consumer must validate bytes and policy on the server.
 
 ### Shared presentation contract (Basecoat-first, no per-app CSS toolchain)
 
