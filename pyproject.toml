@@ -29,6 +29,7 @@ platform = [
 dev = [
     "itsdangerous>=2.2",
     "pytest>=9",
+    "pytest-env>=1.5",
     "httpx2>=2.15.1",
     "fastapi>=0.161.1",
     "starlette>=1.9.0",
@@ -40,6 +41,7 @@ dev = [
 browser = [
     "playwright>=1.62",
     "pytest>=9",
+    "pytest-env>=1.5",
     "httpx2>=2.15.1",
     "fastapi>=0.161.1",
     "starlette>=1.9.0",
@@ -52,6 +54,9 @@ packages = ["app_factory"]
 
 [tool.hatch.build.targets.sdist]
 include = ["app_factory", "README.md", "COMPAT.md", "bom", "pyproject.toml"]
+
+[tool.pytest_env]
+PLAYWRIGHT_BROWSERS_PATH = ".playwright"
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

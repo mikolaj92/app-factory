@@ -36,8 +36,6 @@ jobs:
       - name: Install root extras
         if: ${{ !cancelled() }}
         run: uv sync --locked --all-extras
-      - run: uv run --locked --all-extras playwright install --with-deps chromium
-        if: ${{ !cancelled() }}
       - name: Check all projects
         if: ${{ !cancelled() }}
         shell: bash

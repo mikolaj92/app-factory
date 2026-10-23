@@ -51,6 +51,7 @@ browser = [
     { name = "httpx2" },
     { name = "playwright" },
     { name = "pytest" },
+    { name = "pytest-env" },
     { name = "python-multipart" },
     { name = "starlette" },
     { name = "uvicorn", extra = ["standard"] },
@@ -61,6 +62,7 @@ dev = [
     { name = "itsdangerous" },
     { name = "packaging" },
     { name = "pytest" },
+    { name = "pytest-env" },
     { name = "python-multipart" },
     { name = "ruff" },
     { name = "starlette" },
@@ -91,6 +93,8 @@ requires-dist = [
     { name = "playwright", marker = "extra == 'browser'", specifier = ">=1.62" },
     { name = "pytest", marker = "extra == 'browser'", specifier = ">=9" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=9" },
+    { name = "pytest-env", marker = "extra == 'browser'", specifier = ">=1.5" },
+    { name = "pytest-env", marker = "extra == 'dev'", specifier = ">=1.5" },
     { name = "python-multipart", marker = "extra == 'browser'", specifier = ">=0.0.32" },
     { name = "python-multipart", marker = "extra == 'dev'", specifier = ">=0.0.32" },
     { name = "python-multipart", marker = "extra == 'fastapi'", specifier = ">=0.0.32" },
@@ -763,6 +767,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e4/47/b9efed96c114afcfa3c9d3fe98a76a1d14c74a9e266d397cf6eb64be5e01/pytest-9.1.1.tar.gz", hash = "sha256:1088fbde8f2b49d95a549a195707afa7a76a3ce9bcadc26b6d71f0ffda5fe313", size = 1636369, upload-time = "2026-06-19T10:58:32.857Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/24/25/1de2678b631f5a49215c6c96fff41ba892b0a34df68d6d80292b1b48aa7f/pytest-9.1.1-py3-none-any.whl", hash = "sha256:37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c", size = 386536, upload-time = "2026-06-19T10:58:31.347Z" },
+]
+
+[[package]]
+name = "pytest-env"
+version = "1.8.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+    { name = "python-dotenv" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0e/36/ccea73f55f269dc15c17ffb85d86beab7602bd7712f509300ef0d6bb937a/pytest_env-1.8.1.tar.gz", hash = "sha256:996f86ad78b6c7b5335e0d493f9e9ecd3e421174e056742856f91da439e1cbd9", size = 17852, upload-time = "2026-10-18T06:54:41.736Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8a/7d/d02c020f0daff882c9115c3c0381b8fac386570ef08c10d648a1a6fdf89e/pytest_env-1.8.1-py3-none-any.whl", hash = "sha256:753d3f0c646dd43f292a6d664099d1cafce39dda08217510ec5e9b6a681628a0", size = 10464, upload-time = "2026-10-18T06:54:40.508Z" },
 ]
 
 [[package]]

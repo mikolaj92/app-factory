@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-"""Run both project suites with isolated environments and actual cwd markers.
-
-Setup (including Chromium) remains a separate step. A marker is not proof of
-success: each following pytest invocation must produce its own passing summary.
-Each invocation checks its lock and has a bounded execution time.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -54,10 +47,15 @@ def main() -> int:
         # Keep that bypass disabled for child and nested uv commands alike.
         env["UV_NO_ENV_FILE"] = "1"
         env["UV_PROJECT_ENVIRONMENT"] = str(project / ".venv")
-        for stage, argv in (
-            ("SYNC", ["uv", "sync", "--locked", "--all-extras"]),
-            ("TEST", ["uv", "run", "--locked", "--all-extras", "pytest"]),
-        ):
+        stages = [("SYNC", ["uv", "sync", "--locked", "--all-extras"])]
+        if project == ROOT:
+            env["PLAYWRIGHT_BROWSERS_PATH"] = str(ROOT / ".playwright")
+            stages.append((
+                "BROWSER_INSTALL",
+                ["uv", "run", "--locked", "--all-extras", "playwright", "install", "--with-deps", "chromium"],
+            ))
+        stages.append(("TEST", ["uv", "run", "--locked", "--all-extras", "pytest"]))
+        for stage, argv in stages:
             print(f"LOKAY_{stage}_CWD={project}", flush=True)
             process = None
             try:
