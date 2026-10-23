@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-"""Run both project suites with isolated environments and actual cwd markers.
-
-Setup (including Chromium) remains a separate step. A marker is not proof of
-success: each following pytest invocation must produce its own passing summary.
-Each invocation checks its lock and has a bounded execution time.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -21,7 +14,7 @@ PROJECT_TIMEOUT = 240  # Both suites must fit within Lokay's 600-second budget.
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description="Run project checks with isolated environments and cwd markers.")
     parser.add_argument(
         "--project", choices=("root", "bom"),
         help="run one project for a separate CI step; default: run both",
@@ -54,10 +47,14 @@ def main() -> int:
         # Keep that bypass disabled for child and nested uv commands alike.
         env["UV_NO_ENV_FILE"] = "1"
         env["UV_PROJECT_ENVIRONMENT"] = str(project / ".venv")
-        for stage, argv in (
-            ("SYNC", ["uv", "sync", "--locked", "--all-extras"]),
-            ("TEST", ["uv", "run", "--locked", "--all-extras", "pytest"]),
-        ):
+        stages = [("SYNC", ["uv", "sync", "--locked", "--all-extras"])]
+        if project == ROOT:
+            env["PLAYWRIGHT_BROWSERS_PATH"] = str(ROOT / ".playwright")
+            stages.append((
+                "BROWSER", ["uv", "run", "--locked", "--all-extras", "playwright", "install", "chromium"],
+            ))
+        stages.append(("TEST", ["uv", "run", "--locked", "--all-extras", "pytest"]))
+        for stage, argv in stages:
             print(f"LOKAY_{stage}_CWD={project}", flush=True)
             process = None
             try:

@@ -65,6 +65,8 @@ requires-dist = [
     { name = "playwright", marker = "extra == 'browser'", specifier = ">=1.62" },
     { name = "pytest", marker = "extra == 'browser'", specifier = ">=9" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=9" },
+    { name = "pytest-env", marker = "extra == 'browser'", specifier = ">=1.6" },
+    { name = "pytest-env", marker = "extra == 'dev'", specifier = ">=1.6" },
     { name = "python-multipart", marker = "extra == 'browser'", specifier = ">=0.0.32" },
     { name = "python-multipart", marker = "extra == 'dev'", specifier = ">=0.0.32" },
     { name = "python-multipart", marker = "extra == 'fastapi'", specifier = ">=0.0.32" },
