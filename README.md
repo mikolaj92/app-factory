@@ -628,8 +628,7 @@ after validation.
 ## Development
 
 ```bash
-uv sync --locked --all-extras
-PLAYWRIGHT_BROWSERS_PATH=.playwright uv run --locked playwright install chromium
+uv sync --extra dev
 uv run pytest
 
 # Local chrome storybook (LAN-visible; iterate shell/CSS/JS here)
@@ -663,7 +662,7 @@ Installation is not test execution. Validate the two projects separately:
 # Repository root: full suite, including browsers, and all public extras
 uv lock --check
 uv sync --frozen --all-extras
-PLAYWRIGHT_BROWSERS_PATH=.playwright uv run --locked playwright install --with-deps chromium
+uv run --locked playwright install --with-deps chromium
 uv run --locked --all-extras pytest -q
 uv run --locked ruff check .
 uv run --locked python scripts/refresh_platform_assets.py --check-http-releases
@@ -703,9 +702,17 @@ alone proves nothing. After each invocation, `LOKAY_TEST_EXIT_CODE` records its
 exit code and cwd (124 for timeout, 127 for launch failure).
 Each `PROJECT_TEST_RESULT=` JSON line records the actual argv, cwd, child PID
 and exit code. A null PID means launch failed; a PID alone does not prove
-that tests passed. These status lines do not replace pytest summaries.
-Root pytest config sets `PLAYWRIGHT_BROWSERS_PATH=.playwright`, also for `uv run pytest`.
-Install Chromium explicitly as above; `.playwright/` is ignored by Git.
+that tests passed. These status lines do not replace pytest summaries. For checkout-local Chromium downloads, set
+`PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright"` during installation and execution;
+the downloaded browser directory is ignored by Git.
+
+Optional browser isolation (issue #9) skips unless Playwright is installed:
+
+```bash
+uv sync --extra browser
+uv run playwright install chromium
+uv run pytest tests/test_browser_chrome.py tests/test_browser_errors.py tests/test_browser_runs.py
+```
 
 ---
 

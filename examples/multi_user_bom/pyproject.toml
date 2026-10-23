@@ -7,7 +7,7 @@ dependencies = [
   "app-factory[platform]",
   "my-auth[fastapi-htmx]",
   "my-usermanager[fastapi-htmx,myauth]",
-  "httpx2>=2.13.1",
+  "httpx2>=2.15.1",
   "pytest>=9",
   "itsdangerous>=2.2",
   "python-multipart>=0.0.32",
