@@ -37,7 +37,7 @@ def main() -> int:
             key: value for key, value in os.environ.items()
             if key not in {
                 "UV_WORKING_DIR", "UV_PROJECT", "UV_NO_PROJECT", "UV_NO_SYNC", "UV_FROZEN",
-                "UV_ISOLATED", "UV_ENV_FILE", "PYTEST_ADDOPTS",
+                "UV_ISOLATED", "UV_ENV_FILE", "PYTEST_ADDOPTS", "PLAYWRIGHT_BROWSERS_PATH",
                 "UV_CONFIG_FILE", "UV_NO_CONFIG",
                 "UV_NO_SOURCES", "UV_NO_SOURCES_PACKAGE",
                 "UV_NO_DEV", "UV_NO_GROUP", "UV_NO_DEFAULT_GROUPS",
@@ -49,7 +49,6 @@ def main() -> int:
         env["UV_PROJECT_ENVIRONMENT"] = str(project / ".venv")
         stages = [("SYNC", ["uv", "sync", "--locked", "--all-extras"])]
         if project == ROOT:
-            env["PLAYWRIGHT_BROWSERS_PATH"] = str(ROOT / ".playwright")
             stages.append((
                 "BROWSER_INSTALL",
                 ["uv", "run", "--locked", "--all-extras", "playwright", "install", "--with-deps", "chromium"],
@@ -60,7 +59,10 @@ def main() -> int:
             process = None
             try:
                 process = subprocess.Popen(
-                    argv, cwd=project, env=env, start_new_session=os.name == "posix",
+                    argv, cwd=project,
+                    env=env | {"PLAYWRIGHT_BROWSERS_PATH": str(ROOT / ".playwright")}
+                    if stage == "BROWSER_INSTALL" else env,
+                    start_new_session=os.name == "posix",
                 )
                 try:
                     returncode = process.wait(timeout=PROJECT_TIMEOUT)
