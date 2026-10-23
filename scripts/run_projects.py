@@ -49,6 +49,7 @@ def main() -> int:
         env["UV_PROJECT_ENVIRONMENT"] = str(project / ".venv")
         stages = [("SYNC", ["uv", "sync", "--locked", "--all-extras"])]
         if project == ROOT:
+            env["PLAYWRIGHT_BROWSERS_PATH"] = str(ROOT / ".playwright")
             stages.append((
                 "BROWSER", ["uv", "run", "--locked", "--all-extras", "playwright", "install", "chromium"],
             ))
@@ -59,7 +60,7 @@ def main() -> int:
             try:
                 process = subprocess.Popen(
                     argv, cwd=project,
-                    env=env | {"PLAYWRIGHT_BROWSERS_PATH": str(ROOT / ".playwright")} if stage == "BROWSER" else env,
+                    env=env,
                     start_new_session=os.name == "posix",
                 )
                 try:
