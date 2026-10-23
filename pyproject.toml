@@ -59,5 +59,6 @@ include = ["app_factory", "README.md", "COMPAT.md", "bom", "pyproject.toml"]
 PLAYWRIGHT_BROWSERS_PATH = ".playwright"
 
 [tool.pytest.ini_options]
+required_plugins = ["pytest-env>=1.5"]
 pythonpath = ["."]
 testpaths = ["tests"]
