@@ -89,33 +89,24 @@
 
     const validate = (event) => {
       const files = Array.from(input.files || []);
-      if (!files.length && input.required) { event.preventDefault(); setStatus(field.dataset.labelEmpty, 'error'); return false; }
+      if (!files.length && input.required) { event.preventDefault(); setStatus(field.dataset.labelEmpty, 'error'); return; }
       const max = Number.parseInt(field.dataset.maxBytes || '', 10);
       const oversized = Number.isFinite(max) ? files.filter((file) => file.size > max) : [];
-      if (oversized.length) { event.preventDefault(); setStatus(message(field.dataset.labelTooLarge, { file: oversized.map((f) => f.name).join(', ') }), 'error'); return false; }
+      if (oversized.length) { event.preventDefault(); setStatus(message(field.dataset.labelTooLarge, { file: oversized.map((f) => f.name).join(', ') }), 'error'); return; }
       const wrong = files.filter((file) => !accepts(file, field.dataset.accept));
-      if (wrong.length) { event.preventDefault(); setStatus(message(field.dataset.labelWrongType, { file: wrong.map((f) => f.name).join(', ') }), 'error'); return false; }
+      if (wrong.length) { event.preventDefault(); setStatus(message(field.dataset.labelWrongType, { file: wrong.map((f) => f.name).join(', ') }), 'error'); return; }
       if (files.length > 1 && confirmed && confirmed.value !== String(files.length)) {
-        if (!window.confirm(message(field.dataset.labelConfirm, { count: files.length }))) { event.preventDefault(); return false; }
-        confirmed.value = String(files.length);
-        if (event.type === 'submit') {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-          queueMicrotask(() => form.requestSubmit(event.submitter || undefined));
-          return false;
+        event.preventDefault();
+        if (window.confirm(message(field.dataset.labelConfirm, { count: files.length }))) {
+          confirmed.value = String(files.length);
+          form.requestSubmit();
         }
       }
-      return true;
     };
+    form.addEventListener('submit', validate);
+    form.addEventListener('htmx:config:request', validate);
 
-    form.addEventListener('submit', (event) => {
-      if (event.defaultPrevented || !validate(event)) event.stopImmediatePropagation();
-    }, true);
-
-    form.addEventListener('htmx:before:request', (event) => {
-      if (event.defaultPrevented || !validate(event)) return;
-      const body = event.detail?.ctx?.request?.body;
-      if (confirmed && body instanceof FormData) body.set(confirmed.name, confirmed.value);
+    form.addEventListener('htmx:before:request', () => {
       if (submit) { submit.disabled = true; submit.setAttribute('aria-busy', 'true'); }
       if (progress) progress.hidden = false;
       if (bar) bar.removeAttribute('value');
