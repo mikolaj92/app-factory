@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""Run both project suites with isolated environments and actual cwd markers.
+
+Setup (including Chromium) remains a separate step. A marker is not proof of
+success: each following pytest invocation must produce its own passing summary.
+Each invocation checks its lock and has a bounded execution time.
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -14,7 +21,7 @@ PROJECT_TIMEOUT = 240  # Both suites must fit within Lokay's 600-second budget.
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run project checks with isolated environments and cwd markers.")
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--project", choices=("root", "bom"),
         help="run one project for a separate CI step; default: run both",
@@ -37,7 +44,7 @@ def main() -> int:
             key: value for key, value in os.environ.items()
             if key not in {
                 "UV_WORKING_DIR", "UV_PROJECT", "UV_NO_PROJECT", "UV_NO_SYNC", "UV_FROZEN",
-                "UV_ISOLATED", "UV_ENV_FILE", "PYTEST_ADDOPTS", "PLAYWRIGHT_BROWSERS_PATH",
+                "UV_ISOLATED", "UV_ENV_FILE", "PYTEST_ADDOPTS",
                 "UV_CONFIG_FILE", "UV_NO_CONFIG",
                 "UV_NO_SOURCES", "UV_NO_SOURCES_PACKAGE",
                 "UV_NO_DEV", "UV_NO_GROUP", "UV_NO_DEFAULT_GROUPS",
@@ -47,21 +54,15 @@ def main() -> int:
         # Keep that bypass disabled for child and nested uv commands alike.
         env["UV_NO_ENV_FILE"] = "1"
         env["UV_PROJECT_ENVIRONMENT"] = str(project / ".venv")
-        stages = [("SYNC", ["uv", "sync", "--locked", "--all-extras"])]
-        if project == ROOT:
-            env["PLAYWRIGHT_BROWSERS_PATH"] = str(ROOT / ".playwright")
-            stages.append((
-                "BROWSER", ["uv", "run", "--locked", "--all-extras", "playwright", "install", "chromium"],
-            ))
-        stages.append(("TEST", ["uv", "run", "--locked", "--all-extras", "pytest"]))
-        for stage, argv in stages:
+        for stage, argv in (
+            ("SYNC", ["uv", "sync", "--locked", "--all-extras"]),
+            ("TEST", ["uv", "run", "--locked", "--all-extras", "pytest"]),
+        ):
             print(f"LOKAY_{stage}_CWD={project}", flush=True)
             process = None
             try:
                 process = subprocess.Popen(
-                    argv, cwd=project,
-                    env=env,
-                    start_new_session=os.name == "posix",
+                    argv, cwd=project, env=env, start_new_session=os.name == "posix",
                 )
                 try:
                     returncode = process.wait(timeout=PROJECT_TIMEOUT)
