@@ -104,9 +104,10 @@
       }
     };
     form.addEventListener('submit', validate);
-    form.addEventListener('htmx:config:request', validate);
 
-    form.addEventListener('htmx:before:request', () => {
+    form.addEventListener('htmx:before:request', (event) => {
+      validate(event);
+      if (event.defaultPrevented) return;
       if (submit) { submit.disabled = true; submit.setAttribute('aria-busy', 'true'); }
       if (progress) progress.hidden = false;
       if (bar) bar.removeAttribute('value');
