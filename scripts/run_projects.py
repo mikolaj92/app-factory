@@ -23,6 +23,7 @@ def main() -> int:
         "--project", choices=("root", "bom"),
         help="run one project for a separate CI step; default: run both",
     )
+    parser.add_argument("--prepare", action="store_true", help="sync dependencies and install browsers without running tests")
     args = parser.parse_args()
     projects = PROJECTS if args.project is None else (
         ROOT if args.project == "root" else ROOT / "examples" / "multi_user_bom",
@@ -58,7 +59,8 @@ def main() -> int:
                 "BROWSER", ["uv", "run", "--locked", "--all-extras", "playwright",
                             "install", "--with-deps", "chromium"],
             ))
-        stages.append(("TEST", ["uv", "run", "--locked", "--all-extras", "pytest"]))
+        if not args.prepare:
+            stages.append(("TEST", ["uv", "run", "--locked", "--all-extras", "pytest"]))
         for stage, argv in stages:
             print(f"LOKAY_{stage}_CWD={project}", flush=True)
             process = None

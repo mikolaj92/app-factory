@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "sh",
+    "-c",
+    "echo \"LOKAY_TEST_CWD=$PWD\"; uv run pytest"
+  ],
+  "cwd": "/Users/mini-m4-0/.lokay/harness2/runs/mikolaj92__app-factory/executions/92fdce167d7ecb9cde82a549a8f0fd21ece6e62d0530eacf438daee7a92178de/worktree",
+  "environment": {
+    "UV_CACHE_DIR": "/Users/mini-m4-0/.lokay/harness2/runs/mikolaj92__app-factory/executions/92fdce167d7ecb9cde82a549a8f0fd21ece6e62d0530eacf438daee7a92178de/worktree/.check-evidence/uv-cache",
+    "UV_PROJECT_ENVIRONMENT": "/Users/mini-m4-0/.lokay/harness2/runs/mikolaj92__app-factory/executions/92fdce167d7ecb9cde82a549a8f0fd21ece6e62d0530eacf438daee7a92178de/worktree/.venv"
+  },
+  "removed_environment": [
+    "PLAYWRIGHT_BROWSERS_PATH"
+  ],
+  "returncode": 1
+}
