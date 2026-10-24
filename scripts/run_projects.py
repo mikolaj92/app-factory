@@ -97,6 +97,8 @@ def main() -> int:
             print(f"PROJECT_{stage}_RESULT=" + json.dumps(result), flush=True)
             results.append(result)
             failed |= returncode != 0
+            if returncode != 0:
+                break
     print("PROJECT_CHECK_SUMMARY=" + json.dumps(results), flush=True)
     return int(failed)
 

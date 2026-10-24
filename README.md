@@ -661,7 +661,7 @@ Installation is not test execution. Validate the two projects separately:
 ```bash
 # Repository root: full suite, including browsers, and all public extras
 uv lock --check
-uv sync --frozen --all-extras
+uv sync --locked --all-extras
 PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright" uv run --locked playwright install --with-deps chromium
 uv run --locked --all-extras pytest -q
 uv run --locked ruff check .
@@ -693,7 +693,7 @@ its declared Git and editable path sources. It also removes inherited
 It removes `UV_ENV_FILE` and forces `UV_NO_ENV_FILE=1` so env files cannot
 restore those options in child or nested `uv` commands.
 It checks locked manifests
-and returns nonzero if either invocation fails.
+and returns nonzero on failure; failed setup stops that project's remaining stages.
 Each suite has a 240-second timeout, leaving time within Lokay's 600-second
 command budget. A timeout or launch error does not prevent the other suite
 from running. Each cwd marker precedes a real pytest invocation; a marker
