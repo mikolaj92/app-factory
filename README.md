@@ -662,7 +662,7 @@ Installation is not test execution. Validate the two projects separately:
 # Repository root: full suite, including browsers, and all public extras
 uv lock --check
 uv sync --frozen --all-extras
-uv run --locked playwright install --with-deps chromium
+PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright" uv run --locked playwright install --with-deps chromium
 uv run --locked --all-extras pytest -q
 uv run --locked ruff check .
 uv run --locked python scripts/refresh_platform_assets.py --check-http-releases
@@ -672,12 +672,11 @@ uv build
 (cd examples/multi_user_bom && uv lock --check && uv sync --frozen --all-extras && uv run --locked --all-extras pytest -q)
 ```
 
-After setup, `uv run --locked python scripts/run_projects.py` runs both full suites.
-CI executes `uv run --locked --all-extras pytest -q` directly in two steps:
-repository root, then `examples/multi_user_bom`, each with its own environment.
-It disables uv env-file loading in both projects.
-The BOM step also runs after a root failure; each step preserves pytest's
-failure status through the log pipeline. CI uploads both pytest summaries
+`uv run --locked python scripts/run_projects.py` syncs both projects, installs
+Chromium into `.playwright/`, and runs both full suites in separate environments.
+CI uses this entry point with uv env-file loading disabled.
+The BOM suite also runs after a root failure. CI preserves the script's
+failure status through the log pipeline and uploads the combined log
 as `project-tests-<SHA>-python-<version>`, including on failure.
 The Python 3.12 and 3.14 matrix runs both projects independently.
 Separate root and BOM logs record each cwd, argv and exit status.
@@ -702,15 +701,16 @@ alone proves nothing. After each invocation, `LOKAY_TEST_EXIT_CODE` records its
 exit code and cwd (124 for timeout, 127 for launch failure).
 Each `PROJECT_TEST_RESULT=` JSON line records the actual argv, cwd, child PID
 and exit code. A null PID means launch failed; a PID alone does not prove
-that tests passed. These status lines do not replace pytest summaries. For checkout-local Chromium downloads, set
-`PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright"` during installation and execution;
-the downloaded browser directory is ignored by Git.
+that tests passed. These status lines do not replace pytest summaries.
+The root pytest configuration loads `scripts.run_projects` to discover Chromium
+in `.playwright/`, without an operator export or downloads during import.
+The downloaded browser directory is ignored by Git.
 
 Optional browser isolation (issue #9) skips unless Playwright is installed:
 
 ```bash
 uv sync --extra browser
-uv run playwright install chromium
+PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright" uv run playwright install chromium
 uv run pytest tests/test_browser_chrome.py tests/test_browser_errors.py tests/test_browser_runs.py
 ```
 
