@@ -145,30 +145,34 @@ Exact sources, licenses, and digests are stored under `app_factory/assets/`.
 ### Reusable file upload
 
 `app_factory/components/file_upload.html` exports `file_upload` / `file_upload_field`; hosts supply action, target, `accept`, `multiple`, `max_bytes`, and labels. Native multipart POST is the no-JS fallback.
-The following contract is derived from `file_upload_boot.html` and bundled `assets/htmx.min.js` (4.0.0); browser POST counts remain unverified.
+This contract comes from `file_upload_boot.html` and bundled `assets/htmx.min.js` (4.0.0), not a browser run. It establishes no observed POST counts or one-POST-per-confirmation guarantee.
 
-- HTMX collects `FormData` before `htmx:config:request`, then dispatches cancellable
-  `htmx:before:request` before Fetch. Request events expose `event.detail.ctx`:
-  `ctx.request.form`, `ctx.sourceElement`, `ctx.request.body`, and later `ctx.response.status`.
-  The dispatcher checks the event's cancellation result before calling Fetch.
-- One shared validator checks current enabled upload inputs in the request's form on every
-  before-request attempt, including queued or host retries without a change event.
-  Required selection, inclusive per-file `max_bytes`, and case-insensitive extension/MIME/`type/*`
-  matching retain the field's messages. Native submit uses the same validator.
-- Each attempt asks once for batch consent; hidden `confirmed_count` is payload, not approval.
-  The count covers all enabled upload fields. Acceptance continues the existing transport;
-  refusal cancels it. The controller never calls `requestSubmit` or sends its own request.
-  Native submit skips processing when already cancelled; later cancellation clears approval after dispatch.
-- Before Fetch, multipart file entries are refreshed from the current form, including repeated
-  names and native empty-file entries. Other payload entries remain intact; `confirmed_count`
-  is updated. Hosts retain format policy and server validation responsibility.
-- Cancellation before the controller skips consent and busy state. Cancellation after it clears
-  approval and busy/progress after dispatch. Document-level after/finally handlers also reset
-  completion, errors, timeout and abort, retaining the original form across swaps.
-  Reset restores required/empty disabling, hides progress, and sets `0`/`0%`.
-- Picker change, drop and removal clear status, confirmation and busy/progress.
-  Global delegated handlers and field-ready guards prevent duplicate listeners across swaps.
-  Swap initialization includes both the context root and its descendants. Forms stay isolated.
+- In the shared head, HTMX registers its `DOMContentLoaded` listener before the upload boot, so its form `submit` handler precedes the controller's on initial page load.
+  HTMX checks native validity and collects `FormData` before `htmx:config:request`, then emits
+  `htmx:before:request` before Fetch. These request events carry `event.detail.ctx`;
+  use `ctx.sourceElement`, `ctx.request.body`, and (once received) `ctx.response.status`.
+- The multipart body contains named form fields, repeated files under `name` (default `files`),
+  and, with `multiple`, hidden `confirmed_count`. This is a collection-time snapshot, not a live file list.
+  The controller validates live `input.files` on both `submit` and `htmx:before:request`:
+  required selection, per-file `max_bytes`, then case-insensitive extension/MIME/`type/*` matching.
+  It does not rebuild the collected body; later file or confirmation changes need not reach that body.
+- For batches, a count mismatch cancels that event and opens `window.confirm`; acceptance stores
+  the count and calls `form.requestSubmit()`. Cancellation does not stop other listeners, and this
+  HTMX submit path does not test `submit.defaultPrevented`. Re-entry during native submit can be
+  suppressed; re-entry from `htmx:before:request` can queue another request (default `queue first`).
+  Queued contexts retain collected bodies and rerun before-request handlers, not data collection.
+- Picker change, drop, or removal clears status and confirmation, not busy/progress. Confirmation
+  compares only counts, not file identity. Retry is manual: retained forms keep files and confirmation;
+  validation runs again, but an unchanged confirmed count skips the dialog. There is no automatic retry.
+- Cancelling `htmx:before:request` prevents that Fetch, not queued work. Earlier listeners leave
+  `defaultPrevented` set, so the controller skips busy/progress; later listeners can cancel after it
+  sets busy. Form-local resets handle `htmx:after:request` after response text, before swap, and
+  `htmx:finally:request` on completion, error, timeout, abort, or before-request cancellation.
+  Reset clears busy, restores required/empty disabling, hides progress, and sets `0`/`0%`.
+  Native validation/config cancellation never enters finally. After swap, detached sources dispatch
+  on `document` or a replacement target, so the old form's reset listener may not receive finally.
+- Boot/field-ready guards prevent repeat field initialization, not one listener per form: each field adds form handlers using the first status/submit/confirmation/progress controls.
+  Fields share a count, not batch identity; each render/reset can overwrite submit disabling. Swap initialization scans descendants of `ctx.target || ctx.sourceElement`, excluding the root.
 
 Client pages set `client_interactive = true` and extend `app_factory/client_shell.html`. Server helpers enforce size/count limits; hosts validate content. Client checks and `confirmed_count` are not security controls.
 
