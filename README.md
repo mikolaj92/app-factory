@@ -144,37 +144,37 @@ Exact sources, licenses, and digests are stored under `app_factory/assets/`.
 
 ### Reusable file upload
 
-`app_factory/components/file_upload.html` exports domain-blind `file_upload` and `file_upload_field` Jinja macros.
-The host configures `accept`, `multiple`, `max_bytes`, labels, action, and HTMX
-target. The component provides picker/drop, selected-file removal, batch
-confirmation, busy state, and an HTMX request indicator; the normal multipart
-form remains the no-JS fallback. Server-side format and security validation
-remain consumer-owned. HTMX 4 uses Fetch, so byte-level upload progress is not
-available from the transport.
+`app_factory/components/file_upload.html` exports `file_upload` / `file_upload_field`; hosts supply action, target, `accept`, `multiple`, `max_bytes`, and labels. Native multipart POST is the no-JS fallback.
+This contract comes from `file_upload_boot.html` and bundled `assets/htmx.min.js` (4.0.0), not a browser run. It establishes no observed POST counts or one-POST-per-confirmation guarantee.
 
-The backend companions `read_upload_bounded(...)` and `read_uploads_bounded(...)`
-read `UploadFile` objects in chunks and enforce per-file, aggregate, and file-count
-limits. They deliberately do not validate file formats, archives, malware, or
-product policy.
+- In the shared head, HTMX registers its `DOMContentLoaded` listener before the upload boot, so its form `submit` handler precedes the controller's on initial page load.
+  HTMX checks native validity and collects `FormData` before `htmx:config:request`, then emits
+  `htmx:before:request` before Fetch. These request events carry `event.detail.ctx`;
+  use `ctx.sourceElement`, `ctx.request.body`, and (once received) `ctx.response.status`.
+- The multipart body contains named form fields, repeated files under `name` (default `files`),
+  and, with `multiple`, hidden `confirmed_count`. This is a collection-time snapshot, not a live file list.
+  The controller validates live `input.files` on both `submit` and `htmx:before:request`:
+  required selection, per-file `max_bytes`, then case-insensitive extension/MIME/`type/*` matching.
+  It does not rebuild the collected body; later file or confirmation changes need not reach that body.
+- For batches, a count mismatch cancels that event and opens `window.confirm`; acceptance stores
+  the count and calls `form.requestSubmit()`. Cancellation does not stop other listeners, and this
+  HTMX submit path does not test `submit.defaultPrevented`. Re-entry during native submit can be
+  suppressed; re-entry from `htmx:before:request` can queue another request (default `queue first`).
+  Cancelling `htmx:before:request` prevents that Fetch, but is not a blanket cancellation of queued work.
+- Picker change, drop, or removal clears status and confirmation, not busy/progress. Confirmation
+  compares only counts, not file identity. Retry is manual: retained forms keep files and confirmation;
+  validation runs again, but an unchanged confirmed count skips the dialog. There is no automatic retry.
+- An uncancelled controller `htmx:before:request` handler disables submit, sets `aria-busy`, and shows
+  indeterminate progress (no byte progress with Fetch). Its form-local reset handles `htmx:after:request`
+  after response text, before swap, and `htmx:finally:request` on completion, error, timeout, abort,
+  or before-request cancellation. Reset clears busy, restores required/empty disabling, hides progress,
+  and sets the bar/label to `0`/`0%`; earlier validation/config cancellation never enters this finally.
+  Later listeners can cancel after busy is set. Finally follows swap; detached sources dispatch on
+  `document` (or a replacement target after swap), so the old form's reset listener may not receive it.
 
-Client pages opt into the same HTMX/Alpine generation without forking the shell:
-
-```jinja2
-{% set client_interactive = true %}
-{% extends "app_factory/client_shell.html" %}
-{% from "app_factory/components/file_upload.html" import file_upload %}
-
-{{ file_upload(
-    id="evidence",
-    action="/evidence",
-    accept=".example,application/x-example",
-    max_bytes=26214400,
-    submit_label="Upload",
-) }}
-```
-
-The macro does not name or inspect product formats. Browser `accept` is UX only;
-the consumer must validate bytes and policy on the server.
+Client pages set `client_interactive = true`, extend `app_factory/client_shell.html`, import `file_upload`, and call it with host action and policy.
+`read_upload_bounded(...)` / `read_uploads_bounded(...)` enforce server-side per-file, aggregate, and count limits. Hosts still validate bytes, formats, archives, malware, and product policy;
+client `accept`, size checks, and `confirmed_count` are not security controls.
 
 ### Shared presentation contract (Basecoat-first, no per-app CSS toolchain)
 
