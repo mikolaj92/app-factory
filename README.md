@@ -170,8 +170,8 @@ The controller uses bundled `assets/htmx.min.js` (4.0.0). HTMX alone owns transp
   Reset clears busy, restores required/empty disabling, hides progress, and sets `0`/`0%`.
   Native validation/config cancellation never enters finally. Document listeners route request events
   by `ctx.request.form`, including external sources and detached sources after swap.
-- Boot/field-ready guards prevent duplicate listeners. Each attempt initializes current fields and
-  validates only fields still in that form. Swap initialization includes `ctx.target || ctx.sourceElement`.
+- Boot/field-ready guards prevent duplicate listeners. Native submit and `htmx:before:request` initialize
+  current fields before validation, even in a new request form. Swaps use `ctx.target || ctx.sourceElement`.
 
 Client pages set `client_interactive = true` and extend `app_factory/client_shell.html`. Server helpers enforce size/count limits; hosts validate content. Client checks and `confirmed_count` are not security controls.
 

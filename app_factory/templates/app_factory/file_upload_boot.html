@@ -56,10 +56,10 @@
       if (label) label.textContent = '0%';
     };
     form.addEventListener('submit', (event) => {
-      if (!validate(event)) event.stopImmediatePropagation();
+      initAll(form);
+      if (!validate(event)) { reset(); event.stopImmediatePropagation(); }
     }, true);
     const beforeRequest = (event) => {
-      initAll(form);
       if (!validate(event)) { reset(); return; }
       const body = event.detail.ctx.request.body;
       if (body instanceof FormData) {
@@ -166,7 +166,10 @@
     root.querySelectorAll?.('[data-app-file-upload-field]').forEach(init);
   };
   document.addEventListener('htmx:before:request', (event) => {
-    forms.get(event.detail?.ctx?.request?.form)?.beforeRequest(event);
+    const form = event.detail?.ctx?.request?.form;
+    if (!form) return;
+    initAll(form);
+    forms.get(form)?.beforeRequest(event);
   });
   for (const name of ['htmx:after:request', 'htmx:finally:request']) {
     document.addEventListener(name, (event) => {
