@@ -25,63 +25,6 @@
     (text, [key, value]) => text.replaceAll(`{${key}}`, String(value)), String(template || '')
   );
 
-  const forms = new WeakMap();
-  const initForm = (form) => {
-    if (forms.has(form)) return forms.get(form);
-    const validators = new Map();
-    const validate = (event) => {
-      if (event.defaultPrevented) return false;
-      for (const [field, check] of validators) {
-        if (field.isConnected && field.closest('form') === form && !check()) {
-          event.preventDefault();
-          return false;
-        }
-      }
-      const confirmed = form.querySelector('[data-app-file-confirmed-count]');
-      if (confirmed) confirmed.value = String(Array.from(form.querySelectorAll('[data-app-file-input]')).reduce((count, input) => count + (input.files?.length || 0), 0));
-      return true;
-    };
-    const reset = () => {
-      const inputs = Array.from(form.querySelectorAll('[data-app-file-input]'));
-      const submit = form.querySelector('[data-app-file-submit]');
-      if (submit) {
-        submit.removeAttribute('aria-busy');
-        submit.disabled = inputs.some((input) => input.required && !input.files?.length);
-      }
-      const progress = form.querySelector('[data-app-file-progress]');
-      const bar = form.querySelector('[data-app-file-progress-bar]');
-      const label = form.querySelector('[data-app-file-progress-label]');
-      if (progress) progress.hidden = true;
-      if (bar) bar.value = 0;
-      if (label) label.textContent = '0%';
-    };
-    form.addEventListener('submit', (event) => {
-      initAll(form);
-      if (!validate(event)) { reset(); event.stopImmediatePropagation(); }
-    }, true);
-    const beforeRequest = (event) => {
-      if (!validate(event)) { reset(); return; }
-      const body = event.detail.ctx.request.body;
-      if (body instanceof FormData) {
-        const inputs = Array.from(form.querySelectorAll('[data-app-file-input]')).filter((input) => input.name && !input.matches(':disabled'));
-        new Set(inputs.map((input) => input.name)).forEach((name) => body.delete(name));
-        inputs.forEach((input) => Array.from(input.files || []).forEach((file) => body.append(input.name, file)));
-        form.querySelectorAll('[data-app-file-confirmed-count][name]').forEach((input) => body.set(input.name, input.value));
-      }
-      const submit = form.querySelector('[data-app-file-submit]');
-      const progress = form.querySelector('[data-app-file-progress]');
-      const bar = form.querySelector('[data-app-file-progress-bar]');
-      const label = form.querySelector('[data-app-file-progress-label]');
-      if (submit) { submit.disabled = true; submit.setAttribute('aria-busy', 'true'); }
-      if (progress) progress.hidden = false;
-      if (bar) bar.removeAttribute('value');
-      if (label) label.textContent = '';
-    };
-    const state = { validators, reset, beforeRequest };
-    forms.set(form, state);
-    return state;
-  };
-
   const init = (field) => {
     if (!field || field.dataset.appFileUploadReady === 'true') return;
     field.dataset.appFileUploadReady = 'true';
@@ -91,10 +34,12 @@
     const dropzone = field.querySelector('[data-app-file-dropzone]');
     const list = field.querySelector('[data-app-file-list]');
     const status = form.querySelector('[data-app-file-status]');
+    const submit = form.querySelector('[data-app-file-submit]');
     const confirmed = form.querySelector('[data-app-file-confirmed-count]');
+    const progress = form.querySelector('[data-app-file-progress]');
+    const bar = form.querySelector('[data-app-file-progress-bar]');
+    const progressLabel = form.querySelector('[data-app-file-progress-label]');
     if (!input) return;
-    const state = initForm(form);
-    let confirmedFiles = [];
 
     const setStatus = (text, state = '') => {
       if (!status) return;
@@ -128,8 +73,7 @@
           return item;
         }));
       }
-      state.reset();
-      confirmedFiles = [];
+      if (submit) submit.disabled = input.required && files.length === 0;
       if (confirmed) confirmed.value = '';
       setStatus('');
     };
@@ -143,39 +87,44 @@
       });
     }
 
-    const validate = () => {
+    const validate = (event) => {
       const files = Array.from(input.files || []);
-      if (!files.length && input.required) { setStatus(field.dataset.labelEmpty, 'error'); return false; }
+      if (!files.length && input.required) { event.preventDefault(); setStatus(field.dataset.labelEmpty, 'error'); return; }
       const max = Number.parseInt(field.dataset.maxBytes || '', 10);
       const oversized = Number.isFinite(max) ? files.filter((file) => file.size > max) : [];
-      if (oversized.length) { setStatus(message(field.dataset.labelTooLarge, { file: oversized.map((f) => f.name).join(', ') }), 'error'); return false; }
+      if (oversized.length) { event.preventDefault(); setStatus(message(field.dataset.labelTooLarge, { file: oversized.map((f) => f.name).join(', ') }), 'error'); return; }
       const wrong = files.filter((file) => !accepts(file, field.dataset.accept));
-      if (wrong.length) { setStatus(message(field.dataset.labelWrongType, { file: wrong.map((f) => f.name).join(', ') }), 'error'); return false; }
-      if (files.length > 1 && confirmed && (files.length !== confirmedFiles.length || files.some((file, index) => file !== confirmedFiles[index]))) {
-        if (!window.confirm(message(field.dataset.labelConfirm, { count: files.length }))) return false;
-        confirmedFiles = files;
+      if (wrong.length) { event.preventDefault(); setStatus(message(field.dataset.labelWrongType, { file: wrong.map((f) => f.name).join(', ') }), 'error'); return; }
+      if (files.length > 1 && confirmed && confirmed.value !== String(files.length)) {
+        event.preventDefault();
+        if (window.confirm(message(field.dataset.labelConfirm, { count: files.length }))) {
+          confirmed.value = String(files.length);
+          form.requestSubmit();
+        }
       }
-      return true;
     };
-    state.validators.set(field, validate);
+    form.addEventListener('submit', validate);
+
+    form.addEventListener('htmx:before:request', (event) => {
+      validate(event);
+      if (event.defaultPrevented) return;
+      if (submit) { submit.disabled = true; submit.setAttribute('aria-busy', 'true'); }
+      if (progress) progress.hidden = false;
+      if (bar) bar.removeAttribute('value');
+      if (progressLabel) progressLabel.textContent = '';
+    });
+    const reset = () => {
+      if (submit) { submit.removeAttribute('aria-busy'); submit.disabled = input.required && !(input.files && input.files.length); }
+      if (progress) progress.hidden = true;
+      if (bar) bar.value = 0;
+      if (progressLabel) progressLabel.textContent = '0%';
+    };
+    form.addEventListener('htmx:after:request', reset);
+    form.addEventListener('htmx:finally:request', reset);
     render();
   };
 
-  const initAll = (root = document) => {
-    if (root.matches?.('[data-app-file-upload-field]')) init(root);
-    root.querySelectorAll?.('[data-app-file-upload-field]').forEach(init);
-  };
-  document.addEventListener('htmx:before:request', (event) => {
-    const form = event.detail?.ctx?.request?.form;
-    if (!form) return;
-    initAll(form);
-    forms.get(form)?.beforeRequest(event);
-  });
-  for (const name of ['htmx:after:request', 'htmx:finally:request']) {
-    document.addEventListener(name, (event) => {
-      forms.get(event.detail?.ctx?.request?.form)?.reset();
-    });
-  }
+  const initAll = (root = document) => root.querySelectorAll?.('[data-app-file-upload-field]').forEach(init);
   document.addEventListener('DOMContentLoaded', () => initAll());
   document.addEventListener('htmx:after:swap', (event) => {
     const ctx = event.detail && event.detail.ctx;
