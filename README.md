@@ -160,21 +160,21 @@ This contract comes from `file_upload_boot.html` and bundled `assets/htmx.min.js
   the count and calls `form.requestSubmit()`. Cancellation does not stop other listeners, and this
   HTMX submit path does not test `submit.defaultPrevented`. Re-entry during native submit can be
   suppressed; re-entry from `htmx:before:request` can queue another request (default `queue first`).
-  Cancelling `htmx:before:request` prevents that Fetch, but is not a blanket cancellation of queued work.
+  Queued contexts retain collected bodies and rerun before-request handlers, not data collection.
 - Picker change, drop, or removal clears status and confirmation, not busy/progress. Confirmation
   compares only counts, not file identity. Retry is manual: retained forms keep files and confirmation;
   validation runs again, but an unchanged confirmed count skips the dialog. There is no automatic retry.
-- An uncancelled controller `htmx:before:request` handler disables submit, sets `aria-busy`, and shows
-  indeterminate progress (no byte progress with Fetch). Its form-local reset handles `htmx:after:request`
-  after response text, before swap, and `htmx:finally:request` on completion, error, timeout, abort,
-  or before-request cancellation. Reset clears busy, restores required/empty disabling, hides progress,
-  and sets the bar/label to `0`/`0%`; earlier validation/config cancellation never enters this finally.
-  Later listeners can cancel after busy is set. Finally follows swap; detached sources dispatch on
-  `document` (or a replacement target after swap), so the old form's reset listener may not receive it.
+- Cancelling `htmx:before:request` prevents that Fetch, not queued work. Earlier listeners leave
+  `defaultPrevented` set, so the controller skips busy/progress; later listeners can cancel after it
+  sets busy. Form-local resets handle `htmx:after:request` after response text, before swap, and
+  `htmx:finally:request` on completion, error, timeout, abort, or before-request cancellation.
+  Reset clears busy, restores required/empty disabling, hides progress, and sets `0`/`0%`.
+  Native validation/config cancellation never enters finally. After swap, detached sources dispatch
+  on `document` or a replacement target, so the old form's reset listener may not receive finally.
+- Boot/field-ready guards prevent repeat field initialization, not one listener per form: each field adds form handlers using the first status/submit/confirmation/progress controls.
+  Fields share a count, not batch identity; each render/reset can overwrite submit disabling. Swap initialization scans descendants of `ctx.target || ctx.sourceElement`, excluding the root.
 
-Client pages set `client_interactive = true`, extend `app_factory/client_shell.html`, import `file_upload`, and call it with host action and policy.
-`read_upload_bounded(...)` / `read_uploads_bounded(...)` enforce server-side per-file, aggregate, and count limits. Hosts still validate bytes, formats, archives, malware, and product policy;
-client `accept`, size checks, and `confirmed_count` are not security controls.
+Client pages set `client_interactive = true` and extend `app_factory/client_shell.html`. Server helpers enforce size/count limits; hosts validate content. Client checks and `confirmed_count` are not security controls.
 
 ### Shared presentation contract (Basecoat-first, no per-app CSS toolchain)
 
