@@ -158,7 +158,7 @@ The following contract is derived from `file_upload_boot.html` and bundled `asse
 - Each attempt asks once for batch consent; hidden `confirmed_count` is payload, not approval.
   The count covers all enabled upload fields. Acceptance continues the existing transport;
   refusal cancels it. The controller never calls `requestSubmit` or sends its own request.
-  Native submit skips controller processing when HTMX has already prevented its default action.
+  Native submit skips processing when already cancelled; later cancellation clears approval after dispatch.
 - Before Fetch, multipart file entries are refreshed from the current form, including repeated
   names and native empty-file entries. Other payload entries remain intact; `confirmed_count`
   is updated. Hosts retain format policy and server validation responsibility.

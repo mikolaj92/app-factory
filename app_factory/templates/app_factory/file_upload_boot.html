@@ -79,6 +79,7 @@
     if (!form.matches?.('form') || !fields(form).length || event.defaultPrevented) return;
     reset(form);
     if (!validate(form) || !consent(form)) { event.preventDefault(); reset(form); }
+    queueMicrotask(() => { if (event.defaultPrevented) reset(form); });
   });
 
   document.addEventListener('htmx:before:request', (event) => {
