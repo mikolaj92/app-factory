@@ -165,13 +165,13 @@ The controller uses bundled `assets/htmx.min.js` (4.0.0). HTMX alone owns transp
   Retry remains host-owned; the controller does not retry automatically.
 - Cancelling `htmx:before:request` prevents that Fetch, not queued work. Earlier listeners leave
   `defaultPrevented` set, so the controller skips busy/progress; later listeners can cancel after it
-  sets busy. Form-local resets handle `htmx:after:request` after response text, before swap, and
+  sets busy. Resets handle `htmx:after:request` after response text, before swap, and
   `htmx:finally:request` on completion, error, timeout, abort, or before-request cancellation.
   Reset clears busy, restores required/empty disabling, hides progress, and sets `0`/`0%`.
-  Native validation/config cancellation never enters finally. After swap, detached sources dispatch
-  on `document` or a replacement target, so the old form's reset listener may not receive finally.
-- Boot/field-ready guards and form state prevent duplicate listeners. Submit disabling considers all
-  required fields. Swap initialization scans `ctx.target || ctx.sourceElement`, including the root.
+  Native validation/config cancellation never enters finally. Document listeners route request events
+  by `ctx.request.form`, including external sources and detached sources after swap.
+- Boot/field-ready guards prevent duplicate listeners. Each attempt initializes current fields and
+  validates only fields still in that form. Swap initialization includes `ctx.target || ctx.sourceElement`.
 
 Client pages set `client_interactive = true` and extend `app_factory/client_shell.html`. Server helpers enforce size/count limits; hosts validate content. Client checks and `confirmed_count` are not security controls.
 

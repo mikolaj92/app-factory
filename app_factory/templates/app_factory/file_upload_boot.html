@@ -32,7 +32,7 @@
     const validate = (event) => {
       if (event.defaultPrevented) return false;
       for (const [field, check] of validators) {
-        if (field.isConnected && !check()) {
+        if (field.isConnected && field.closest('form') === form && !check()) {
           event.preventDefault();
           return false;
         }
@@ -58,8 +58,9 @@
     form.addEventListener('submit', (event) => {
       if (!validate(event)) event.stopImmediatePropagation();
     }, true);
-    form.addEventListener('htmx:before:request', (event) => {
-      if (event.detail?.ctx?.request.form !== form || !validate(event)) return;
+    const beforeRequest = (event) => {
+      initAll(form);
+      if (!validate(event)) { reset(); return; }
       const body = event.detail.ctx.request.body;
       if (body instanceof FormData) {
         const inputs = Array.from(form.querySelectorAll('[data-app-file-input]')).filter((input) => input.name && !input.matches(':disabled'));
@@ -75,10 +76,8 @@
       if (progress) progress.hidden = false;
       if (bar) bar.removeAttribute('value');
       if (label) label.textContent = '';
-    });
-    form.addEventListener('htmx:after:request', reset);
-    form.addEventListener('htmx:finally:request', reset);
-    const state = { validators, reset };
+    };
+    const state = { validators, reset, beforeRequest };
     forms.set(form, state);
     return state;
   };
@@ -166,6 +165,14 @@
     if (root.matches?.('[data-app-file-upload-field]')) init(root);
     root.querySelectorAll?.('[data-app-file-upload-field]').forEach(init);
   };
+  document.addEventListener('htmx:before:request', (event) => {
+    forms.get(event.detail?.ctx?.request?.form)?.beforeRequest(event);
+  });
+  for (const name of ['htmx:after:request', 'htmx:finally:request']) {
+    document.addEventListener(name, (event) => {
+      forms.get(event.detail?.ctx?.request?.form)?.reset();
+    });
+  }
   document.addEventListener('DOMContentLoaded', () => initAll());
   document.addEventListener('htmx:after:swap', (event) => {
     const ctx = event.detail && event.detail.ctx;
