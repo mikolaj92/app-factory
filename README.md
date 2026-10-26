@@ -144,37 +144,37 @@ Exact sources, licenses, and digests are stored under `app_factory/assets/`.
 
 ### Reusable file upload
 
-`app_factory/components/file_upload.html` exports domain-blind `file_upload` and `file_upload_field` Jinja macros.
-The host configures `accept`, `multiple`, `max_bytes`, labels, action, and HTMX
-target. The component provides picker/drop, selected-file removal, batch
-confirmation, busy state, and an HTMX request indicator; the normal multipart
-form remains the no-JS fallback. Server-side format and security validation
-remain consumer-owned. HTMX 4 uses Fetch, so byte-level upload progress is not
-available from the transport.
+`app_factory/components/file_upload.html` exports `file_upload` / `file_upload_field`; hosts supply action, target, `accept`, `multiple`, `max_bytes`, and labels. Native multipart POST is the no-JS fallback.
+This contract comes from `file_upload_boot.html` and bundled `assets/htmx.min.js` (4.0.0), not a browser run. It establishes no observed POST counts or one-POST-per-confirmation guarantee.
 
-The backend companions `read_upload_bounded(...)` and `read_uploads_bounded(...)`
-read `UploadFile` objects in chunks and enforce per-file, aggregate, and file-count
-limits. They deliberately do not validate file formats, archives, malware, or
-product policy.
+- In the shared head, HTMX registers its `DOMContentLoaded` listener before the upload boot, so its form `submit` handler precedes the controller's on initial page load.
+  HTMX checks native validity and collects `FormData` before `htmx:config:request`, then emits
+  `htmx:before:request` before Fetch. These request events carry `event.detail.ctx`;
+  use `ctx.sourceElement`, `ctx.request.body`, and (once received) `ctx.response.status`.
+- The multipart body contains named form fields, repeated files under `name` (default `files`),
+  and, with `multiple`, hidden `confirmed_count`. This is a collection-time snapshot, not a live file list.
+  The controller validates live `input.files` on both `submit` and `htmx:before:request`:
+  required selection, per-file `max_bytes`, then case-insensitive extension/MIME/`type/*` matching.
+  It does not rebuild the collected body; later file or confirmation changes need not reach that body.
+- For batches, a count mismatch cancels that event and opens `window.confirm`; acceptance stores
+  the count and calls `form.requestSubmit()`. Cancellation does not stop other listeners, and this
+  HTMX submit path does not test `submit.defaultPrevented`. Re-entry during native submit can be
+  suppressed; re-entry from `htmx:before:request` can queue another request (default `queue first`).
+  Queued contexts retain collected bodies and rerun before-request handlers, not data collection.
+- Picker change, drop, or removal clears status and confirmation, not busy/progress. Confirmation
+  compares only counts, not file identity. Retry is manual: retained forms keep files and confirmation;
+  validation runs again, but an unchanged confirmed count skips the dialog. There is no automatic retry.
+- Cancelling `htmx:before:request` prevents that Fetch, not queued work. Earlier listeners leave
+  `defaultPrevented` set, so the controller skips busy/progress; later listeners can cancel after it
+  sets busy. Form-local resets handle `htmx:after:request` after response text, before swap, and
+  `htmx:finally:request` on completion, error, timeout, abort, or before-request cancellation.
+  Reset clears busy, restores required/empty disabling, hides progress, and sets `0`/`0%`.
+  Native validation/config cancellation never enters finally. After swap, detached sources dispatch
+  on `document` or a replacement target, so the old form's reset listener may not receive finally.
+- Boot/field-ready guards prevent repeat field initialization, not one listener per form: each field adds form handlers using the first status/submit/confirmation/progress controls.
+  Fields share a count, not batch identity; each render/reset can overwrite submit disabling. Swap initialization scans descendants of `ctx.target || ctx.sourceElement`, excluding the root.
 
-Client pages opt into the same HTMX/Alpine generation without forking the shell:
-
-```jinja2
-{% set client_interactive = true %}
-{% extends "app_factory/client_shell.html" %}
-{% from "app_factory/components/file_upload.html" import file_upload %}
-
-{{ file_upload(
-    id="evidence",
-    action="/evidence",
-    accept=".example,application/x-example",
-    max_bytes=26214400,
-    submit_label="Upload",
-) }}
-```
-
-The macro does not name or inspect product formats. Browser `accept` is UX only;
-the consumer must validate bytes and policy on the server.
+Client pages set `client_interactive = true` and extend `app_factory/client_shell.html`. Server helpers enforce size/count limits; hosts validate content. Client checks and `confirmed_count` are not security controls.
 
 ### Shared presentation contract (Basecoat-first, no per-app CSS toolchain)
 
@@ -661,8 +661,8 @@ Installation is not test execution. Validate the two projects separately:
 ```bash
 # Repository root: full suite, including browsers, and all public extras
 uv lock --check
-uv sync --locked --all-extras
-PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright" uv run --locked playwright install --with-deps chromium
+uv sync --frozen --all-extras
+uv run --locked playwright install --with-deps chromium
 uv run --locked --all-extras pytest -q
 uv run --locked ruff check .
 uv run --locked python scripts/refresh_platform_assets.py --check-http-releases
@@ -672,11 +672,12 @@ uv build
 (cd examples/multi_user_bom && uv lock --check && uv sync --frozen --all-extras && uv run --locked --all-extras pytest -q)
 ```
 
-`uv run --locked python scripts/run_projects.py` syncs both projects, installs
-Chromium into `.playwright/`, and runs both full suites in separate environments.
-CI uses this entry point with uv env-file loading disabled.
-The BOM suite also runs after a root failure. CI preserves the script's
-failure status through the log pipeline and uploads the combined log
+After setup, `uv run --locked python scripts/run_projects.py` runs both full suites.
+CI executes `uv run --locked --all-extras pytest -q` directly in two steps:
+repository root, then `examples/multi_user_bom`, each with its own environment.
+It disables uv env-file loading in both projects.
+The BOM step also runs after a root failure; each step preserves pytest's
+failure status through the log pipeline. CI uploads both pytest summaries
 as `project-tests-<SHA>-python-<version>`, including on failure.
 The Python 3.12 and 3.14 matrix runs both projects independently.
 Separate root and BOM logs record each cwd, argv and exit status.
@@ -693,7 +694,7 @@ its declared Git and editable path sources. It also removes inherited
 It removes `UV_ENV_FILE` and forces `UV_NO_ENV_FILE=1` so env files cannot
 restore those options in child or nested `uv` commands.
 It checks locked manifests
-and returns nonzero on failure; failed setup stops that project's remaining stages.
+and returns nonzero if either invocation fails.
 Each suite has a 240-second timeout, leaving time within Lokay's 600-second
 command budget. A timeout or launch error does not prevent the other suite
 from running. Each cwd marker precedes a real pytest invocation; a marker
@@ -701,16 +702,15 @@ alone proves nothing. After each invocation, `LOKAY_TEST_EXIT_CODE` records its
 exit code and cwd (124 for timeout, 127 for launch failure).
 Each `PROJECT_TEST_RESULT=` JSON line records the actual argv, cwd, child PID
 and exit code. A null PID means launch failed; a PID alone does not prove
-that tests passed. These status lines do not replace pytest summaries.
-The root pytest configuration loads `scripts.run_projects` to discover Chromium
-in `.playwright/`, without an operator export or downloads during import.
-The downloaded browser directory is ignored by Git.
+that tests passed. These status lines do not replace pytest summaries. For checkout-local Chromium downloads, set
+`PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright"` during installation and execution;
+the downloaded browser directory is ignored by Git.
 
 Optional browser isolation (issue #9) skips unless Playwright is installed:
 
 ```bash
 uv sync --extra browser
-PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright" uv run playwright install chromium
+uv run playwright install chromium
 uv run pytest tests/test_browser_chrome.py tests/test_browser_errors.py tests/test_browser_runs.py
 ```
 
