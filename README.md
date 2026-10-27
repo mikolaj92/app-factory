@@ -662,7 +662,7 @@ Installation is not test execution. Validate the two projects separately:
 # Repository root: full suite, including browsers, and all public extras
 uv lock --check
 uv sync --frozen --all-extras
-uv run --locked playwright install --with-deps chromium
+PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright" uv run --locked playwright install --with-deps chromium
 uv run --locked --all-extras pytest -q
 uv run --locked ruff check .
 uv run --locked python scripts/refresh_platform_assets.py --check-http-releases
@@ -672,7 +672,7 @@ uv build
 (cd examples/multi_user_bom && uv lock --check && uv sync --frozen --all-extras && uv run --locked --all-extras pytest -q)
 ```
 
-After setup, `uv run --locked python scripts/run_projects.py` runs both full suites.
+After setup, `uv run --locked python scripts/run_projects.py` installs Chromium for the root project and runs both full suites.
 CI executes `uv run --locked --all-extras pytest -q` directly in two steps:
 repository root, then `examples/multi_user_bom`, each with its own environment.
 It disables uv env-file loading in both projects.
@@ -693,8 +693,8 @@ its declared Git and editable path sources. It also removes inherited
 `UV_NO_DEV`, `UV_NO_GROUP` and `UV_NO_DEFAULT_GROUPS` dependency selectors.
 It removes `UV_ENV_FILE` and forces `UV_NO_ENV_FILE=1` so env files cannot
 restore those options in child or nested `uv` commands.
-It checks locked manifests
-and returns nonzero if either invocation fails.
+It checks locked manifests and returns nonzero if any installation or test
+invocation fails.
 Each suite has a 240-second timeout, leaving time within Lokay's 600-second
 command budget. A timeout or launch error does not prevent the other suite
 from running. Each cwd marker precedes a real pytest invocation; a marker
@@ -702,15 +702,15 @@ alone proves nothing. After each invocation, `LOKAY_TEST_EXIT_CODE` records its
 exit code and cwd (124 for timeout, 127 for launch failure).
 Each `PROJECT_TEST_RESULT=` JSON line records the actual argv, cwd, child PID
 and exit code. A null PID means launch failed; a PID alone does not prove
-that tests passed. These status lines do not replace pytest summaries. For checkout-local Chromium downloads, set
-`PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright"` during installation and execution;
-the downloaded browser directory is ignored by Git.
+that tests passed. These status lines do not replace pytest summaries. Root
+`conftest.py` points `PLAYWRIGHT_BROWSERS_PATH` at the checkout's `.playwright`
+directory for every pytest run; that directory is ignored by Git.
 
 Optional browser isolation (issue #9) skips unless Playwright is installed:
 
 ```bash
 uv sync --extra browser
-uv run playwright install chromium
+PLAYWRIGHT_BROWSERS_PATH="$PWD/.playwright" uv run playwright install chromium
 uv run pytest tests/test_browser_chrome.py tests/test_browser_errors.py tests/test_browser_runs.py
 ```
 
